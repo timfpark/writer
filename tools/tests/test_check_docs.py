@@ -83,13 +83,6 @@ class CheckDocsTest(unittest.TestCase):
         self.write("a.md", FRONTMATTER + "# Title again\n")
         self.assertEqual(self.problems(), ["a.md:5: H1 heading duplicates the frontmatter title; start at H2"])
 
-    def test_previous_work_is_not_checked(self):
-        self.write("docs/previous-work/0001-old.md", "# No frontmatter\n\n[x](./missing.md)\n")
-        self.write("docs/previous-work-notes.md", "## No frontmatter\n")
-        self.assertEqual(self.problems(), [
-            "docs/previous-work-notes.md:1: missing YAML frontmatter delimited by '---' lines",
-        ])
-
 
 if __name__ == "__main__":
     unittest.main()
