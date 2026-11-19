@@ -36,13 +36,15 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | # | Work item                                                                       | Subsystems   | Outcome                                                                     | Prerequisite |
 |---|---------------------------------------------------------------------------------|--------------|-----------------------------------------------------------------------------|--------------|
-| 2 | [Add a reproducible development container](./0002-development-container.md)     | `repository` | `tools/check` passes in a pinned, non-root container with every toolchain.  | None         |
-| 3 | [Run the validation gate in GitHub Actions](./0003-continuous-integration.md)   | `repository` | Pull requests and `main` run `tools/check` behind one required `CI result`. | 2            |
+| 3 | [Run the validation gate in GitHub Actions](./0003-continuous-integration.md)   | `repository` | Pull requests and `main` run `tools/check` behind one required `CI result`. | None         |
 | 4 | [Configure repository governance on GitHub](./0004-repository-governance.md)    | `repository` | Dependabot, a PR template, branch protection, and secret scanning are live. | 3            |
-| 5 | [Add Markdown style lint to the validation gate](./0005-markdown-style-lint.md) | `repository` | `tools/check` reports Markdown style violations with file and line.         | 2, 4         |
-| 6 | [Establish the service subsystem foundation](./0006-service-foundation.md)      | `service`    | `service/` serves a health endpoint behind a verified contract and phase.   | 4            |
-| 7 | [Establish the webapp subsystem foundation](./0007-webapp-foundation.md)        | `webapp`     | `webapp/` shows service health through a generated, verified client.        | 6            |
+| 5 | [Add Markdown style lint to the validation gate](./0005-markdown-style-lint.md) | `repository` | `tools/check` reports Markdown style violations with file and line.         | 4            |
+| 8 | [Record the service architecture ADR](./0008-service-architecture-adr.md)       | `service`    | An accepted ADR fixes the service framework, crates, and contract source.   | None         |
+| 9 | [Record the webapp architecture ADR](./0009-webapp-architecture-adr.md)         | `webapp`     | An accepted ADR fixes the webapp build tool, client generator, and port.    | 8            |
+| 6 | [Establish the service subsystem foundation](./0006-service-foundation.md)      | `service`    | `service/` serves a health endpoint behind a verified contract and phase.   | 4, 8         |
+| 7 | [Establish the webapp subsystem foundation](./0007-webapp-foundation.md)        | `webapp`     | `webapp/` shows service health through a generated, verified client.        | 6, 9         |
 
-Items 6 and 7 each record their subsystem's architecture ADR before building,
-and apply the "Adding a subsystem" checklist in the
+Items 8 and 9 record the service and webapp architecture ADRs before any
+subsystem code exists. Items 6 and 7 build on those decisions and apply the
+"Adding a subsystem" checklist in the
 [agent guide](../../AGENTS.md#adding-a-subsystem).

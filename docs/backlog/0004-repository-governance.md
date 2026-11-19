@@ -24,8 +24,9 @@ it lists. CODEOWNERS and dependency review are deferred.
 
 ## Scope
 
-* Add `.github/dependabot.yml` with weekly updates for the `github-actions` and
-  `devcontainers` ecosystems.
+* Add `.github/dependabot.yml` with weekly updates for the `github-actions`,
+  `devcontainers`, and `docker` ecosystems; `docker` keeps the digest-pinned
+  base image in `.devcontainer/Dockerfile` current.
 * Add `.github/pull_request_template.md` asking for the backlog item, governing
   ADRs, and the `tools/check` result.
 * Apply the ADR's repository settings: a `main` ruleset requiring a pull
@@ -37,7 +38,7 @@ it lists. CODEOWNERS and dependency review are deferred.
 
 ## Acceptance criteria
 
-* [ ] Dependabot opens or reports no pending updates for both ecosystems
+* [ ] Dependabot opens or reports no pending updates for every ecosystem
   without configuration errors.
 * [ ] A direct push to `main` is rejected, and a pull request cannot merge
   until `CI result` succeeds.

@@ -1,6 +1,6 @@
 ---
 title: Establish the service subsystem foundation
-description: Decide the service's core architecture and create service/ with a pinned toolchain, a verified API contract, and its validation phase.
+description: Create service/ with a pinned toolchain, a verified API contract, and its validation phase, following the service architecture ADR.
 author: Tim Park
 ms.date: 2026-11-19
 ms.topic: reference
@@ -22,15 +22,14 @@ ADR 0001 places the service's manifest, lockfile, toolchain pin, API contract,
 configuration example, prompts, and evaluation cases inside `service/`, and
 assigns them to the service's first deliverable. It requires a Cargo workspace
 inside `service/`, with focused internal crates under `service/crates/` from
-the start. It leaves the HTTP framework, specific crate responsibilities and
-dependencies, and whether the OpenAPI document is hand-written or emitted
-from code to a later service ADR.
+the start. The service architecture ADR from
+[backlog 8](./0008-service-architecture-adr.md) chooses the HTTP framework,
+async runtime, crate responsibilities and dependencies, and how the OpenAPI
+document is produced and verified. If building reveals a flaw in that
+decision, amend the ADR in the same pull request.
 
 ## Scope
 
-* Record a service architecture ADR covering the HTTP framework, internal
-  crate responsibilities and dependency direction, and how the OpenAPI
-  document is produced and verified.
 * Confirm whether Cargo must use an organizational registry proxy and
   configure it before adding any crate.
 * Create `service/` with a virtual workspace `Cargo.toml`, a shared
@@ -45,13 +44,15 @@ from code to a later service ADR.
   and tests for every workspace member, plus a contract freshness check.
 * Apply the root guide's "Adding a subsystem" checklist, including
   `service/README.md`, `service/AGENTS.md` with Governing decisions and exact
-  commands, the container toolchain, and a `cargo` Dependabot entry.
+  commands, the container toolchain pinned to `rust-toolchain.toml`, port 8080
+  in the devcontainer's `forwardPorts`, and a `cargo` Dependabot entry.
 * Leave `service/prompts/` and `service/evals/` to the first pair-writing
   agent story rather than creating them empty.
 
 ## Acceptance criteria
 
-* [ ] The service ADR is accepted and listed in the ADR index.
+* [ ] The framework, crates, and contract production match the service ADR,
+  and `service/AGENTS.md` links it under Governing decisions.
 * [ ] The service workspace contains a thin executable and at least one
   internal library crate, and the gate checks every member.
 * [ ] Following `service/README.md`, a request to the health endpoint on
@@ -65,3 +66,4 @@ from code to a later service ADR.
 ## Prerequisites
 
 * [Configure repository governance on GitHub](./0004-repository-governance.md)
+* [Record the service architecture ADR](./0008-service-architecture-adr.md)

@@ -1,0 +1,32 @@
+// Shared development container for every toolchain that tools/check needs.
+// Setup steps live in the root README.md. When a toolchain, dependency, or
+// environment requirement changes, update the pins in this folder and the
+// setup documentation in the same change, as the root AGENTS.md requires.
+{
+  "name": "Writer",
+  // Pins the base image by digest and configures the registry proxies.
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/node:2.1.2": {
+      // The single record of the container's Node.js version. npm is the
+      // release bundled with this Node.js version.
+      "version": "26.13.1",
+      "nvmVersion": "0.41.0",
+      "pnpmVersion": "none",
+      "nodeGypDependencies": false
+    },
+    "ghcr.io/devcontainers/features/rust:1.6.1": {
+      // Installs rustup with this default toolchain. A subsystem's
+      // rust-toolchain.toml takes precedence inside its folder.
+      "version": "1.100.0",
+      "profile": "minimal"
+    }
+  },
+  "containerUser": "vscode",
+  "remoteUser": "vscode"
+  // Port 8080 is reserved for the service. Add it to "forwardPorts" in the
+  // change that creates service/, not before. Supply any credential at run
+  // time, never through this folder, the image, or build arguments.
+}
