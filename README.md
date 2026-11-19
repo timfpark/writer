@@ -22,7 +22,7 @@ prose for quality and consistency.
 | Webapp    | The first client for the system                | Planned |
 
 Neither subsystem exists yet. The repository currently holds its architecture
-decisions, backlog, and validation gate.
+decisions, backlog, validation gate, and development container.
 
 ## Where to look
 
@@ -35,13 +35,60 @@ decisions, backlog, and validation gate.
 
 ## Development setup
 
-You need Git, Bash, and Python 3.9 or newer. Validate any change from the
-repository root:
+Work either in the development container, which carries every pinned
+toolchain, or on a host with the same prerequisites. Validate any change from
+the repository root:
 
 ```bash
 tools/check
 ```
 
-The development container, CI, and subsystem toolchains are pending work in
-the [backlog](./docs/backlog/README.md); setup steps for them arrive with
-those items.
+### Development container
+
+The [development container](./.devcontainer/devcontainer.json) provides Bash,
+Git, Python 3.9 or newer, rustup with a default Rust toolchain, and Node.js
+with npm. Each version is recorded once: the
+[Dockerfile](./.devcontainer/Dockerfile) pins the base image by digest, which
+fixes Python, Bash, and Git, and `devcontainer.json` pins each feature and the
+Node.js and Rust versions exactly. The Dev Container CLI records each
+feature's content digest in `devcontainer-lock.json`.
+
+It runs as the non-root `vscode` user. The image configures the registry
+proxies globally, so every user, shell, and folder in the container uses them
+unless a project overrides them:
+
+| Tool | Global config     | Proxy                                                |
+|------|-------------------|------------------------------------------------------|
+| npm  | `/etc/npmrc`      | `https://packagefeedproxy.microsoft.io/npm/`         |
+| pip  | `/etc/pip.conf`   | `https://packagefeedproxy.microsoft.io/pypi/simple/` |
+| uv   | `/etc/uv/uv.toml` | `https://packagefeedproxy.microsoft.io/pypi/simple/` |
+
+To use it, you need Git and Docker, or another Docker-compatible engine, plus
+one of these clients:
+
+* In VS Code with the Dev Containers extension, open the repository and run
+  **Dev Containers: Reopen in Container**. After changing `.devcontainer/`,
+  run **Dev Containers: Rebuild Container**.
+* With the [Dev Container CLI](https://github.com/devcontainers/cli), run from
+  the repository root:
+
+  ```bash
+  devcontainer up --workspace-folder .
+  devcontainer exec --workspace-folder . tools/check
+  ```
+
+Port 8080 is reserved for the service and is not forwarded until `service/`
+exists. The container holds no credentials; supply any secret at run time
+rather than in the image, the repository, or build arguments.
+
+### Host setup
+
+On a host, `tools/check` needs Git, Bash, and Python 3.9 or newer. Later
+phases need the container's other toolchains: rustup for the service, and
+Node.js with npm for Markdown style lint and the webapp. Use the versions the
+container pins, and configure npm and pip or uv to use the registry proxies
+above.
+
+CI and subsystem toolchains are pending work in the
+[backlog](./docs/backlog/README.md); setup steps for them arrive with those
+items.

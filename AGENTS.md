@@ -17,8 +17,8 @@ Writer is a constant pair writer: it asks questions, suggests other ideas, and
 checks prose for quality and consistency. The repository is a monorepo with a
 planned Rust service and a planned TypeScript/React web client.
 
-Today the repository holds documentation and the validation gate only. No
-subsystem code, development container, or CI exists yet.
+Today the repository holds documentation, the validation gate, and the
+development container. No subsystem code or CI exists yet.
 [ADR 0001](./docs/adrs/0001-monorepo-structure.md) records the layout,
 subsystem boundaries, and tooling baseline; the
 [backlog](./docs/backlog/README.md) orders the work that implements it.
@@ -55,10 +55,11 @@ these boundaries and where tests, fixtures, and generated files belong.
 | `AGENTS.md`           | Repository-wide rules for coding agents                           | Existing |
 | `docs/adrs/`          | Architecture decisions, indexed by its README                     | Existing |
 | `docs/backlog/`       | Prioritized planned work, indexed by its README                   | Existing |
+| `docs/previous-work/` | Reference designs from an earlier project; the gate skips it      | Existing |
 | `tools/`              | Validation gate and its tests                                     | Existing |
 | `.gitignore`          | Build output, secrets, and local-only data kept out of git        | Existing |
 | `.editorconfig`       | Editor formatting conventions                                     | Existing |
-| `.devcontainer/`      | Shared development container with every toolchain                 | Planned  |
+| `.devcontainer/`      | Shared development container with every toolchain                 | Existing |
 | `.github/`            | CI workflow, Dependabot, and pull request template                | Planned  |
 | `service/`, `webapp/` | Subsystems, each owning its manifest, lockfile, and toolchain pin | Planned  |
 
@@ -100,6 +101,12 @@ code, and its evaluation cases in `service/evals/`. Never mix the two.
 * Do not create empty subsystem folders or placeholders. Write planned paths
   and commands as code spans labeled planned, never as links.
 * Add a dependency only when the change needs it.
+* When a change adds, removes, or changes a toolchain, dependency, or
+  environment requirement, update in the same change the
+  [devcontainer configuration](./.devcontainer/), every
+  version pin that must match it, such as a `rust-toolchain.toml` or
+  `package.json` `engines`, and the setup documentation in the
+  [README](./README.md) and affected subsystem guides.
 * Install npm packages only through the
   `https://packagefeedproxy.microsoft.io/npm/` registry proxy. npm reads
   project settings only from the folder holding `package.json`, so give each
@@ -124,8 +131,9 @@ tools/check
 ```
 
 It needs Bash and Python 3.9 or newer, takes no arguments, and runs every
-phase. It exits 0 when all phases pass, 1 when a phase fails, and 2 on a usage
-or prerequisite error.
+phase. The [development container](./README.md#development-container)
+provides every prerequisite. It exits 0 when all phases pass, 1 when a phase
+fails, and 2 on a usage or prerequisite error.
 
 | Phase   | Checks                                                                                       | Status  |
 |---------|----------------------------------------------------------------------------------------------|---------|
@@ -147,15 +155,18 @@ placeholder, and make these changes in the same pull request:
 
 1. Add a `README.md` for people and an `AGENTS.md` guide with the subsystem's
    purpose, dependency boundaries, a Governing decisions section linking every
-   ADR whose `subsystems` frontmatter names it, and exact setup, run, and check
-   commands.
+   ADR whose `subsystems` frontmatter names it, exact setup, run, and check
+   commands, and the rule that toolchain, dependency, or environment changes
+   update the devcontainer configuration, version pins, and setup
+   documentation in the same change.
 2. Update the subsystem table and repository map above and the project
    [README](./README.md).
 3. Keep the subsystem's manifest, lockfile, toolchain pin, and `.env.example`
    inside its folder. For an npm project, add an `.npmrc` with the proxy.
 4. Add its validation phase to [tools/check](./tools/check) in dependency
    order, with the service before the webapp.
-5. Add its toolchain to `.devcontainer/` and its ecosystem to
-   `.github/dependabot.yml` once those exist.
-6. Give any local server a loopback port distinct from the service's 8080, and
-   record it in the subsystem README.
+5. Add its toolchain to `.devcontainer/`, pinned to the version the subsystem
+   declares, and its ecosystem to `.github/dependabot.yml` once that exists.
+6. Give any local server a loopback port, 8080 for the service and a
+   distinct port for every other server. Record it in the subsystem README and
+   add it to the devcontainer's `forwardPorts`.

@@ -46,6 +46,5 @@ checks frontmatter, links, and index coverage.
 
 ## Prerequisites
 
-* [Add a reproducible development container](./0002-development-container.md)
 * [Configure repository governance on GitHub](./0004-repository-governance.md),
   which creates the Dependabot configuration

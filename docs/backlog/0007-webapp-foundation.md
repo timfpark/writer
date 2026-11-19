@@ -1,6 +1,6 @@
 ---
 title: Establish the webapp subsystem foundation
-description: Decide the webapp's core architecture and create webapp/ with a pinned runtime, a generated API client, and its validation phase.
+description: Create webapp/ with a pinned runtime, a generated API client, and its validation phase, following the webapp architecture ADR.
 author: Tim Park
 ms.date: 2026-11-19
 ms.topic: reference
@@ -21,12 +21,13 @@ set out.
 ADR 0001 places the webapp's manifest, lockfile, Node.js version, `.npmrc`,
 configuration example, and generated API client inside `webapp/`. The client is
 generated from the service's committed OpenAPI document and checked for
-freshness. The build tool and generator are left to a later webapp ADR.
+freshness. The webapp architecture ADR from
+[backlog 9](./0009-webapp-architecture-adr.md) chooses the build tool, the
+client generator, and the development server port. If building reveals a flaw
+in that decision, amend the ADR in the same pull request.
 
 ## Scope
 
-* Record a webapp architecture ADR covering the build tool, the API client
-  generator, and the development server port.
 * Create `webapp/` with `package.json` (Node.js version in `engines`),
   `package-lock.json`, an `.npmrc` that sets the
   `https://packagefeedproxy.microsoft.io/npm/` proxy, and an `.env.example`
@@ -42,7 +43,8 @@ freshness. The build tool and generator are left to a later webapp ADR.
 
 ## Acceptance criteria
 
-* [ ] The webapp ADR is accepted and listed in the ADR index.
+* [ ] The build tool, client generator, and port match the webapp ADR, and
+  `webapp/AGENTS.md` links it under Governing decisions.
 * [ ] Following `webapp/README.md`, the page shows the service's health status
   on a host and in the development container.
 * [ ] Changing the service contract without regenerating the client makes
@@ -53,3 +55,4 @@ freshness. The build tool and generator are left to a later webapp ADR.
 ## Prerequisites
 
 * [Establish the service subsystem foundation](./0006-service-foundation.md)
+* [Record the webapp architecture ADR](./0009-webapp-architecture-adr.md)

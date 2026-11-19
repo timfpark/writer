@@ -47,4 +47,4 @@ workflows are rejected for now.
 
 ## Prerequisites
 
-* [Add a reproducible development container](./0002-development-container.md)
+None.
