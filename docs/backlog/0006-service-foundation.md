@@ -20,23 +20,29 @@ boundaries and tooling that
 
 ADR 0001 places the service's manifest, lockfile, toolchain pin, API contract,
 configuration example, prompts, and evaluation cases inside `service/`, and
-assigns them to the service's first deliverable. It leaves the HTTP framework,
-the crate layout, and whether the OpenAPI document is hand-written or emitted
+assigns them to the service's first deliverable. It requires a Cargo workspace
+inside `service/`, with focused internal crates under `service/crates/` from
+the start. It leaves the HTTP framework, specific crate responsibilities and
+dependencies, and whether the OpenAPI document is hand-written or emitted
 from code to a later service ADR.
 
 ## Scope
 
-* Record a service architecture ADR covering the HTTP framework, crate layout,
-  and how the OpenAPI document is produced and verified.
+* Record a service architecture ADR covering the HTTP framework, internal
+  crate responsibilities and dependency direction, and how the OpenAPI
+  document is produced and verified.
 * Confirm whether Cargo must use an organizational registry proxy and
   configure it before adding any crate.
-* Create `service/` with `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, a
-  health endpoint on loopback port 8080, and an `.env.example` with no real
-  values.
+* Create `service/` with a virtual workspace `Cargo.toml`, a shared
+  `Cargo.lock` and `rust-toolchain.toml`, a health endpoint on loopback port
+  8080, and an `.env.example` with no real values.
+* Put a thin executable crate and at least one focused internal library crate
+  under `service/crates/`, with `publish = false` and explicit, acyclic
+  dependencies. Create only crates needed by this deliverable.
 * Commit the OpenAPI document as the contract of record, covering the health
   endpoint.
 * Add a `service` phase to `tools/check` running formatting, lint, build,
-  tests, and a contract freshness check.
+  and tests for every workspace member, plus a contract freshness check.
 * Apply the root guide's "Adding a subsystem" checklist, including
   `service/README.md`, `service/AGENTS.md` with Governing decisions and exact
   commands, the container toolchain, and a `cargo` Dependabot entry.
@@ -46,6 +52,8 @@ from code to a later service ADR.
 ## Acceptance criteria
 
 * [ ] The service ADR is accepted and listed in the ADR index.
+* [ ] The service workspace contains a thin executable and at least one
+  internal library crate, and the gate checks every member.
 * [ ] Following `service/README.md`, a request to the health endpoint on
   `127.0.0.1:8080` succeeds on a host and in the development container.
 * [ ] Changing the health endpoint without updating the contract makes

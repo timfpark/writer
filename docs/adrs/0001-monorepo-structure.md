@@ -50,6 +50,7 @@ in `docs/` and repository-wide tooling in `tools/`.
 
 A subsystem folder is created with its first deliverable, never as an empty
 placeholder. No CLI, shared-library, or separate agent subsystem is planned.
+Internal service crates are part of the service, not separate subsystems.
 
 The tree below marks each path as existing or planned. A planned path names
 the backlog item or subsystem deliverable that creates it.
@@ -77,6 +78,7 @@ writer/
   service/                     planned    backlog 6
     AGENTS.md, README.md
     Cargo.toml, Cargo.lock, rust-toolchain.toml
+    crates/                    internal Cargo workspace members
     openapi.*                  API contract of record
     prompts/                   pair-writing agent prompts
     evals/                     pair-writing agent evaluation cases
@@ -94,9 +96,23 @@ Change to an `apps/` and `packages/` layout when either trigger occurs:
   through the HTTP API contract.
 * A third deployable subsystem is added.
 
-Adopt a root Cargo workspace when a second Rust subsystem is added. Until then,
-the service's `Cargo.toml`, `Cargo.lock`, `rust-toolchain.toml`, and `target/`
-stay inside `service/`.
+Use a Cargo workspace inside `service/` from its first deliverable.
+`service/Cargo.toml` is a virtual workspace manifest, with member crates under
+`service/crates/`. The workspace shares one `Cargo.lock`, toolchain pin, and
+`target/` directory, all inside `service/`. Internal crates set
+`publish = false`.
+
+Keep the executable crate thin: it assembles focused library crates and starts
+the service. Give each library crate one cohesive responsibility, a narrow
+public API, and explicit, acyclic dependencies on other internal crates. Add
+crates for behavior being delivered, not empty placeholders for future layers.
+The first deliverable includes the executable and at least one internal
+library crate so modularity and single responsibility guide the service from
+the start.
+
+Move the Cargo workspace to the repository root when a second Rust subsystem
+is added; internal crates alone do not trigger that move or a change to the
+top-level subsystem layout.
 
 ### Subsystem boundaries
 
@@ -229,7 +245,8 @@ the development container provides Node.js.
 Each subsystem adds a phase for its formatting, lint, build, and test checks,
 in dependency order, with its first deliverable. The service phase runs before
 the webapp phase because the webapp's generated client depends on the service
-contract.
+contract. The service phase checks every workspace member, not only the
+executable crate.
 
 Selective checks and reusable workflows are rejected for now. With two small
 subsystems, a full run is fast and avoids a selector whose mistakes would skip
@@ -305,7 +322,10 @@ how they were verified.
   The revisit triggers above say when to adopt it.
 * A root Cargo workspace was rejected for now because only one Rust subsystem
   is planned, and a root manifest would split the service's ownership across
-  two folders.
+  two folders. A workspace inside `service/` supports internal crates without
+  that split.
+* A single service crate was rejected because internal crate boundaries make
+  responsibilities, public APIs, and dependencies explicit from the start.
 * A shared contracts package was rejected because the OpenAPI document under
   `service/` already gives clients one authoritative contract.
 * A separate `agent/` subsystem was rejected because the pair-writing agent
@@ -318,6 +338,8 @@ how they were verified.
 
 * Contributors and agents find every subsystem's rules in its own folder, and
   the root guide stays short.
+* Internal crates make service boundaries explicit, at the cost of maintaining
+  member manifests and checking the whole workspace.
 * The gate validates documentation today. It does not yet lint Markdown style,
   run in CI, or check code, so a green result covers only the phases it lists.
 * Subsystem stories must apply the root guide's "Adding a subsystem" checklist,
