@@ -30,6 +30,7 @@ records that name it in a Governing decisions section, as
 
 ## Records
 
-| ADR                                  | Title                                                      | Status   | Date       |
-|--------------------------------------|------------------------------------------------------------|----------|------------|
-| [0001](./0001-monorepo-structure.md) | Monorepo structure, agent navigation, and tooling baseline | Accepted | 2026-11-19 |
+| ADR                                    | Title                                                      | Status   | Date       |
+|----------------------------------------|------------------------------------------------------------|----------|------------|
+| [0001](./0001-monorepo-structure.md)   | Monorepo structure, agent navigation, and tooling baseline | Accepted | 2026-11-19 |
+| [0002](./0002-service-architecture.md) | Service HTTP framework, crate layout, and API contract     | Accepted | 2026-11-19 |

@@ -20,6 +20,10 @@ estimated_reading_time: 12
 
 Accepted on 2026-11-19.
 
+[ADR 0002](./0002-service-architecture.md) settles the service decisions this
+record defers: the HTTP framework, internal crate responsibilities, and how the
+OpenAPI contract is produced and verified.
+
 ## Context
 
 Writer is a constant pair writer: it asks questions, suggests other ideas, and
