@@ -79,9 +79,10 @@ one of these clients:
   devcontainer exec --workspace-folder . tools/check
   ```
 
-Port 8080 is reserved for the service and is not forwarded until `service/`
-exists. The container holds no credentials; supply any secret at run time
-rather than in the image, the repository, or build arguments.
+Port 8080 is reserved for the service and port 5173 for the webapp's
+development server; neither is forwarded until its subsystem exists. The
+container holds no credentials; supply any secret at run time rather than in
+the image, the repository, or build arguments.
 
 ### Host setup
 
