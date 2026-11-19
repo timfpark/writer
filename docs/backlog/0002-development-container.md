@@ -38,6 +38,11 @@ version than CI.
 * Keep credentials out of the image, the repository, and build arguments.
 * Add container setup and host prerequisites to the root `README.md`, and
   update the root `AGENTS.md` repository map from planned to existing.
+* Add guidance to the root and relevant existing nested `AGENTS.md` files
+  requiring changes to toolchains, dependencies, or environment requirements
+  to keep the devcontainer configuration, version pins, and setup documentation
+  in sync in the same change. Require future subsystem guides to carry this
+  guidance through the root guide's "Adding a subsystem" checklist.
 
 ## Acceptance criteria
 
@@ -48,6 +53,11 @@ version than CI.
   `npm config get registry` report the pinned versions and the proxy.
 * [ ] No secret, token, or `.env` file appears in the image layers or the
   repository.
+* [ ] The root and relevant existing nested `AGENTS.md` files require agents
+  to update the devcontainer configuration, version pins, and setup documentation
+  in the same change whenever toolchains, dependencies, or environment
+  requirements change. The root guide's "Adding a subsystem" checklist requires
+  this guidance in future subsystem guides.
 
 ## Prerequisites
 
