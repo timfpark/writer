@@ -1,10 +1,12 @@
 ---
 title: Architecture Decision Records
-description: Index of architectural decisions for the portfolio service and its client subsystems
+description: Index of architectural decisions for the Writer service and its clients
 author: Tim Park
-ms.date: 2026-11-18
+ms.date: 2026-11-19
 ms.topic: reference
-keywords: [rust, adr, architecture]
+keywords:
+  - adr
+  - architecture
 estimated_reading_time: 2
 ---
 
@@ -19,15 +21,15 @@ Decisions that have not been made yet carry a story in the
 [backlog](../backlog/README.md), alongside the delivery work they unblock.
 
 Every subsystem shares this log and its numbering, including decisions that
-affect only one subsystem. Each record lists the subsystems whose code or
-clients must follow it in its `subsystems` frontmatter, using the folder names
-`service`, `cli`, `webapp`, and `agent`. Each subsystem's `AGENTS.md` links the
+affect only one subsystem. ADR and backlog numbers are independent. Each record
+lists the subsystems whose code or clients must follow it in its `subsystems`
+frontmatter, using the folder names `service` and `webapp`, or `repository` for
+repository-wide tooling and process. Each subsystem's `AGENTS.md` links the
 records that name it in a Governing decisions section, as
-[ADR 0010](./0010-monorepo-layout-and-subsystem-boundaries.md#documentation-and-planning)
-describes.
+[ADR 0001](./0001-monorepo-structure.md#agent-discoverability) describes.
 
 ## Records
 
-| ADR                                                                    | Title                                                 | Status   | Date       |
-| ---------------------------------------------------------------------- | ----------------------------------------------------- | -------- | ---------- |
-| [0001](./0001-example.md)                               | Example (delete with first actual ADR)                | Accepted | 2026-10-15 |
+| ADR                                  | Title                                                      | Status   | Date       |
+|--------------------------------------|------------------------------------------------------------|----------|------------|
+| [0001](./0001-monorepo-structure.md) | Monorepo structure, agent navigation, and tooling baseline | Accepted | 2026-11-19 |

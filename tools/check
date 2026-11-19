@@ -1,0 +1,54 @@
+#!/usr/bin/env bash
+# Repository validation gate: runs every phase, reports each result, and exits
+# 0 only when all phases pass. Exit 1 means a check failed; exit 2 means a
+# usage error or a missing prerequisite.
+set -euo pipefail
+
+usage() {
+  cat <<'USAGE'
+Usage: tools/check
+
+Runs every validation phase from the repository root:
+  tools  unit tests for the repository tooling (Python 3.9+)
+  docs   Markdown frontmatter, relative links, and docs index coverage
+
+Exit codes: 0 all phases passed, 1 a phase failed, 2 usage or prerequisite error.
+USAGE
+}
+
+case "${1:-}" in
+  -h | --help) usage; exit 0 ;;
+  "") ;;
+  *) usage >&2; exit 2 ;;
+esac
+
+root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$root"
+
+if ! command -v python3 >/dev/null 2>&1 ||
+  ! python3 -c 'import sys; sys.exit(sys.version_info < (3, 9))'; then
+  echo "check: prerequisite missing: python3 3.9 or newer must be on PATH" >&2
+  exit 2
+fi
+
+failed=()
+run_phase() {
+  local name="$1"
+  shift
+  echo "==> $name"
+  if "$@"; then
+    echo "<== $name: passed"
+  else
+    echo "<== $name: FAILED" >&2
+    failed+=("$name")
+  fi
+}
+
+run_phase tools env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover --start-directory tools/tests --quiet
+run_phase docs python3 tools/check_docs.py
+
+if ((${#failed[@]})); then
+  echo "check: FAILED phases: ${failed[*]}" >&2
+  exit 1
+fi
+echo "check: all phases passed"

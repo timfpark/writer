@@ -1,0 +1,19 @@
+# Secrets and local settings; commit sanitized *.example files instead
+.env
+.env.*
+!.env.example
+
+# Local-only data such as real manuscripts and scratch files
+.local/
+
+# Build output and installed dependencies
+target/
+node_modules/
+dist/
+coverage/
+__pycache__/
+
+# Operating system and editor files
+.DS_Store
+.idea/
+*.swp
