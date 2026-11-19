@@ -46,8 +46,9 @@ decision, amend the ADR in the same pull request.
   `service/README.md`, `service/AGENTS.md` with Governing decisions and exact
   commands, the container toolchain pinned to `rust-toolchain.toml`, port 8080
   in the devcontainer's `forwardPorts`, and a `cargo` Dependabot entry.
-* Leave `service/prompts/` and `service/evals/` to the first pair-writing
-  agent story rather than creating them empty.
+* Leave `service/prompts/` and `service/evals/` to
+  [backlog 12](./0012-first-pair-writing-agent.md), the first pair-writing
+  agent story, rather than creating them empty.
 
 ## Acceptance criteria
 

@@ -32,6 +32,8 @@ decisions, backlog, validation gate, and development container.
   layout, subsystem boundaries, and tooling baseline. The
   [ADR index](./docs/adrs/README.md) lists every decision.
 * The [backlog](./docs/backlog/README.md) orders planned work.
+* [tools/check](./tools/check) is the validation gate. Run it before every
+  commit, as described under [Development setup](#development-setup).
 
 ## Development setup
 
