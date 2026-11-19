@@ -6,6 +6,7 @@ ms.date: 2026-11-19
 ms.topic: reference
 status: Accepted
 subsystems:
+  - repository
   - service
   - webapp
 keywords:
@@ -19,6 +20,10 @@ estimated_reading_time: 12
 ## Status
 
 Accepted on 2026-11-19.
+
+[ADR 0002](./0002-service-architecture.md) settles the service decisions this
+record defers: the HTTP framework, internal crate responsibilities, and how the
+OpenAPI contract is produced and verified.
 
 ## Context
 
@@ -81,8 +86,8 @@ writer/
     Cargo.toml, Cargo.lock, rust-toolchain.toml
     crates/                    internal Cargo workspace members
     openapi.*                  API contract of record
-    prompts/                   pair-writing agent prompts
-    evals/                     pair-writing agent evaluation cases
+    prompts/                   planned    backlog 12, pair-writing agent prompts
+    evals/                     planned    backlog 12, agent evaluation cases
     .env.example
   webapp/                      planned    backlog 7
     AGENTS.md, README.md
@@ -186,7 +191,8 @@ develop Writer. The pair-writing agent is product behavior. Its prompts live in
 `service/prompts/`, its model integrations in service code, and its evaluation
 cases in `service/evals/`. Product prompts are never placed in coding-agent
 guidance, and coding-agent guidance never becomes product prompts. Choosing an
-agent framework or model provider is deferred to a later service ADR.
+agent framework or model provider is deferred to a later service ADR, which
+[backlog 10](../backlog/0010-agent-architecture-adr.md) records.
 
 ### Safety rules
 

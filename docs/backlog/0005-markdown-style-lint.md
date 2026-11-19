@@ -33,7 +33,16 @@ checks frontmatter, links, and index coverage.
 * Run the lint from the docs phase of `tools/check` using the locked version,
   installing with `npm ci` when needed. Exit 2 with a clear message when
   Node.js is missing.
-* Fix existing violations and add the npm ecosystem to Dependabot.
+* Fix existing violations.
+* Add a Dependabot npm entry for `tools/` that uses the
+  `https://packagefeedproxy.microsoft.io/npm/` proxy registry, as
+  [ADR 0001](../adrs/0001-monorepo-structure.md#versions-lockfiles-and-registries)
+  requires.
+* `tools/package-lock.json` is the repository's first lockfile, which meets
+  one of ADR 0001's conditions for revisiting the deferred dependency review
+  action. Check whether the repository's visibility or plan supports it,
+  record the result in the pull request, and add a backlog item to adopt it
+  if supported.
 
 ## Acceptance criteria
 
