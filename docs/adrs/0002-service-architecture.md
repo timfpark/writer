@@ -35,11 +35,11 @@ this decision.
 
 The first deployment is local: one user, one service process, listening on
 loopback port 8080. The webapp calls the service only through a TypeScript
-client generated from the contract, chosen in
-[backlog 9](../backlog/0009-webapp-architecture-adr.md). The pair-writing agent
-will make slow outbound calls to model providers and will likely stream
-suggestions back to the browser as they arrive, so request handling must
-overlap long-lived I/O without blocking other requests.
+client generated from the contract (though other clients are potentially
+envisioned), chosen in [backlog 9](../backlog/0009-webapp-architecture-adr.md).
+The pair-writing agent will make slow outbound calls to model providers and
+will likely stream suggestions back to the browser as they arrive, so request
+handling must overlap long-lived I/O without blocking other requests.
 
 An earlier project chose axum, Tokio, and SQLx for a similar local service.
 We reuse its framework and runtime reasoning, revisited against current
