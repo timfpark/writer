@@ -75,7 +75,7 @@ writer/
     tests/                     existing   unit tests for repository tooling
   .devcontainer/               existing   shared development container
   .github/
-    workflows/ci.yml           planned    backlog 3
+    workflows/ci.yml           existing   runs tools/check in the container
     dependabot.yml             planned    backlog 4
     pull_request_template.md   planned    backlog 4
   .markdownlint-cli2.jsonc     planned    backlog 5
@@ -213,7 +213,7 @@ agent framework or model provider is deferred to a later service ADR, which
 | Validation gate, docs phase         | Adopt    | `tools/check`, `tools/check_docs.py`                 | This decision                                          |
 | Markdown style lint                 | Adopt    | `.markdownlint-cli2.jsonc`, `tools/check` docs phase | [Backlog 5](../backlog/0005-markdown-style-lint.md)    |
 | Development container               | Adopt    | `.devcontainer/`                                     | Backlog 2                                              |
-| GitHub Actions CI                   | Adopt    | `.github/workflows/ci.yml`                           | [Backlog 3](../backlog/0003-continuous-integration.md) |
+| GitHub Actions CI                   | Adopt    | `.github/workflows/ci.yml`                           | Backlog 3                                              |
 | Selective checks                    | Reject   | Not applicable                                       | Not planned                                            |
 | Reusable workflows                  | Reject   | Not applicable                                       | Not planned                                            |
 | Runtime and toolchain pinning       | Adopt    | Each subsystem; tool versions in `.devcontainer/`    | Backlog 2, 6, 7                                        |
@@ -346,8 +346,9 @@ how they were verified.
   the root guide stays short.
 * Internal crates make service boundaries explicit, at the cost of maintaining
   member manifests and checking the whole workspace.
-* The gate validates documentation today. It does not yet lint Markdown style,
-  run in CI, or check code, so a green result covers only the phases it lists.
+* The gate validates documentation today, locally and in CI. It does not yet
+  lint Markdown style or check code, so a green result covers only the phases
+  it lists.
 * Subsystem stories must apply the root guide's "Adding a subsystem" checklist,
   including a scoped guide, a `tools/check` phase, a Dependabot entry, and the
   container toolchain.

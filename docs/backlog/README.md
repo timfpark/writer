@@ -36,8 +36,7 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                             | Subsystems          | Outcome                                                                     | Prerequisite |
 |----|---------------------------------------------------------------------------------------|---------------------|-----------------------------------------------------------------------------|--------------|
-| 3  | [Run the validation gate in GitHub Actions](./0003-continuous-integration.md)         | `repository`        | Pull requests and `main` run `tools/check` behind one required `CI result`. | None         |
-| 4  | [Configure repository governance on GitHub](./0004-repository-governance.md)          | `repository`        | Dependabot, a PR template, branch protection, and secret scanning are live. | 3            |
+| 4  | [Configure repository governance on GitHub](./0004-repository-governance.md)          | `repository`        | Dependabot, a PR template, branch protection, and secret scanning are live. | None         |
 | 5  | [Add Markdown style lint to the validation gate](./0005-markdown-style-lint.md)       | `repository`        | `tools/check` reports Markdown style violations with file and line.         | 4            |
 | 13 | [Record the API conventions ADR](./0013-api-conventions-adr.md)                       | `service`, `webapp` | An accepted ADR fixes API versioning, path and field naming, and errors.    | None         |
 | 6  | [Establish the service subsystem foundation](./0006-service-foundation.md)            | `service`           | `service/` serves a health endpoint behind a verified contract and phase.   | 4, 13        |
