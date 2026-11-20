@@ -6,8 +6,8 @@ description: Repository-wide rules, navigation, and validation for contributors 
 ## Overview and navigation
 
 Writer is a local-first writing workspace and AI pair writer (see
-[README.md](./README.md)). `service/` exists and `webapp/` is planned; start
-with the [backlog index](./docs/backlog/README.md) for prioritized work and the
+[README.md](./README.md)). `service/` and `webapp/` exist; start with the
+[backlog index](./docs/backlog/README.md) for prioritized work and the
 [ADR index](./docs/adrs/README.md) for governing decisions, beginning with
 [ADR 0001](./docs/adrs/0001-monorepo-structure.md).
 
@@ -18,12 +18,12 @@ with the [backlog index](./docs/backlog/README.md) for prioritized work and the
    `Decision summary` first; read full ADR bodies only when changing
    architecture, dependencies, or conventions.
 3. Follow the [Adding a subsystem](./docs/adrs/0001-monorepo-structure.md#adding-a-subsystem)
-   checklist when creating `webapp/`.
+   checklist when creating any new subsystem.
 
-| Subsystem  | Responsibility                                               | Stack                  | Guide                                    | Status  |
-|------------|--------------------------------------------------------------|------------------------|------------------------------------------|---------|
-| `service/` | Workspace storage, domain rules, `/api/v1/` API, pair writer | Rust, Cargo            | [service/AGENTS.md](./service/AGENTS.md) | Active  |
-| `webapp/`  | React editing workspace consuming the generated API client   | TypeScript, React, npm | `webapp/AGENTS.md` (planned)             | Planned |
+| Subsystem  | Responsibility                                               | Stack                  | Guide                                    | Status |
+|------------|--------------------------------------------------------------|------------------------|------------------------------------------|--------|
+| `service/` | Workspace storage, domain rules, `/api/v1/` API, pair writer | Rust, Cargo            | [service/AGENTS.md](./service/AGENTS.md) | Active |
+| `webapp/`  | React editing workspace consuming the generated API client   | TypeScript, React, npm | [webapp/AGENTS.md](./webapp/AGENTS.md)   | Active |
 
 * Couple clients to `service/` only through its HTTP API and committed
   [service/openapi.json](./service/openapi.json) contract; never import across
@@ -34,7 +34,9 @@ with the [backlog index](./docs/backlog/README.md) for prioritized work and the
 * Target [tools/check](./tools/check), [tools/check_docs.py](./tools/check_docs.py),
   and `tools/tests/` directly when inspecting repository tooling; avoid broad
   globs under `tools/` because `tools/node_modules/` holds installed lint
-  packages, and skip `service/target/`, which holds Cargo build output.
+  packages. Skip `service/target/`, which holds Cargo build output, and
+  `webapp/node_modules/` and `webapp/dist/`, which hold installed packages and
+  build output.
 * Treat [.devcontainer/](./.devcontainer/) as the canonical source of pinned
   toolchain versions and global registry proxies, and keep local scratch or
   manuscripts inside ignored `.local/`.
@@ -46,8 +48,9 @@ with the [backlog index](./docs/backlog/README.md) for prioritized work and the
 * Never commit real manuscripts or paste them into code, fixtures, evaluations,
   logs, issues, or pull requests; use synthetic prose, names, and identifiers.
 * Regenerate generated files ([service/openapi.json](./service/openapi.json)
-  and `webapp/src/api/generated/`, planned) with their generators rather than
-  editing them by hand.
+  and [webapp/src/api/generated/](./webapp/src/api/generated/)) with their
+  generators rather than editing them by hand, and regenerate the webapp
+  client in the same change as the contract.
 * Do not create empty placeholder folders; write non-existent paths and
   commands in code spans labeled planned, never as Markdown links.
 * Add dependencies only when needed, and update [.devcontainer/](./.devcontainer/),
@@ -80,14 +83,43 @@ with the [backlog index](./docs/backlog/README.md) for prioritized work and the
   `CI result`'s `needs` list.
 * Work on a branch for a pull request to `main` using conventional commits
   (`feat`, `fix`, `docs`, `ci`, `build`, `refactor`, `test`, `chore`),
-  optionally scoped to `service`, `webapp`, `devcontainer`, or `tools`.
+  optionally scoped to `service`, `webapp`, `devcontainer`, or `tools`, with an
+  imperative subject such as
+  `feat(webapp): add webapp foundation with generated API client`.
 
 ## Validation
 
 * Use fast targeted commands while iterating: `python3 tools/check_docs.py`,
   `python3 -m unittest discover --start-directory tools/tests`, or the affected
-  subsystem's test runner, such as `cargo test --workspace` in `service/`.
+  subsystem's test runner, such as `cargo test --workspace` in `service/` or
+  `npm run test` in `webapp/`.
 * Before every commit and before reporting work complete, run `tools/check`
   with no arguments from the repository root on the final contents of the
   change, and rerun it after any edit. If `tools/check` fails or cannot run,
   report the blocker and do not commit or claim validation passed.
+
+## Delivering a backlog item
+
+When a backlog item (story or ADR) meets its acceptance criteria and
+`tools/check` passes on the final contents, deliver it without waiting to be
+asked:
+
+1. Retire the item as [docs/backlog/README.md](./docs/backlog/README.md)
+   specifies, in the same change.
+2. Commit to a branch, never to `main`: create one from the latest `main`,
+   such as `feat/0007-webapp-foundation`, and make one conventional commit
+   whose subject summarizes the item.
+3. Push the branch and open a pull request to `main` with
+   `gh pr create --base main`, titled with the commit subject, which becomes
+   the squash commit. Fill every section of the
+   [pull request template](./.github/pull_request_template.md), including
+   the last lines of `tools/check` and where it ran.
+4. Monitor it with `gh pr checks <number> --watch` until `CI result`
+   finishes. On a failure, read the log with `gh run view <run-id> --log-failed`,
+   fix the cause, rerun `tools/check`, push a new commit rather than
+   rewriting history, and watch again. Address review comments the same way.
+5. Report the pull request URL and its final check status. Leave merging to
+   the maintainer unless asked, and never bypass branch protection.
+
+If `gh` is missing or not authenticated, or a push is rejected, commit locally,
+report the blocker, and stop.

@@ -4,7 +4,7 @@
 
 ## Backlog item
 
-<!-- The work item this delivers, such as docs/backlog/0007-webapp-foundation.md, or "None" with a reason. -->
+<!-- The work item this delivers, such as docs/backlog/0020-workspace-shell.md, or "None" with a reason. -->
 
 ## Governing ADRs
 

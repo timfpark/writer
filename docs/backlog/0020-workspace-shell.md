@@ -21,8 +21,8 @@ writing whenever I choose.
 The [README](../../README.md#the-writing-workspace) describes the layout.
 [Backlog 16](./0016-webapp-interface-adr.md) chooses the styling, tokens,
 typefaces, primitives, router, and server-state caching this story installs.
-[Backlog 7](./0007-webapp-foundation.md) leaves a single page showing service
-health. Later stories fill the regions: the navigator in
+Backlog 7, the webapp foundation, left [webapp/](../../webapp/README.md) with a
+single page showing service health. Later stories fill the regions: the navigator in
 [backlog 22](./0022-workspace-navigator.md), the writing surface in
 [backlog 23](./0023-writing-surface.md), and the assistant in
 [backlog 25](./0025-assistant-pane.md).
@@ -58,5 +58,4 @@ health. Later stories fill the regions: the navigator in
 
 ## Prerequisites
 
-* [Establish the webapp subsystem foundation](./0007-webapp-foundation.md)
 * [Record the webapp interface foundation ADR](./0016-webapp-interface-adr.md)

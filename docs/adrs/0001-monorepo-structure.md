@@ -231,7 +231,7 @@ placeholder, and make these changes in the same pull request:
    [dependabot.yml](../../.github/dependabot.yml) (using the proxy `registries`
    entry for npm).
 6. Bind any local server to loopback (`127.0.0.1:8888` for `service`, and a
-   distinct port such as `127.0.0.1:5173` for `webapp`), record it in the
+   distinct port such as `127.0.0.1:5180` for `webapp`), record it in the
    subsystem README, and add it to the devcontainer's `forwardPorts`.
 
 ### Coding agents and the product agent
@@ -286,8 +286,9 @@ agent framework or model provider is deferred to a later service ADR.
 `tools/check` is the single validation entry point for hosts, the development
 container, and CI. It runs every phase without arguments, reports each phase's
 result, and exits 0 when all pass, 1 when a phase fails, and 2 on a usage or
-prerequisite error. It requires Bash, Python 3.9 or newer, Node.js 22 or newer
-with npm, and Cargo installed with rustup.
+prerequisite error. It requires Bash, Python 3.9 or newer, npm with exactly the
+Node.js version `webapp/package.json` pins in `engines`, and Cargo installed
+with rustup.
 
 The implemented phases are `tools`, which unit-tests the repository tooling,
 and `docs`, which checks every Markdown file for frontmatter with a `title` and
@@ -297,7 +298,10 @@ ADRs and backlog items, an index row for each of those documents, and Markdown
 style rules via a pinned `markdownlint-cli2` package in `tools/`. The `service`
 phase, added by the service foundation (backlog 6), checks formatting, lints
 with warnings denied, builds, and tests every Cargo workspace member, including
-the contract freshness test.
+the contract freshness test. The `webapp` phase, added by the webapp
+foundation (backlog 7), installs the locked dependencies, checks the generated
+client's freshness, formatting, lint, and types, runs the tests, and builds,
+as [ADR 0003](./0003-webapp-architecture.md#quality-checks) lists.
 
 Markdown style lint landed in backlog 5 after the development container
 provided Node.js.
@@ -410,9 +414,9 @@ them.
   the root guide stays short.
 * Internal crates make service boundaries explicit, at the cost of maintaining
   member manifests and checking the whole workspace.
-* The gate validates documentation, Markdown style, and the service locally
-  and in CI. A green result covers only the phases it lists, so each later
-  subsystem must add its own.
+* The gate validates documentation, Markdown style, the service, and the
+  webapp locally and in CI. A green result covers only the phases it lists, so
+  each later subsystem must add its own.
 * Subsystem stories must apply the [Adding a subsystem](#adding-a-subsystem)
   checklist above, including a scoped guide, a `tools/check` phase, a
   Dependabot entry, and the container toolchain.

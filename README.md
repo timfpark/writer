@@ -19,12 +19,14 @@ prose for quality and consistency.
 | Subsystem                      | Purpose                                        | Status  |
 |--------------------------------|------------------------------------------------|---------|
 | [Service](./service/README.md) | Text storage, HTTP API, and the AI pair writer | Active  |
-| Webapp                         | The first client for the system                | Planned |
+| [Webapp](./webapp/README.md)   | The first client for the system                | Active  |
 
-The service serves a health endpoint behind a verified API contract; its
-[guide](./service/README.md) covers setup and commands. The webapp does not
-exist yet. The repository also holds its architecture decisions, backlog,
-validation gate, and development container.
+The service serves a health endpoint behind a verified API contract, and the
+webapp shows that health through a client generated from the contract. Each
+guide, for the [service](./service/README.md) and the
+[webapp](./webapp/README.md), covers its setup and commands. The repository
+also holds its architecture decisions, backlog, validation gate, and
+development container.
 
 ## Product direction
 
@@ -73,8 +75,8 @@ deliver the workspace, followed by the pair-writing agent.
 ## Where to look
 
 * [AGENTS.md](./AGENTS.md) holds repository-wide rules for contributors and
-  coding agents, and [service/AGENTS.md](./service/AGENTS.md) holds the
-  service's rules.
+  coding agents. [service/AGENTS.md](./service/AGENTS.md) and
+  [webapp/AGENTS.md](./webapp/AGENTS.md) hold each subsystem's rules.
 * [ADR 0001](./docs/adrs/0001-monorepo-structure.md) records the repository
   layout, subsystem boundaries, and tooling baseline. The
   [ADR index](./docs/adrs/README.md) lists every decision.
@@ -129,27 +131,29 @@ one of these clients:
   devcontainer exec --workspace-folder . tools/check
   ```
 
-The container forwards port 8888, where the service listens, so a request from
-the host reaches a service running in the container when you use VS Code. The
+The container forwards port 8888, where the service listens, and port 5180,
+where the webapp's development server listens, so a browser or request on the
+host reaches either one running in the container when you use VS Code. The
 Dev Container CLI does not forward ports; use `devcontainer exec` to make
-requests inside the container instead. Port 5173 is reserved for the webapp's
-development server and is forwarded once the webapp exists. The container
-holds no credentials; supply any secret at run time rather than in the image,
-the repository, or build arguments.
+requests inside the container instead. The container holds no credentials;
+supply any secret at run time rather than in the image, the repository, or
+build arguments.
 
 ### Host setup
 
-On a host, `tools/check` needs Git, Bash, Python 3.9 or newer, Node.js 22 or
-newer with npm, and [rustup](https://rustup.rs/) with `cargo` on `PATH`.
-In `service/`, rustup installs the Rust version that
-`service/rust-toolchain.toml` pins, with `clippy` and `rustfmt`, the first
-time Cargo runs. The webapp phase, once it exists, will need the container's
-pinned Node.js version. Configure npm and pip or uv to use the registry
-proxies above; Cargo needs no proxy.
+On a host, `tools/check` needs Git, Bash, Python 3.9 or newer, Node.js 26.13.1
+with npm, and [rustup](https://rustup.rs/) with `cargo` on `PATH`. Node.js
+must be exactly the version `webapp/package.json` pins in `engines`, the same
+version the container carries, for example installed with
+`nvm install 26.13.1`; `tools/check` exits 2 on any other. In `service/`,
+rustup installs the Rust version that `service/rust-toolchain.toml` pins, with
+`clippy` and `rustfmt`, the first time Cargo runs. Configure pip or uv to use
+the registry proxies above. The `.npmrc` files in `tools/` and `webapp/`
+already set the npm proxy for their folders, and Cargo needs no proxy.
 
-The [service guide](./service/README.md) covers running and configuring the
-service. Setup steps for the webapp arrive with its
-[backlog](./docs/backlog/README.md) item.
+The [service guide](./service/README.md) and the
+[webapp guide](./webapp/README.md) cover running and configuring each
+subsystem.
 
 ### Continuous integration
 
@@ -177,8 +181,8 @@ decides.
 
 * [dependabot.yml](./.github/dependabot.yml) opens weekly update pull requests
   for GitHub Actions, the development container features, the container's
-  digest-pinned base image, the npm tooling manifest in `tools/`, and the
-  service's Cargo workspace. Each subsystem adds its ecosystem when its
+  digest-pinned base image, the npm tooling manifest in `tools/`, the
+  service's Cargo workspace, and the webapp's npm manifest. Each subsystem adds its ecosystem when its
   manifest lands, and npm entries use the registry proxy.
 * The [pull request template](./.github/pull_request_template.md) asks for the
   backlog item, the governing ADRs, and the `tools/check` result. GitHub
