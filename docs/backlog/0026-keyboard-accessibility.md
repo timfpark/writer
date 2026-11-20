@@ -18,7 +18,7 @@ without a pointer so that organizing and writing never slow me down.
 ## Context
 
 [Backlog 22](./0022-workspace-navigator.md) builds the navigator on the
-WAI-ARIA tree pattern, with arrow keys, `Home`, `End`, and `Enter`, and
+WAI-ARIA treegrid pattern, with arrow keys, `Home`, `End`, and `Enter`, and
 [backlog 24](./0024-tree-drag-and-drop.md) adds a non-dragging move. The
 remaining shortcuts were left out of those stories so the navigator could
 ship sooner. [Backlog 21](./0021-browser-tests.md) supplies automated
@@ -26,7 +26,7 @@ accessibility checks.
 
 ## Scope
 
-* Complete the WAI-ARIA tree pattern in the navigator with type-ahead, `F2`
+* Complete the WAI-ARIA treegrid pattern in the navigator with type-ahead, `F2`
   to rename, `Delete` to delete, and keyboard access to the context menu's
   create and move actions.
 * Add shortcuts that move focus between the navigator, the writing surface,

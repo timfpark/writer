@@ -33,6 +33,12 @@ collision. It also amends [Deleting an item](#deleting-an-item): a 500 from
 a structural change may follow a change that committed, which the retry
 rules here make safe, and the tree is still entirely old or entirely new.
 
+Amended on 2026-11-20 by [ADR 0007](./0007-webapp-interface.md), which
+settles the webapp interface [follow-up decisions](#follow-up-decisions):
+`/documents/{documentId}` URLs, TanStack Query applying tree changes in
+order and rolling back by refetching the tree, and IndexedDB holding
+unacknowledged text per document and browser tab.
+
 ## Decision summary
 
 * Model the workspace as one tree of folders and documents. Folders nest up
@@ -89,8 +95,8 @@ Later decisions build on this one. The storage ADR
 and derives revision tokens, the editor ADR
 ([backlog 17](../backlog/0017-editor-adr.md)) chooses the Markdown subset and
 when autosave fires, and the webapp interface ADR
-([backlog 16](../backlog/0016-webapp-interface-adr.md)) chooses routing and
-server-state caching. A later release adds change control in the style of
+([ADR 0007](./0007-webapp-interface.md)) chooses routing and server-state
+caching. A later release adds change control in the style of
 Git, where the writer commits a set of changes as one atomic revision and can
 view or roll back to earlier states. This record leaves room for it without
 designing it.
@@ -493,7 +499,7 @@ client therefore also writes each document's unacknowledged text, with its
 text is acknowledged, and on reopening saves any text it finds through the
 same stale-write rule, so a stale base leads to the recovery below rather
 than an overwrite. The webapp interface ADR
-([backlog 16](../backlog/0016-webapp-interface-adr.md)) chooses the storage
+([ADR 0007](./0007-webapp-interface.md#browser-storage)) chooses the storage
 mechanism.
 
 On a 409 from `replaceDocumentContent`, the client recovers without losing
@@ -844,7 +850,7 @@ Trade-offs and risks:
   created outside Writer that breaks a limit
 * Editor ([backlog 17](../backlog/0017-editor-adr.md)): the Markdown subset,
   canonical form, and autosave timing and flush events
-* Webapp interface ([backlog 16](../backlog/0016-webapp-interface-adr.md)):
+* Webapp interface ([ADR 0007](./0007-webapp-interface.md)):
   the URL scheme for open documents, the server-state cache that applies
   optimistic changes, and the browser storage that holds unacknowledged text
 * Version history: commits, history reads, restore, and the pagination

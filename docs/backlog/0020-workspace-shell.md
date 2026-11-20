@@ -19,7 +19,7 @@ writing whenever I choose.
 ## Context
 
 The [README](../../README.md#the-writing-workspace) describes the layout.
-[Backlog 16](./0016-webapp-interface-adr.md) chooses the styling, tokens,
+[ADR 0007](../adrs/0007-webapp-interface.md) chooses the styling, tokens,
 typefaces, primitives, router, and server-state caching this story installs.
 Backlog 7, the webapp foundation, left [webapp/](../../webapp/README.md) with a
 single page showing service health. Later stories fill the regions: the navigator in
@@ -29,18 +29,23 @@ single page showing service health. Later stories fill the regions: the navigato
 
 ## Scope
 
-* Install the packages backlog 16 chooses, and add the design tokens, global
-  styles, and self-hosted typefaces.
-* Lay out a header bar above three regions. The central writing region takes
-  every pixel the side panes do not use.
+* Install the packages ADR 0007 chooses, and add the design tokens for both
+  themes, global styles, and self-hosted typefaces.
+* Apply ADR 0007's tooling: generated CSS Module declarations in
+  `typecheck`, the token contrast test, the font license files in the build,
+  the Oxlint allowance for CSS imports, and the Dependabot cooldown.
+* Lay out a header bar above three regions, following ADR 0007's
+  [layout and density](../adrs/0007-webapp-interface.md#layout-and-density).
+  The central writing region takes every pixel the side panes do not use.
 * Put a title slot on the left of the header, pane toggles, and a placeholder
   profile avatar and menu on the right for the one local user, with no
   authentication.
 * Collapse and expand each side pane from the header and with keyboard
   shortcuts, and remember each pane's state across reloads in browser
   storage.
-* On narrow viewports, show side panes over the writing region rather than
-  narrowing it.
+* Below ADR 0007's breakpoints, show side panes over the writing region
+  rather than narrowing it, and apply its touch rules, so the shell works on
+  iPad in both orientations.
 * Add the routes for the empty workspace and for an open document, and show
   a clear message when the service is unreachable in place of the health page.
 * Update `webapp/README.md` and `webapp/AGENTS.md` with the new dependencies
@@ -58,4 +63,4 @@ single page showing service health. Later stories fill the regions: the navigato
 
 ## Prerequisites
 
-* [Record the webapp interface foundation ADR](./0016-webapp-interface-adr.md)
+None.

@@ -30,7 +30,9 @@ faithfully in a simulated DOM.
 
 * Record an ADR choosing the browser test runner, comparing at least
   Playwright and Vitest browser mode, plus the accessibility checker, the
-  browsers covered, and where the tests live.
+  browsers covered, including WebKit at iPad sizes with touch as
+  [ADR 0007](../adrs/0007-webapp-interface.md#supported-browsers) requires,
+  and where the tests live.
 * Pin the browsers in the development container, and keep the gate runnable
   on a host.
 * Start the service and the webapp's development server for each run, using

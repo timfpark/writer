@@ -20,8 +20,8 @@ it.
 
 [Backlog 19](./0019-workspace-api.md) serves the operations, and
 [ADR 0005](../adrs/0005-workspace-model.md) sets the title rules and what
-deleting a folder does. [Backlog 16](./0016-webapp-interface-adr.md) chooses
-the tree primitive and server-state caching, and
+deleting a folder does. [ADR 0007](../adrs/0007-webapp-interface.md#components)
+chooses the tree primitive and server-state caching, and
 [backlog 20](./0020-workspace-shell.md) provides the pane.
 Moving and reordering by drag and drop arrive in
 [backlog 24](./0024-tree-drag-and-drop.md). The tree's keyboard structure
@@ -44,9 +44,10 @@ shortcuts beyond moving through the tree arrive in
   folder deletion removes.
 * Open a document by selecting it, highlight the open document, and expand
   its ancestors when it is opened by URL.
-* Build the tree on the WAI-ARIA tree pattern: `tree` and `treeitem` roles,
-  one tab stop with roving focus, arrow keys to move focus and to expand or
-  collapse folders, `Home` and `End`, and `Enter` to open a document.
+* Build the tree on React Aria's `Tree`, which follows the WAI-ARIA treegrid
+  pattern: `treegrid` and `row` roles, one tab stop with roving focus, arrow
+  keys to move focus and to expand or collapse folders, `Home` and `End`, and
+  `Enter` to open a document.
 * Apply changes optimistically, roll back on failure, and show failures by
   their problem `code` without blocking the page.
 * Give each browser test run a temporary data folder, and add browser tests
