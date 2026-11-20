@@ -43,8 +43,9 @@ single page showing service health. Later stories fill the regions: the navigato
 * Collapse and expand each side pane from the header and with keyboard
   shortcuts, and remember each pane's state across reloads in browser
   storage.
-* On narrow viewports, show side panes over the writing region rather than
-  narrowing it.
+* Below ADR 0007's breakpoints, show side panes over the writing region
+  rather than narrowing it, and apply its touch rules, so the shell works on
+  iPad in both orientations.
 * Add the routes for the empty workspace and for an open document, and show
   a clear message when the service is unreachable in place of the health page.
 * Update `webapp/README.md` and `webapp/AGENTS.md` with the new dependencies

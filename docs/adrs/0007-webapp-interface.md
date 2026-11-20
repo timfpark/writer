@@ -60,8 +60,12 @@ decision.
 * Hold each document's unacknowledged text and base revision in IndexedDB
   through `idb`, keyed by document and browser tab, with a Web Lock per tab
   so a closed tab's text is recovered rather than overwritten.
+* Lay out for desktop windows and iPad in either orientation, with two fixed
+  breakpoints and touch rules keyed to input capability; phones are out of
+  scope.
 * Use Lucide icons, and support desktop Chrome and Edge 111, Firefox 114, and
-  Safari 16.4 and later, Vite 8's default build target.
+  Safari 16.4, and Safari on iPadOS 16.4, and later versions: Vite 8's
+  default build target.
 
 ## Context
 
@@ -86,7 +90,10 @@ more than anything else on the page. Backlogs
 [26](../backlog/0026-keyboard-accessibility.md) build on these choices.
 
 The first release has one local user on a desktop browser, the service on
-loopback, and no hosting beyond the development server. ADR 0003's
+loopback, and no hosting beyond the development server. Writing on an iPad
+is a longer-term goal, so the interface is designed for iPad now, while
+reaching the service from another device waits for a hosting decision.
+Phones are not a goal. ADR 0003's
 TypeScript settings apply: `strict`, `noUncheckedIndexedAccess`, and
 `exactOptionalPropertyTypes`.
 
@@ -403,7 +410,9 @@ contrast high without the glare of pure white on near-black.
   for text, 3:1 for large text, and 3:1 for control boundaries, meaningful
   icons, and focus indicators against adjacent colors. Focus stays visible
   and unobscured, and pointer targets, including the tree's drag handles and
-  actions buttons, are at least 24 by 24 CSS pixels.
+  actions buttons, are at least 24 by 24 CSS pixels, and 44 by 44 on touch
+  screens, as [Responsive layout and touch](#responsive-layout-and-touch)
+  sets.
 * Body text on the writing surface meets at least 10:1 against the page in
   both themes, above WCAG's enhanced 7:1. Secondary text on the surface, such
   as block quotes or placeholders, meets at least 7:1.
@@ -480,6 +489,47 @@ backlogs 20, 22, and 23 may tune within the tokens:
 | Row states         | The open document tinted `--color-current` with no border, focus shown by a 2 px `--color-accent` outline inset 2 px, a dragged row at half opacity        |
 | Menus and popovers | `--color-chrome-raised` with a 1 px `--color-border` edge and a 6 px radius; the focused item tinted `--color-current`                                     |
 | Icons              | Lucide's default 2 px stroke in `currentColor`, 16 to 18 px                                                                                                |
+
+### Responsive layout and touch
+
+Writer lays out for desktop windows and for iPad in portrait and landscape,
+from 744 px wide in portrait to 1,376 px in landscape. Phones are out of scope; a narrower window still works, with both
+panes over the writing region. Responsiveness is plain CSS: media queries on
+the viewport for the shell, container queries for components whose pane
+width varies, and `rem` and `clamp()` sizing. Custom properties cannot appear
+in a media query, so the two breakpoints are fixed widths, written the same
+way everywhere:
+
+| Viewport width             | Navigator                     | Assistant                     | Writing page                                      |
+|----------------------------|-------------------------------|-------------------------------|---------------------------------------------------|
+| 75 rem (1,200 px) or wider | Docked                        | Docked                        | As [Layout and density](#layout-and-density) sets |
+| 60 to 75 rem               | Docked                        | Opens over the writing region | As above                                          |
+| Narrower than 60 rem       | Opens over the writing region | Opens over the writing region | Padded `--space-8` by `--space-6`                 |
+
+A pane that opens over the writing region closes when the writer chooses a
+document, presses `Escape`, or taps outside it, and returns focus to where
+it was. Collapsing a docked pane still persists across reloads; an overlaid
+pane always starts closed.
+
+Touch rules follow the input, not the width or the device, through the
+`hover` and `pointer` media features, because an iPad with a trackpad
+behaves like a desktop and a touch-screen laptop does not:
+
+* Where `(hover: none)`, controls that appear on hover elsewhere, such as a
+  row's drag handle and actions button, are always visible.
+* Where `(pointer: coarse)`, tree rows, menu items, and pointer targets are
+  at least 2.75 rem (44 px) tall, Apple's minimum touch target.
+* Editable text fields, such as inline rename and the document title, use at
+  least 1 rem (16 px) text everywhere, because Safari on iPadOS zooms the
+  page to a focused field with smaller text.
+* Touch dragging starts from the drag handle. Safari may not raise
+  `contextmenu` for a long press, so the actions button and its move
+  commands are the touch path to every row command.
+* The shell's height is `100dvh`, so Safari's toolbars never hide it, and the
+  header and panes pad by `env(safe-area-inset-*)`.
+* The editor keeps the caret visible above iPadOS's on-screen keyboard, which
+  [backlog 23](../backlog/0023-writing-surface.md) verifies. A hardware
+  keyboard on iPad gets the same shortcuts as desktop.
 
 ### Components
 
@@ -660,15 +710,18 @@ has an accessible name.
 
 ### Supported browsers
 
-The webapp supports desktop Chrome and Edge 111, Firefox 114, Safari 16.4,
-and later versions: Vite 8's default `baseline-widely-available` target, used
-for both JavaScript and CSS. Every feature this record relies on is
+The webapp supports desktop Chrome and Edge 111, Firefox 114, and Safari
+16.4, and Safari on iPadOS 16.4, and later versions: Vite 8's default
+`baseline-widely-available` target, which names iOS 16.4, used for both
+JavaScript and CSS. Every feature this record relies on is
 available there, including IndexedDB, Web Locks, `crypto.randomUUID()`,
 variable fonts, and `prefers-color-scheme`; nested CSS is lowered at build. A
 feature outside the target, such as `:has()` before Firefox 121, may only
-enhance a layout that works without it. Narrow windows lay out as backlog 20
-describes, but mobile browsers are not a release target. Backlog 21 chooses
-the engines the browser tests run.
+enhance a layout that works without it. Phones, including Safari on iPhone,
+are not a target. Until a hosting decision serves Writer to other devices
+over HTTPS, which Web Locks and `crypto.randomUUID()` require away from
+`localhost`, iPad layouts are verified in browser tests at iPad sizes with
+touch. Backlog 21 chooses the engines the browser tests run.
 
 ## Consequences
 
@@ -696,7 +749,10 @@ Trade-offs and risks:
 * Screen readers announce the navigator as a tree grid rather than a tree.
   Backlogs 22 and 26 test it with a screen reader.
 * Each row carries a drag handle and an actions button. They may appear on
-  hover or focus, but must stay operable and at least 24 pixels square.
+  hover or focus, but must stay operable and at least 24 pixels square, and
+  on touch screens they are always visible and 44 pixels tall.
+* iPad layouts and touch rules add CSS and test cases now, before any iPad
+  can reach Writer.
 * With a controlled selection, the prototype's live region repeated the
   selected row's announcement after each tree refetch. Backlog 22 checks
   that selection is announced once.
@@ -729,9 +785,11 @@ Trade-offs and risks:
 * A chosen package has a compromised release or stalls: reassess it against
   this record's alternatives.
 * React Aria's toast becomes stable: consider it for notices.
-* Writer targets mobile browsers or hosting beyond loopback: revisit the
-  supported browsers, the storage eviction risk, and the development server's
-  fallback routing.
+* Writer is served to an iPad or another device beyond loopback: revisit the
+  supported browsers, the storage eviction risk, the secure context, and the
+  development server's fallback routing.
+* Writer targets phones: add a phone layout below 60 rem and revisit the
+  writing page, the panes, and touch targets.
 
 ## Follow-up decisions
 
@@ -739,7 +797,8 @@ Trade-offs and risks:
   the autosave timing and flush events that drive unsaved-text writes, and
   styles for document content built on these tokens
 * Browser tests ([backlog 21](../backlog/0021-browser-tests.md)): the engines
-  covered and the accessibility checker that checks composed contrast
+  covered, including WebKit at iPad sizes with touch, and the accessibility
+  checker that checks composed contrast
 * Hosting: fallback routing to `index.html`, and a content security policy
   that can allow fonts, styles, and scripts from the webapp's own origin only
 * A theme control inside Writer, if writers ask for one
