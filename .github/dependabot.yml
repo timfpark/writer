@@ -4,6 +4,12 @@
 # repository's conventional commit scopes.
 version: 2
 
+registries:
+  npm-proxy:
+    type: npm-registry
+    url: https://packagefeedproxy.microsoft.io/npm/
+    replaces-base: true
+
 updates:
   # Actions in .github/workflows/, pinned to full commit SHAs.
   - package-ecosystem: github-actions
@@ -28,3 +34,13 @@ updates:
       interval: weekly
     commit-message:
       prefix: build(devcontainer)
+
+  # Pinned repository tooling in tools/package.json and tools/package-lock.json.
+  - package-ecosystem: npm
+    directory: /tools
+    registries:
+      - npm-proxy
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build(tools)

@@ -64,6 +64,7 @@ the backlog item or subsystem deliverable that creates it.
 writer/
   .editorconfig                existing   editor formatting conventions
   .gitignore                   existing   build output, secrets, local-only data
+  .markdownlint-cli2.jsonc     existing   Markdown style lint rules
   AGENTS.md                    existing   root coding-agent guide
   README.md                    existing   project overview for people
   docs/
@@ -72,14 +73,14 @@ writer/
   tools/
     check                      existing   validation gate
     check_docs.py              existing   docs phase of the gate
+    package.json, .npmrc       existing   pins markdownlint-cli2 via npm proxy
+    package-lock.json          existing   locked Markdown lint dependencies
     tests/                     existing   unit tests for repository tooling
   .devcontainer/               existing   shared development container
   .github/
     workflows/ci.yml           existing   runs tools/check in the container
     dependabot.yml             existing   weekly dependency updates
     pull_request_template.md   existing   pull request checklist
-  .markdownlint-cli2.jsonc     planned    backlog 5
-  tools/package.json           planned    backlog 5, pins Markdown lint
   service/                     planned    backlog 6
     AGENTS.md, README.md
     Cargo.toml, Cargo.lock, rust-toolchain.toml
@@ -211,7 +212,7 @@ agent framework or model provider is deferred to a later service ADR, which
 | Area                                | Decision | Location                                             | Delivered by                                           |
 |-------------------------------------|----------|------------------------------------------------------|--------------------------------------------------------|
 | Validation gate, docs phase         | Adopt    | `tools/check`, `tools/check_docs.py`                 | This decision                                          |
-| Markdown style lint                 | Adopt    | `.markdownlint-cli2.jsonc`, `tools/check` docs phase | [Backlog 5](../backlog/0005-markdown-style-lint.md)    |
+| Markdown style lint                 | Adopt    | `.markdownlint-cli2.jsonc`, `tools/check` docs phase | Backlog 5                                              |
 | Development container               | Adopt    | `.devcontainer/`                                     | Backlog 2                                              |
 | GitHub Actions CI                   | Adopt    | `.github/workflows/ci.yml`                           | Backlog 3                                              |
 | Selective checks                    | Reject   | Not applicable                                       | Not planned                                            |
@@ -228,7 +229,7 @@ agent framework or model provider is deferred to a later service ADR, which
 | Pull request template               | Adopt    | `.github/pull_request_template.md`                   | Backlog 4                                              |
 | Secret scanning and push protection | Adopt    | GitHub repository settings                           | Backlog 4                                              |
 | Code ownership rules                | Defer    | `.github/CODEOWNERS`                                 | Not planned                                            |
-| Dependency review                   | Defer    | `.github/workflows/ci.yml`                           | Not planned                                            |
+| Dependency review                   | Defer    | `.github/workflows/ci.yml`                           | [Backlog 14](../backlog/0014-dependency-review.md)     |
 | Python packages for tooling         | Reject   | Not applicable                                       | Not planned                                            |
 
 #### Validation gate
@@ -236,17 +237,18 @@ agent framework or model provider is deferred to a later service ADR, which
 `tools/check` is the single validation entry point for hosts, the development
 container, and CI. It runs every phase without arguments, reports each phase's
 result, and exits 0 when all pass, 1 when a phase fails, and 2 on a usage or
-prerequisite error. It needs only Bash and Python 3.9 or newer.
+prerequisite error. It requires Bash, Python 3.9 or newer, and Node.js 22 or
+newer with npm.
 
 The implemented phases are `tools`, which unit-tests the repository tooling,
 and `docs`, which checks every Markdown file for frontmatter with a `title` and
 `description`, ISO 8601 `ms.date` values, no H1 under a frontmatter title,
 working relative links and heading fragments, a `subsystems` list on numbered
-ADRs and backlog items, and an index row for each of those documents.
+ADRs and backlog items, an index row for each of those documents, and Markdown
+style rules via a pinned `markdownlint-cli2` package in `tools/`.
 
-Markdown style lint needs Node.js, which the host does not guarantee. It is
-adopted and lands in [backlog 5](../backlog/0005-markdown-style-lint.md) after
-the development container provides Node.js.
+Markdown style lint landed in backlog 5 after the development container
+provided Node.js.
 
 Each subsystem adds a phase for its formatting, lint, build, and test checks,
 in dependency order, with its first deliverable. The service phase runs before
@@ -347,9 +349,9 @@ them.
   the root guide stays short.
 * Internal crates make service boundaries explicit, at the cost of maintaining
   member manifests and checking the whole workspace.
-* The gate validates documentation today, locally and in CI. It does not yet
-  lint Markdown style or check code, so a green result covers only the phases
-  it lists.
+* The gate validates documentation and Markdown style today, locally and in CI.
+  It does not yet check code, so a green result covers only the phases it
+  lists.
 * Subsystem stories must apply the root guide's "Adding a subsystem" checklist,
   including a scoped guide, a `tools/check` phase, a Dependabot entry, and the
   container toolchain.

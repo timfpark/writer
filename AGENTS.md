@@ -56,9 +56,10 @@ these boundaries and where tests, fixtures, and generated files belong.
 | `AGENTS.md`                                                  | Repository-wide rules for coding agents                           | Existing |
 | `docs/adrs/`                                                 | Architecture decisions, indexed by its README                     | Existing |
 | `docs/backlog/`                                              | Prioritized planned work, indexed by its README                   | Existing |
-| `tools/`                                                     | Validation gate and its tests                                     | Existing |
+| `tools/`                                                     | Validation gate, pinned Markdown lint, and tooling tests          | Existing |
 | `.gitignore`                                                 | Build output, secrets, and local-only data kept out of git        | Existing |
 | `.editorconfig`                                              | Editor formatting conventions                                     | Existing |
+| `.markdownlint-cli2.jsonc`                                   | Markdown style lint rules enforced by `tools/check`               | Existing |
 | `.devcontainer/`                                             | Shared development container with every toolchain                 | Existing |
 | `.github/workflows/ci.yml`                                   | CI that runs `tools/check` in the development container           | Existing |
 | `.github/dependabot.yml`, `.github/pull_request_template.md` | Dependency updates and the pull request template                  | Existing |
@@ -131,16 +132,17 @@ repository root:
 tools/check
 ```
 
-It needs Bash and Python 3.9 or newer, takes no arguments, and runs every
-phase. The [development container](./README.md#development-container)
-provides every prerequisite. It exits 0 when all phases pass, 1 when a phase
-fails, and 2 on a usage or prerequisite error.
+It needs Bash, Python 3.9 or newer, and Node.js 22 or newer with npm, takes no
+arguments, and runs every phase. The
+[development container](./README.md#development-container) provides every
+prerequisite. It exits 0 when all phases pass, 1 when a phase fails, and 2 on a
+usage or prerequisite error.
 
 | Phase   | Checks                                                                                       | Status  |
 |---------|----------------------------------------------------------------------------------------------|---------|
 | `tools` | Unit tests for the repository tooling in `tools/tests/`                                      | Active  |
 | `docs`  | Frontmatter, relative links and fragments, `subsystems` fields, and ADR and backlog indexing | Active  |
-| `docs`  | Markdown style lint                                                                          | Planned |
+| `docs`  | Markdown style lint                                                                          | Active  |
 | Each    | Subsystem formatting, lint, build, and tests                                                 | Planned |
 
 Commit only after the gate exits zero on the final contents of the change,
