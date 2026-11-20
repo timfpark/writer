@@ -22,6 +22,12 @@
       // rust-toolchain.toml takes precedence inside its folder.
       "version": "1.100.0",
       "profile": "minimal"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1.1.3": {
+      // Installs this gh release from GitHub's GPG-signed apt repository
+      // rather than an unverified release download.
+      "version": "2.105.0",
+      "installDirectlyFromGitHubRelease": false
     }
   },
   "containerUser": "vscode",
@@ -31,6 +37,12 @@
   // Supply any credential at run time, never through this folder, the image,
   // or build arguments.
   "forwardPorts": [8888, 5180],
+  // gh reads a fine-grained token, scoped to this repository, from the host
+  // environment that starts the container; README.md says how to create it.
+  // When it is unset, gh is unauthenticated.
+  "remoteEnv": {
+    "GH_TOKEN": "${localEnv:GH_TOKEN}"
+  },
   "portsAttributes": {
     "8888": {
       "label": "service"
