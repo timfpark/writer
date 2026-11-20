@@ -19,7 +19,7 @@ writing whenever I choose.
 ## Context
 
 The [README](../../README.md#the-writing-workspace) describes the layout.
-[Backlog 16](./0016-webapp-interface-adr.md) chooses the styling, tokens,
+[ADR 0007](../adrs/0007-webapp-interface.md) chooses the styling, tokens,
 typefaces, primitives, router, and server-state caching this story installs.
 Backlog 7, the webapp foundation, left [webapp/](../../webapp/README.md) with a
 single page showing service health. Later stories fill the regions: the navigator in
@@ -29,8 +29,11 @@ single page showing service health. Later stories fill the regions: the navigato
 
 ## Scope
 
-* Install the packages backlog 16 chooses, and add the design tokens, global
-  styles, and self-hosted typefaces.
+* Install the packages ADR 0007 chooses, and add the design tokens for both
+  themes, global styles, and self-hosted typefaces.
+* Apply ADR 0007's tooling: generated CSS Module declarations in
+  `typecheck`, the token contrast test, the font license files in the build,
+  the Oxlint allowance for CSS imports, and the Dependabot cooldown.
 * Lay out a header bar above three regions. The central writing region takes
   every pixel the side panes do not use.
 * Put a title slot on the left of the header, pane toggles, and a placeholder
@@ -58,4 +61,4 @@ single page showing service health. Later stories fill the regions: the navigato
 
 ## Prerequisites
 
-* [Record the webapp interface foundation ADR](./0016-webapp-interface-adr.md)
+None.

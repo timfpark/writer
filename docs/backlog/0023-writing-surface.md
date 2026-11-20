@@ -20,8 +20,9 @@ them.
 [Backlog 17](./0017-editor-adr.md) chooses the editor, the Markdown subset,
 the round-trip guarantee, and the autosave timing.
 [ADR 0005](../adrs/0005-workspace-model.md#autosave-and-stale-writes) defines saving with a revision
-token and the conflict response. [Backlog 16](./0016-webapp-interface-adr.md)
-chooses the writing typeface and the contrast target for body text.
+token and the conflict response. [ADR 0007](../adrs/0007-webapp-interface.md)
+chooses the writing typeface, the contrast target for body text, and the
+browser storage for unsaved text.
 [Backlog 22](./0022-workspace-navigator.md) opens documents into the writing
 region.
 
@@ -56,7 +57,7 @@ region.
   text is saved once the service returns.
 * [ ] Editing a document's file outside Writer and then typing in Writer
   shows the conflict status, and neither version is lost.
-* [ ] Body text on the writing surface meets the contrast target backlog 16
+* [ ] Body text on the writing surface meets the contrast target ADR 0007
   sets.
 * [ ] `tools/check` exits 0.
 

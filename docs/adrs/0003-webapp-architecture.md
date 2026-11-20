@@ -40,6 +40,12 @@ origin fixed by its sign-in registration, so the two could not run together.
 [ADR 0004](./0004-api-conventions.md) decides versioning and naming below
 `/api/`, which this record leaves open: every route lives under `/api/v1/`.
 
+Amended on 2026-11-20 by [ADR 0007](./0007-webapp-interface.md), which
+settles the routing, styling and components, and server-state caching left
+under [Application shape](#application-shape) and in the follow-up
+decisions. It adds `vite-css-modules` to the build and type check, and
+allows unassigned CSS imports in the Oxlint configuration.
+
 ## Decision summary
 
 * Build `webapp/` as a client-rendered React 19 single-page application
@@ -429,8 +435,8 @@ Trade-offs and risks:
 
 ## Follow-up decisions
 
-* Routing, styling and components, and server-state caching, made by the first
-  story that needs more than one view
+* Routing, styling and components, and server-state caching: settled by
+  [ADR 0007](./0007-webapp-interface.md)
 * Browser end-to-end and automated accessibility testing
 * Serving the built application, content security policy, and hosting beyond
   loopback, alongside the service's hosting decision

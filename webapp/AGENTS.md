@@ -16,9 +16,10 @@ service's health. People start with [README.md](./README.md).
 * Use same-origin paths under `/api/`; the development server proxies them to
   the service. Never put a service URL in the browser bundle or add a `VITE_`
   variable for one.
-* Add no server rendering, framework server, or second server process. Routing,
-  styling, server-state caching, and authentication wait for the stories and
-  ADRs that choose them.
+* Add no server rendering, framework server, or second server process.
+  Routing, styling, components, server-state caching, and browser storage
+  follow [ADR 0007](../docs/adrs/0007-webapp-interface.md), which backlog 20
+  installs; authentication waits for the story and ADR that choose it.
 
 ## Operational rules
 
@@ -75,6 +76,10 @@ Consult these when changing architecture, dependencies, or conventions:
 * [ADR 0005](../docs/adrs/0005-workspace-model.md): folders and documents,
   client-generated identifiers, the workspace operations, and autosave
   conflict recovery
+* [ADR 0007](../docs/adrs/0007-webapp-interface.md): typed CSS Modules and
+  design tokens, themes and contrast targets, typefaces, React Aria
+  Components, drag and drop, routes, server-state caching, unsaved-text
+  storage, icons, and supported browsers
 
 ## Commands
 
