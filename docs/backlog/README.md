@@ -36,14 +36,13 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                             | Subsystems             | Outcome                                                                        | Prerequisite |
 |----|---------------------------------------------------------------------------------------|------------------------|--------------------------------------------------------------------------------|--------------|
-| 7  | [Establish the webapp subsystem foundation](./0007-webapp-foundation.md)              | `webapp`               | `webapp/` shows service health through a generated, verified client.           | None         |
 | 15 | [Record the workspace model and API ADR](./0015-workspace-model-adr.md)               | `service`, `webapp`    | An accepted ADR fixes folders, documents, ordering, autosave, and their API.   | None         |
 | 11 | [Record the service storage ADR](./0011-storage-architecture-adr.md)                  | `service`              | An accepted ADR fixes the storage interface, filesystem backend, and SQL path. | 15           |
 | 16 | [Record the webapp interface foundation ADR](./0016-webapp-interface-adr.md)          | `webapp`               | An accepted ADR fixes styling, typefaces, primitives, routing, and caching.    | None         |
 | 17 | [Record the editor ADR](./0017-editor-adr.md)                                         | `webapp`               | An accepted ADR fixes the editor, Markdown subset, and autosave timing.        | 11, 15       |
 | 18 | [Build workspace storage with the filesystem backend](./0018-workspace-storage.md)    | `service`              | Folders and documents persist as directories and `.md` files on disk.          | 11, 15       |
 | 19 | [Serve the workspace API](./0019-workspace-api.md)                                    | `service`              | The contract lists, creates, saves, moves, and deletes workspace items.        | 18           |
-| 20 | [Build the workspace shell](./0020-workspace-shell.md)                                | `webapp`               | The webapp shows a header, collapsible side panes, and a writing region.       | 7, 16        |
+| 20 | [Build the workspace shell](./0020-workspace-shell.md)                                | `webapp`               | The webapp shows a header, collapsible side panes, and a writing region.       | 16           |
 | 21 | [Add browser end-to-end tests to the gate](./0021-browser-tests.md)                   | `webapp`, `repository` | Browser and accessibility tests drive the webapp against a real service.       | 20           |
 | 22 | [Navigate and organize the workspace tree](./0022-workspace-navigator.md)             | `webapp`               | The navigator shows, folds, creates, renames, deletes, and opens items.        | 19, 20, 21   |
 | 23 | [Write in the editing surface with autosave](./0023-writing-surface.md)               | `webapp`               | Writers edit documents and titles, and every change saves itself.              | 17, 22       |
@@ -56,9 +55,9 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 [ADR 0002](../adrs/0002-service-architecture.md),
 [ADR 0003](../adrs/0003-webapp-architecture.md), and
 [ADR 0004](../adrs/0004-api-conventions.md) record the service and webapp
-architecture and the API conventions. The service foundation (item 6) built
-`service/` on them, and item 7 builds `webapp/` the same way, applying the
-[Adding a subsystem](../adrs/0001-monorepo-structure.md#adding-a-subsystem)
+architecture and the API conventions. The service foundation (item 6) and the
+webapp foundation (item 7) built `service/` and `webapp/` on them, applying
+the [Adding a subsystem](../adrs/0001-monorepo-structure.md#adding-a-subsystem)
 checklist in ADR 0001.
 
 Items 15 through 26 deliver the first release, the writing workspace the

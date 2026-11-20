@@ -10,9 +10,13 @@ Usage: tools/check
 
 Runs every validation phase from the repository root:
   tools    unit tests for the repository tooling (Python 3.9+)
-  docs     Markdown frontmatter, relative links, index coverage, and style lint (Node.js 22+)
+  docs     Markdown frontmatter, relative links, index coverage, and style lint
   service  formatting, lint, build, and tests of every service/ workspace member,
            including the service/openapi.json freshness test (cargo via rustup)
+  webapp   install, generated client freshness, formatting, lint, types, tests,
+           and build of webapp/
+
+Node.js must be exactly the version webapp/package.json pins in engines.node.
 
 Exit codes: 0 all phases passed, 1 a phase failed, 2 usage or prerequisite error.
 USAGE
@@ -33,9 +37,17 @@ if ! command -v python3 >/dev/null 2>&1 ||
   exit 2
 fi
 
-if ! command -v node >/dev/null 2>&1 ||
-  ! node -e 'process.exit(Number(process.versions.node.split(".")[0]) < 22 ? 1 : 0)'; then
-  echo "check: prerequisite missing: Node.js 22 or newer (node) must be on PATH" >&2
+if ! node_pin="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["engines"]["node"])' webapp/package.json 2>/dev/null)"; then
+  echo "check: prerequisite missing: webapp/package.json must pin the Node.js version in engines.node" >&2
+  exit 2
+fi
+
+node_found=""
+if command -v node >/dev/null 2>&1; then
+  node_found="$(node -p 'process.versions.node' 2>/dev/null)" || node_found=""
+fi
+if [[ "$node_found" != "$node_pin" ]]; then
+  echo "check: prerequisite missing: Node.js $node_pin (node), the version webapp/package.json engines.node pins, must be on PATH; found ${node_found:-none}" >&2
   exit 2
 fi
 
@@ -95,6 +107,20 @@ run_service_phase() {
   )
 }
 
+# Every step after the install needs node_modules, so a failed install stops
+# the phase; otherwise every step runs so one report lists all failures.
+run_webapp_phase() {
+  (
+    cd "$root/webapp" || exit 1
+    npm ci --include=dev --no-audit --no-fund || exit 1
+    rc=0
+    for script in api:check format:check lint typecheck test build; do
+      npm run "$script" || rc=1
+    done
+    exit "$rc"
+  )
+}
+
 failed=()
 run_phase() {
   local name="$1"
@@ -111,6 +137,7 @@ run_phase() {
 run_phase tools env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover --start-directory tools/tests --quiet
 run_phase docs run_docs_phase
 run_phase service run_service_phase
+run_phase webapp run_webapp_phase
 
 if ((${#failed[@]})); then
   echo "check: FAILED phases: ${failed[*]}" >&2
