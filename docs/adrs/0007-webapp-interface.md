@@ -33,6 +33,12 @@ scheme, optimistic cache, and browser storage that
 [ADR 0005](./0005-workspace-model.md#follow-up-decisions) left to this
 decision.
 
+Amended on 2026-11-20 by [ADR 0008](./0008-editor.md), which settles the
+editor [follow-up decisions](#follow-up-decisions): the bundle budget, with
+the editor loaded as its own chunk, the flush events that drive unsaved-text
+writes, and document styles built on these tokens, adding `--color-ink` on
+`--color-chrome` to the contrast test.
+
 ## Decision summary
 
 * Style with CSS Modules and CSS custom properties. `vite-css-modules`
@@ -669,8 +675,9 @@ and takes a new identifier. Keying by tab means two tabs editing one document
 never overwrite each other's unsaved text.
 
 * The client writes the record before each save request, on each of the
-  editor ADR's flush events, and otherwise at most every 500 ms while the
-  writer types, so a browser crash loses at most half a second of typing.
+  [editor ADR's flush events](./0008-editor.md#autosave-timing-and-flush-events),
+  and otherwise at most every 500 ms while the writer types, so a browser
+  crash loses at most half a second of typing.
 * When a save is acknowledged, the record is deleted if it holds exactly the
   saved text. Otherwise the newer text now builds on the acknowledged
   revision, and the record's `baseRevision` becomes it.
@@ -744,8 +751,9 @@ Trade-offs and risks:
 * The JavaScript loaded grows from 69 KB to 199 KB gzipped before the editor,
   and the single chunk exceeds Vite's advisory 500 KB minified warning, which
   the build prints but which fails nothing. The editor ADR
-  ([backlog 17](../backlog/0017-editor-adr.md)) sets the budget, and code
-  splitting by route is the first remedy if it is exceeded.
+  ([ADR 0008](./0008-editor.md#bundle-budget)) sets the budget and loads the
+  editor as its own chunk; splitting by route is the next remedy if it is
+  exceeded.
 * Screen readers announce the navigator as a tree grid rather than a tree.
   Backlogs 22 and 26 test it with a screen reader.
 * Each row carries a drag handle and an actions button. They may appear on
@@ -778,8 +786,8 @@ Trade-offs and risks:
 * A screen reader test in backlog 26 finds the treegrid confusing: reconsider
   the tree's pattern, which may mean a primitive other than React Aria's
   `Tree`.
-* The bundle exceeds the editor ADR's budget: split by route and load drag
-  and drop, menus, and dialogs on demand.
+* The bundle exceeds [ADR 0008's budget](./0008-editor.md#bundle-budget):
+  split by route and load drag and drop, menus, and dialogs on demand.
 * Writers ask to choose a theme inside Writer: add an override stored per
   browser on top of the operating system's setting.
 * A chosen package has a compromised release or stalls: reassess it against
@@ -793,9 +801,9 @@ Trade-offs and risks:
 
 ## Follow-up decisions
 
-* The editor ([backlog 17](../backlog/0017-editor-adr.md)): the bundle budget,
-  the autosave timing and flush events that drive unsaved-text writes, and
-  styles for document content built on these tokens
+* The editor: settled by [ADR 0008](./0008-editor.md), including the bundle
+  budget, the autosave timing and flush events that drive unsaved-text
+  writes, and styles for document content built on these tokens
 * Browser tests ([backlog 21](../backlog/0021-browser-tests.md)): the engines
   covered, including WebKit at iPad sizes with touch, and the accessibility
   checker that checks composed contrast
