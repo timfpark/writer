@@ -123,5 +123,9 @@ asked:
 5. Report the pull request URL and its final check status. Leave merging to
    the maintainer unless asked, and never bypass branch protection.
 
-If `gh` is missing or not authenticated, or a push is rejected, commit locally,
+In the development container, `gh` authenticates with the `GH_TOKEN` the
+maintainer supplies from the host, as the
+[README](./README.md#github-cli) describes. Never print, log, store, or
+replace that token, and never run `gh auth login` or `gh auth logout`. If `gh`
+is missing or not authenticated, or a push is rejected, commit locally,
 report the blocker, and stop.

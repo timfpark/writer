@@ -98,8 +98,8 @@ tools/check
 ### Development container
 
 The [development container](./.devcontainer/devcontainer.json) provides Bash,
-Git, Python 3.9 or newer, rustup with a default Rust toolchain, and Node.js
-with npm. Each version is recorded once: the
+Git, Python 3.9 or newer, rustup with a default Rust toolchain, Node.js
+with npm, and the GitHub CLI. Each version is recorded once: the
 [Dockerfile](./.devcontainer/Dockerfile) pins the base image by digest, which
 fixes Python, Bash, and Git, and `devcontainer.json` pins each feature and the
 Node.js and Rust versions exactly. The Dev Container CLI records each
@@ -139,6 +139,50 @@ Dev Container CLI does not forward ports; use `devcontainer exec` to make
 requests inside the container instead. The container holds no credentials;
 supply any secret at run time rather than in the image, the repository, or
 build arguments.
+
+#### GitHub CLI
+
+The container also carries the [GitHub CLI](https://cli.github.com/), `gh`,
+installed from GitHub's signed package repository, so you or a coding agent
+can open pull requests and watch their checks as [AGENTS.md](./AGENTS.md)
+describes. It reads its credential from `GH_TOKEN`, which the container copies
+from the environment that starts it. Every process in the container can read
+that token, including package install scripts and build scripts, so give it
+only what pull requests need:
+
+1. On GitHub, open **Settings**, **Developer settings**, **Personal access
+   tokens**, **Fine-grained tokens**, and choose **Generate new token**.
+2. Set a short expiration, such as 30 days, and under **Repository access**
+   choose **Only select repositories** and pick `timfpark/writer`.
+3. Under **Repository permissions**, grant read and write on **Contents** and
+   **Pull requests**, and read-only on **Actions** and **Commit statuses**.
+   Leave every other permission at no access. Without **Workflows**, the
+   token cannot push changes to `.github/workflows/`, and without
+   **Administration**, it cannot change the ruleset that protects `main`.
+4. Export the token on the host, then start VS Code or the Dev Container CLI
+   from that shell, so the container receives it:
+
+   ```bash
+   export GH_TOKEN=<fine-grained token>
+   code .
+   ```
+
+5. If the container was already running, run **Dev Containers: Rebuild
+   Container** or **Dev Containers: Reopen in Container**, then check access
+   inside it with `gh auth status`.
+
+In VS Code, `git push` inside the container keeps using the Git credentials
+that VS Code forwards from the host, so the token's limits apply to `gh` and
+its API calls rather than to those pushes. With the Dev Container CLI, which
+forwards no credentials, run `gh auth setup-git` once in the container so Git
+pushes with the token.
+
+Keep the token in a password manager or your shell's secret store, never in a
+file in the repository. When `GH_TOKEN` is unset, `gh` is unauthenticated and
+CI is unaffected. Revoke the token on GitHub when you no longer need it. The
+ruleset on `main` still requires a pull request and a passing `CI result`, so
+the token cannot push to `main`, but it can merge a pull request whose checks
+pass; the repository's agent guide leaves merging to the maintainer.
 
 ### Host setup
 
