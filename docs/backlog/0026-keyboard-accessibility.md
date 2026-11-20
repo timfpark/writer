@@ -17,17 +17,18 @@ without a pointer so that organizing and writing never slow me down.
 
 ## Context
 
-[Backlog 22](./0022-workspace-navigator.md) and
-[backlog 24](./0024-tree-drag-and-drop.md) deliver the navigator for pointer
-users, with focusable controls and a non-dragging move. Full keyboard
-operation was left out of the first release's navigator so it could ship
-sooner. [Backlog 21](./0021-browser-tests.md) supplies automated
+[Backlog 22](./0022-workspace-navigator.md) builds the navigator on the
+WAI-ARIA tree pattern, with arrow keys, `Home`, `End`, and `Enter`, and
+[backlog 24](./0024-tree-drag-and-drop.md) adds a non-dragging move. The
+remaining shortcuts were left out of those stories so the navigator could
+ship sooner. [Backlog 21](./0021-browser-tests.md) supplies automated
 accessibility checks.
 
 ## Scope
 
-* Follow the WAI-ARIA tree pattern in the navigator: arrow keys, `Home`,
-  `End`, type-ahead, `Enter` to open, `F2` to rename, and `Delete` to delete.
+* Complete the WAI-ARIA tree pattern in the navigator with type-ahead, `F2`
+  to rename, `Delete` to delete, and keyboard access to the context menu's
+  create and move actions.
 * Add shortcuts that move focus between the navigator, the writing surface,
   and the assistant, and return focus sensibly when a pane collapses.
 * Add a shortcut reference reachable from the header.

@@ -33,8 +33,9 @@ faithfully in a simulated DOM.
   browsers covered, and where the tests live.
 * Pin the browsers in the development container, and keep the gate runnable
   on a host.
-* Start the service with a temporary data folder and the webapp's
-  development server for each run, using synthetic text only.
+* Start the service and the webapp's development server for each run, using
+  synthetic text only. The navigator story gives each run a temporary data
+  folder once the service stores the workspace.
 * Add a first test of the workspace shell, including collapsing both panes,
   with an automated accessibility check.
 * Run the tests in `tools/check` or a CI job wired into `CI result`, as the
@@ -51,5 +52,4 @@ faithfully in a simulated DOM.
 
 ## Prerequisites
 
-* [Serve the workspace API](./0019-workspace-api.md)
 * [Build the workspace shell](./0020-workspace-shell.md)

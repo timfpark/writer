@@ -42,11 +42,11 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | 15 | [Record the workspace model and API ADR](./0015-workspace-model-adr.md)               | `service`, `webapp`    | An accepted ADR fixes folders, documents, ordering, autosave, and their API.   | None         |
 | 11 | [Record the service storage ADR](./0011-storage-architecture-adr.md)                  | `service`              | An accepted ADR fixes the storage interface, filesystem backend, and SQL path. | 15           |
 | 16 | [Record the webapp interface foundation ADR](./0016-webapp-interface-adr.md)          | `webapp`               | An accepted ADR fixes styling, typefaces, primitives, routing, and caching.    | None         |
-| 17 | [Record the editor ADR](./0017-editor-adr.md)                                         | `webapp`               | An accepted ADR fixes the editor, Markdown subset, and autosave timing.        | None         |
+| 17 | [Record the editor ADR](./0017-editor-adr.md)                                         | `webapp`               | An accepted ADR fixes the editor, Markdown subset, and autosave timing.        | 11, 15       |
 | 18 | [Build workspace storage with the filesystem backend](./0018-workspace-storage.md)    | `service`              | Folders and documents persist as directories and `.md` files on disk.          | 6, 11, 15    |
 | 19 | [Serve the workspace API](./0019-workspace-api.md)                                    | `service`              | The contract lists, creates, saves, moves, and deletes workspace items.        | 18           |
 | 20 | [Build the workspace shell](./0020-workspace-shell.md)                                | `webapp`               | The webapp shows a header, collapsible side panes, and a writing region.       | 7, 16        |
-| 21 | [Add browser end-to-end tests to the gate](./0021-browser-tests.md)                   | `webapp`, `repository` | Browser and accessibility tests drive the webapp against a real service.       | 19, 20       |
+| 21 | [Add browser end-to-end tests to the gate](./0021-browser-tests.md)                   | `webapp`, `repository` | Browser and accessibility tests drive the webapp against a real service.       | 20           |
 | 22 | [Navigate and organize the workspace tree](./0022-workspace-navigator.md)             | `webapp`               | The navigator shows, folds, creates, renames, deletes, and opens items.        | 19, 20, 21   |
 | 23 | [Write in the editing surface with autosave](./0023-writing-surface.md)               | `webapp`               | Writers edit documents and titles, and every change saves itself.              | 17, 22       |
 | 24 | [Move and reorder items with drag and drop](./0024-tree-drag-and-drop.md)             | `webapp`               | Writers move and reorder items by dragging or with a menu.                     | 22           |
@@ -66,12 +66,13 @@ checklist in ADR 0001.
 Items 15 through 26 deliver the first release, the writing workspace the
 [README](../../README.md#product-direction) describes. Its decisions come
 first: item 15 fixes the workspace model and API, item 11 the storage that
-persists it, item 16 the interface foundation, and item 17 the editor. The
-service then stores and serves the workspace (18 and 19) while the webapp
-builds its shell (20). Browser tests (21) land before the navigator (22) and
-the writing surface (23), which together make the first usable release. Drag
-and drop (24), the assistant pane prototype (25), and full keyboard operation
-(26) complete it.
+persists it, item 16 the interface foundation, and item 17 the editor, which
+must respect both the model and the storage format. The service then stores
+and serves the workspace (18 and 19) while the webapp builds its shell (20)
+and browser tests against it (21). The keyboard-navigable navigator (22) and
+the writing surface (23) together make the first usable release. Drag and
+drop (24), the assistant pane prototype (25), and the remaining keyboard
+shortcuts (26) complete it.
 
 The pair-writing agent follows the workspace. Item 10 records the agent
 decision before item 12 creates `service/prompts/` and `service/evals/`.
