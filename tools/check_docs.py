@@ -19,6 +19,9 @@ REQUIRED_KEYS = ("title", "description")
 INDEXED_DIRS = ("docs/adrs", "docs/backlog")
 NUMBERED_DOC = re.compile(r"^\d{4}-[a-z0-9-]+\.md$")
 SKIP_DIRS = {".git", "node_modules", "target", "dist", ".local"}
+# GitHub copies these files verbatim into new pull request bodies, so they
+# carry no frontmatter. Their links are still checked.
+NO_FRONTMATTER = {".github/pull_request_template.md"}
 
 FENCE = re.compile(r"^\s{0,3}(```|~~~)")
 INLINE_CODE = re.compile(r"(`+).*?\1")
@@ -128,7 +131,8 @@ class Checker:
             self.report(path, number, message)
         rel = path.relative_to(self.root).as_posix()
         if fields is None:
-            self.report(path, 1, "missing YAML frontmatter delimited by '---' lines")
+            if rel not in NO_FRONTMATTER:
+                self.report(path, 1, "missing YAML frontmatter delimited by '---' lines")
         else:
             for key in REQUIRED_KEYS:
                 value = fields.get(key)

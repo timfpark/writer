@@ -36,10 +36,9 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                             | Subsystems          | Outcome                                                                     | Prerequisite |
 |----|---------------------------------------------------------------------------------------|---------------------|-----------------------------------------------------------------------------|--------------|
-| 4  | [Configure repository governance on GitHub](./0004-repository-governance.md)          | `repository`        | Dependabot, a PR template, branch protection, and secret scanning are live. | None         |
-| 5  | [Add Markdown style lint to the validation gate](./0005-markdown-style-lint.md)       | `repository`        | `tools/check` reports Markdown style violations with file and line.         | 4            |
+| 5  | [Add Markdown style lint to the validation gate](./0005-markdown-style-lint.md)       | `repository`        | `tools/check` reports Markdown style violations with file and line.         | None         |
 | 13 | [Record the API conventions ADR](./0013-api-conventions-adr.md)                       | `service`, `webapp` | An accepted ADR fixes API versioning, path and field naming, and errors.    | None         |
-| 6  | [Establish the service subsystem foundation](./0006-service-foundation.md)            | `service`           | `service/` serves a health endpoint behind a verified contract and phase.   | 4, 13        |
+| 6  | [Establish the service subsystem foundation](./0006-service-foundation.md)            | `service`           | `service/` serves a health endpoint behind a verified contract and phase.   | 13           |
 | 7  | [Establish the webapp subsystem foundation](./0007-webapp-foundation.md)              | `webapp`            | `webapp/` shows service health through a generated, verified client.        | 6            |
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)    | `service`           | An accepted ADR fixes the agent framework, provider, prompts, and evals.    | None         |
 | 12 | [Deliver the first pair-writing agent capability](./0012-first-pair-writing-agent.md) | `service`           | The service returns pair-writer questions backed by prompts and evals.      | 6, 10        |

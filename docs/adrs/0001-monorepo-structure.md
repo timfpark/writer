@@ -76,8 +76,8 @@ writer/
   .devcontainer/               existing   shared development container
   .github/
     workflows/ci.yml           existing   runs tools/check in the container
-    dependabot.yml             planned    backlog 4
-    pull_request_template.md   planned    backlog 4
+    dependabot.yml             existing   weekly dependency updates
+    pull_request_template.md   existing   pull request checklist
   .markdownlint-cli2.jsonc     planned    backlog 5
   tools/package.json           planned    backlog 5, pins Markdown lint
   service/                     planned    backlog 6
@@ -219,14 +219,14 @@ agent framework or model provider is deferred to a later service ADR, which
 | Runtime and toolchain pinning       | Adopt    | Each subsystem; tool versions in `.devcontainer/`    | Backlog 2, 6, 7                                        |
 | Committed lockfiles                 | Adopt    | Each subsystem folder                                | Backlog 6, 7                                           |
 | Approved package registries         | Adopt    | `webapp/.npmrc`, container settings                  | Backlog 2, 6, 7                                        |
-| Dependabot                          | Adopt    | `.github/dependabot.yml`                             | [Backlog 4](../backlog/0004-repository-governance.md)  |
+| Dependabot                          | Adopt    | `.github/dependabot.yml`                             | Backlog 4                                              |
 | Ignored files                       | Adopt    | `.gitignore`                                         | This decision                                          |
 | Editor conventions                  | Adopt    | `.editorconfig`                                      | This decision                                          |
 | Code formatters and linters         | Adopt    | Each subsystem's `tools/check` phase                 | Backlog 6, 7                                           |
 | Sanitized environment examples      | Adopt    | `<subsystem>/.env.example`                           | Backlog 6, 7                                           |
 | Contributor setup instructions      | Adopt    | Root `README.md`, subsystem READMEs                  | This decision, then each item                          |
-| Pull request template               | Adopt    | `.github/pull_request_template.md`                   | [Backlog 4](../backlog/0004-repository-governance.md)  |
-| Secret scanning and push protection | Adopt    | GitHub repository settings                           | [Backlog 4](../backlog/0004-repository-governance.md)  |
+| Pull request template               | Adopt    | `.github/pull_request_template.md`                   | Backlog 4                                              |
+| Secret scanning and push protection | Adopt    | GitHub repository settings                           | Backlog 4                                              |
 | Code ownership rules                | Defer    | `.github/CODEOWNERS`                                 | Not planned                                            |
 | Dependency review                   | Defer    | `.github/workflows/ci.yml`                           | Not planned                                            |
 | Python packages for tooling         | Reject   | Not applicable                                       | Not planned                                            |
@@ -311,9 +311,10 @@ lands and the repository's visibility or plan supports it.
 
 #### GitHub repository settings
 
-These settings live in GitHub rather than in version control.
-[Backlog 4](../backlog/0004-repository-governance.md) applies them and records
-how they were verified.
+These settings live in GitHub rather than in version control. Backlog 4
+applied them, and the
+[root README](../../README.md#repository-settings) records how to verify
+them.
 
 * Use `main` as the default branch and protect it with a ruleset that requires
   a pull request and the `CI result` status check.

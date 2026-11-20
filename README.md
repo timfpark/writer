@@ -105,3 +105,39 @@ checks. The final `CI result` check passes only when every CI job succeeds,
 so a failed, skipped, or cancelled job never reports success. The workflow
 uses a read-only token, no repository secrets, and actions pinned to full
 commit SHAs.
+
+## Repository governance
+
+`main` changes only through pull requests that pass CI. Two files in
+`.github/` and a set of GitHub settings enforce this, as
+[ADR 0001](./docs/adrs/0001-monorepo-structure.md#github-repository-settings)
+decides.
+
+* [dependabot.yml](./.github/dependabot.yml) opens weekly update pull requests
+  for GitHub Actions, the development container features, and the container's
+  digest-pinned base image. Each subsystem adds its ecosystem when its
+  manifest lands, and npm entries use the registry proxy.
+* The [pull request template](./.github/pull_request_template.md) asks for the
+  backlog item, the governing ADRs, and the `tools/check` result. GitHub
+  inserts it verbatim, so it is the one Markdown file without frontmatter.
+
+### Repository settings
+
+These settings live in GitHub, not in version control. They were applied on
+2026-11-19 and verified as the table describes. Any repository administrator
+can confirm them with the GitHub CLI.
+
+| Setting                                                           | `gh api` path under `repos/timfpark/writer`        | Verified by                                    |
+|-------------------------------------------------------------------|----------------------------------------------------|------------------------------------------------|
+| Ruleset `main` requires a pull request and `CI result`, no bypass | `rules/branches/main`                              | A direct push to `main` was rejected           |
+| Default `GITHUB_TOKEN` permissions are read-only                  | `actions/permissions/workflow`                     | `default_workflow_permissions` is `read`       |
+| First-time contributors' workflows need approval                  | `actions/permissions/fork-pr-contributor-approval` | `approval_policy` is `first_time_contributors` |
+| Secret scanning and push protection                               | The repository root, field `security_and_analysis` | A synthetic Azure Storage key push was blocked |
+| Dependabot alerts                                                 | `vulnerability-alerts`                             | The endpoint returns HTTP 204                  |
+
+The ruleset requires no approving review, because one maintainer owns every
+path, and GitHub's default of one extra approval for unattributed Copilot pull
+requests stays on. To check push protection again, push a commit with a
+synthetic Azure Storage connection string to a scratch branch and confirm the
+push is rejected. A synthetic `ghp_` token was not blocked in testing, so it
+is not a reliable probe.

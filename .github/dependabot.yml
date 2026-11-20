@@ -1,0 +1,30 @@
+# Weekly version updates, as ADR 0001 decides. Each subsystem adds its
+# ecosystem here when its manifest lands; npm entries must use the
+# packagefeedproxy.microsoft.io registry proxy. Commit prefixes follow the
+# repository's conventional commit scopes.
+version: 2
+
+updates:
+  # Actions in .github/workflows/, pinned to full commit SHAs.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: ci
+
+  # Features in .devcontainer/devcontainer.json and their lockfile digests.
+  - package-ecosystem: devcontainers
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build(devcontainer)
+
+  # The digest-pinned base image in .devcontainer/Dockerfile.
+  - package-ecosystem: docker
+    directory: /.devcontainer
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build(devcontainer)
