@@ -54,4 +54,4 @@ building reveals a flaw in ADR 0006, amend it in the same pull request.
 
 ## Prerequisites
 
-* [Build workspace storage with the filesystem backend](./0018-workspace-storage.md)
+None.

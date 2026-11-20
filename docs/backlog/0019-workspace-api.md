@@ -24,16 +24,20 @@ problem details errors, operation IDs, and tags, and forbids manuscript text in
 paths, query strings, error details, and logs.
 [ADR 0002](../adrs/0002-service-architecture.md) requires router tests for
 every documented response and a fresh `service/openapi.json`.
-[Backlog 18](./0018-workspace-storage.md) supplies the storage the handlers
-call.
+Backlog 18, the workspace storage story, built the storage the handlers call:
+[writer-storage](../../service/crates/writer-storage/)'s `WorkspaceStore`,
+which `writer-server` already opens at startup, and the
+[writer-domain](../../service/crates/writer-domain/) types and errors that
+transport types map to.
 
 ## Scope
 
 * Add the workspace operations to `writer-api`, mapping transport types to
   domain types and storage errors to `Problem` responses, including `404`,
   `409`, `413`, and `422`.
-* Choose the storage backend from configuration at startup in
-  `writer-server`.
+* Pass the store `writer-server` opens at startup to `writer_api::router`,
+  and run `writer-api`'s router tests against the filesystem backend in a
+  temporary directory.
 * Test every documented status through the router, and assert that a
   synthetic marker sent in a document body appears in no error response and
   no log line.
@@ -53,4 +57,4 @@ call.
 
 ## Prerequisites
 
-* [Build workspace storage with the filesystem backend](./0018-workspace-storage.md)
+None.

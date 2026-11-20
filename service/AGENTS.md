@@ -5,20 +5,25 @@ description: Purpose, crate boundaries, operational rules, governing decisions, 
 
 ## Purpose and boundaries
 
-`service/` is a Cargo workspace that serves Writer's HTTP API on loopback
-and, in later stories, stores the workspace and runs the pair-writing agent.
+`service/` is a Cargo workspace that serves Writer's HTTP API on loopback,
+stores the workspace in a data folder, and, in later stories, runs the
+pair-writing agent.
 Clients reach it only through the API and the committed
 [openapi.json](./openapi.json); the service never imports client code. People
 start with [README.md](./README.md).
 
-| Crate                                    | Responsibility                                                                           | May depend on                       |
-|------------------------------------------|------------------------------------------------------------------------------------------|-------------------------------------|
-| [writer-server](./crates/writer-server/) | Reads configuration, logs, binds `127.0.0.1`, serves, and shuts down; no routes or rules | `writer-api`, Tokio, axum           |
-| [writer-api](./crates/writer-api/)       | Routes, handlers, transport types, `Problem` errors, and the OpenAPI document            | Lower internal crates, axum, utoipa |
+| Crate                                      | Responsibility                                                                                          | May depend on                                                                                            |
+|--------------------------------------------|---------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| [writer-server](./crates/writer-server/)   | Reads configuration, logs, opens storage, binds `127.0.0.1`, serves, and shuts down; no routes or rules | `writer-api`, `writer-storage`, Tokio, axum                                                              |
+| [writer-api](./crates/writer-api/)         | Routes, handlers, transport types, `Problem` errors, and the OpenAPI document                           | Lower internal crates, axum, utoipa                                                                      |
+| [writer-storage](./crates/writer-storage/) | `WorkspaceStore`, `StoreError`, revisions, the conformance suite, and the filesystem backend            | `writer-domain`, Tokio, serde, `sha2`, `tempfile`, `unicase`, `unicode-normalization`, `uuid`, `tracing` |
+| [writer-domain](./crates/writer-domain/)   | Workspace types, limits, and the `Tree` checks every backend applies; no I/O                            | Nothing internal; no runtime or framework                                                                |
 
 * Dependencies point downward: `writer-server` to `writer-api` to feature
-  crates such as storage or agent to a pure domain crate. Nothing depends on
-  `writer-server`, and a lower crate never depends on a higher one.
+  crates such as `writer-storage` or agent to `writer-domain`.
+  `writer-server` also depends on `writer-storage` to open the configured
+  backend. Nothing depends on `writer-server`, and a lower crate never
+  depends on a higher one.
 * Only `writer-api` and `writer-server` use axum or Tower types, and only
   `writer-api` uses utoipa. Lower crates expose none of them.
 * Add a crate under `crates/` only with the behavior that needs it, named as
@@ -79,6 +84,28 @@ start with [README.md](./README.md).
   synthetic marker.
 * Use synthetic prose in tests and fixtures, never a real manuscript.
 
+### Storage
+
+* Put a workspace rule in `writer-domain`, tested there without storage, and
+  have every backend apply it through `Tree::check_create` or
+  `Tree::check_place` under its write lock, in the same step as the write.
+* Give every `WorkspaceStore` behavior a case in `writer-storage`'s
+  `conformance` module, expanded by `conformance_tests!`, in the same change;
+  test backend-specific rules beside the backend.
+* Run each filesystem operation's whole sequence of `std::fs` calls in one
+  `spawn_blocking` task that owns the lock guard and a permit, never through
+  `tokio::fs`. Every file write goes through `.writer/tmp/`, `sync_all`,
+  rename, and a directory sync; a structural change is one rename recorded
+  as `pending` in the index first.
+* Add a `disk.step("...")` seam before each new I/O step, so the
+  interruption tests fail and stop the operation there.
+* Storage errors and logs name the operation, item identifier, and I/O
+  error kind, never a path inside the workspace, a title, or content.
+* Storage constructors take an explicit location; only `writer-server`
+  resolves `WRITER_DATA_DIR` and its defaults. Tests open stores in a
+  `tempfile::TempDir` and start `writer-server` with `WRITER_DATA_DIR` set to
+  one.
+
 ### Toolchain and dependencies
 
 * Change [rust-toolchain.toml](./rust-toolchain.toml) and the Rust `version`
@@ -120,6 +147,10 @@ cargo run -p writer-server                                 # serve on 127.0.0.1:
 WRITER_PORT=8889 cargo run -p writer-server                # serve on another loopback port
 curl http://127.0.0.1:8888/api/v1/health                   # expect {"status":"ok"}
 cargo test --workspace                                     # every test, including the contract check
+cargo test -p writer-domain                                # workspace rules only
+cargo test -p writer-storage                               # conformance suite and filesystem backend
+cargo test -p writer-storage conformance::                 # conformance suite only
+WRITER_DATA_DIR=/tmp/writer-data cargo run -p writer-server # serve with data in another folder
 cargo test -p writer-api --test conventions                # ADR 0004 conventions only
 UPDATE_OPENAPI=1 cargo test -p writer-api --test openapi   # regenerate openapi.json
 cargo fmt --all                                            # format

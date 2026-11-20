@@ -1,10 +1,13 @@
 //! Startup and shutdown smoke test of the `writer-server` executable.
 #![cfg(unix)]
 
+use std::ffi::OsStr;
 use std::io::{Read, Write};
 use std::net::{TcpListener, TcpStream};
 use std::process::{Child, Command, ExitStatus, Stdio};
 use std::time::{Duration, Instant};
+
+use tempfile::TempDir;
 
 const TIMEOUT: Duration = Duration::from_secs(20);
 
@@ -19,9 +22,12 @@ impl Drop for Server {
 }
 
 impl Server {
-    fn start(port: &str) -> Self {
+    /// Starts the server with its data in `data_dir`, so no test reaches a
+    /// writer's data.
+    fn start(port: &str, data_dir: impl AsRef<OsStr>) -> Self {
         let child = Command::new(env!("CARGO_BIN_EXE_writer-server"))
             .env("WRITER_PORT", port)
+            .env("WRITER_DATA_DIR", data_dir)
             .stdin(Stdio::null())
             .stdout(Stdio::null())
             .stderr(Stdio::piped())
@@ -69,13 +75,10 @@ fn get_health(port: u16) -> std::io::Result<String> {
     Ok(response)
 }
 
-#[test]
-fn serves_health_on_the_configured_port_and_exits_cleanly_on_sigterm() {
-    let port = unused_port();
-    let mut server = Server::start(&port.to_string());
-
+/// Waits until the server answers the health request.
+fn wait_for_health(server: &mut Server, port: u16) -> String {
     let started = Instant::now();
-    let response = loop {
+    loop {
         if let Ok(response) = get_health(port) {
             break response;
         }
@@ -88,24 +91,86 @@ fn serves_health_on_the_configured_port_and_exits_cleanly_on_sigterm() {
             "writer-server did not answer on port {port}"
         );
         std::thread::sleep(Duration::from_millis(50));
-    };
-    assert!(response.starts_with("HTTP/1.1 200 OK\r\n"), "{response}");
-    assert!(response.ends_with(r#"{"status":"ok"}"#), "{response}");
+    }
+}
 
+fn terminate(server: &mut Server) -> (ExitStatus, String) {
     let killed = Command::new("kill")
         .args(["-TERM", &server.0.id().to_string()])
         .status()
         .unwrap();
     assert!(killed.success());
+    server.wait()
+}
 
-    let (status, stderr) = server.wait();
+#[test]
+fn serves_health_on_the_configured_port_and_exits_cleanly_on_sigterm() {
+    let dir = TempDir::new().unwrap();
+    let data = dir.path().join("data");
+    let port = unused_port();
+    let mut server = Server::start(&port.to_string(), &data);
+
+    let response = wait_for_health(&mut server, port);
+    assert!(response.starts_with("HTTP/1.1 200 OK\r\n"), "{response}");
+    assert!(response.ends_with(r#"{"status":"ok"}"#), "{response}");
+    // The data folder is created on first use, before the service listens.
+    assert!(data.join("workspace/.writer/workspace.json").is_file());
+
+    let (status, stderr) = terminate(&mut server);
     assert_eq!(status.code(), Some(0), "writer-server stderr: {stderr}");
+    assert!(stderr.contains(&data.display().to_string()), "{stderr}");
 }
 
 #[test]
 fn rejects_an_invalid_port_with_exit_2() {
-    let mut server = Server::start("not-a-port");
+    let dir = TempDir::new().unwrap();
+    let mut server = Server::start("not-a-port", dir.path());
     let (status, stderr) = server.wait();
     assert_eq!(status.code(), Some(2));
     assert!(stderr.contains("WRITER_PORT"), "{stderr}");
+}
+
+#[test]
+fn rejects_an_empty_data_folder_setting_with_exit_2() {
+    let mut server = Server::start(&unused_port().to_string(), "");
+    let (status, stderr) = server.wait();
+    assert_eq!(status.code(), Some(2));
+    assert!(stderr.contains("WRITER_DATA_DIR"), "{stderr}");
+}
+
+#[test]
+fn exits_1_naming_a_data_folder_another_service_owns() {
+    let dir = TempDir::new().unwrap();
+    let data = dir.path().join("data");
+    let port = unused_port();
+    let mut first = Server::start(&port.to_string(), &data);
+    wait_for_health(&mut first, port);
+
+    let mut second = Server::start(&unused_port().to_string(), &data);
+    let (status, stderr) = second.wait();
+    assert_eq!(status.code(), Some(1));
+    assert!(stderr.contains(&data.display().to_string()), "{stderr}");
+
+    let (status, stderr) = terminate(&mut first);
+    assert_eq!(status.code(), Some(0), "writer-server stderr: {stderr}");
+}
+
+#[test]
+fn resolves_a_relative_data_folder_against_the_working_directory() {
+    let dir = TempDir::new().unwrap();
+    let port = unused_port();
+    let child = Command::new(env!("CARGO_BIN_EXE_writer-server"))
+        .current_dir(dir.path())
+        .env("WRITER_PORT", port.to_string())
+        .env("WRITER_DATA_DIR", "relative/data")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("writer-server starts");
+    let mut server = Server(child);
+    wait_for_health(&mut server, port);
+    assert!(dir.path().join("relative/data/workspace").is_dir());
+    let (status, stderr) = terminate(&mut server);
+    assert_eq!(status.code(), Some(0), "writer-server stderr: {stderr}");
 }

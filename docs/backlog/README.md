@@ -36,8 +36,7 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                             | Subsystems             | Outcome                                                                                | Prerequisite   |
 |----|---------------------------------------------------------------------------------------|------------------------|----------------------------------------------------------------------------------------|----------------|
-| 18 | [Build workspace storage with the filesystem backend](./0018-workspace-storage.md)    | `service`              | Folders and documents persist as directories and `.md` files on disk.                  | None           |
-| 19 | [Serve the workspace API](./0019-workspace-api.md)                                    | `service`              | The contract lists, creates, saves, moves, and deletes workspace items.                | 18             |
+| 19 | [Serve the workspace API](./0019-workspace-api.md)                                    | `service`              | The contract lists, creates, saves, moves, and deletes workspace items.                | None           |
 | 20 | [Build the workspace shell](./0020-workspace-shell.md)                                | `webapp`               | The webapp shows a header, collapsible side panes, and a writing region.               | None           |
 | 21 | [Add browser end-to-end tests to the gate](./0021-browser-tests.md)                   | `webapp`, `repository` | Browser and accessibility tests drive the webapp against a real service.               | 20             |
 | 22 | [Navigate and organize the workspace tree](./0022-workspace-navigator.md)             | `webapp`               | The navigator shows, folds, creates, renames, deletes, and opens items.                | 19, 20, 21     |
@@ -47,8 +46,8 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | 26 | [Make the workspace fully keyboard operable](./0026-keyboard-accessibility.md)        | `webapp`               | Every workspace operation works from the keyboard and passes checks.                   | 22, 24         |
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)    | `service`              | An accepted ADR fixes the agent framework, provider, prompts, and evals.               | None           |
 | 12 | [Deliver the first pair-writing agent capability](./0012-first-pair-writing-agent.md) | `service`              | The service returns pair-writer questions backed by prompts and evals.                 | 10             |
-| 27 | [Record the change control ADR](./0027-change-control-adr.md)                         | `service`, `webapp`    | An accepted ADR fixes the commit model, commit timing, restore, and progress measures. | 18, 19         |
-| 28 | [Build the SQLite backend and copy command](./0028-sqlite-backend.md)                 | `service`              | The workspace persists in SQLite and copies between backends intact.                   | 18             |
+| 27 | [Record the change control ADR](./0027-change-control-adr.md)                         | `service`, `webapp`    | An accepted ADR fixes the commit model, commit timing, restore, and progress measures. | 19             |
+| 28 | [Build the SQLite backend and copy command](./0028-sqlite-backend.md)                 | `service`              | The workspace persists in SQLite and copies between backends intact.                   | None           |
 | 29 | [Record and restore commits in the service](./0029-service-history.md)                | `service`              | The contract records commits, reads earlier versions, and restores them.               | 27             |
 | 30 | [Browse, compare, and restore history in the webapp](./0030-history-view.md)          | `webapp`               | Writers commit, browse history, compare versions, and roll back.                       | 21, 22, 23, 29 |
 | 31 | [Show writing progress over time](./0031-writing-progress.md)                         | `service`, `webapp`    | Writers see words added and removed per document and folder over time.                 | 29, 30         |
@@ -61,14 +60,18 @@ webapp foundation (item 7) built `service/` and `webapp/` on them, applying
 the [Adding a subsystem](../adrs/0001-monorepo-structure.md#adding-a-subsystem)
 checklist in ADR 0001.
 
-Items 18 through 26 deliver the first release, the writing workspace the
+Items 19 through 26 complete the first release, the writing workspace the
 [README](../../README.md#product-direction) describes.
 [ADR 0005](../adrs/0005-workspace-model.md) fixes its workspace model and API,
 [ADR 0006](../adrs/0006-storage-architecture.md) the storage that persists
 it, [ADR 0007](../adrs/0007-webapp-interface.md) the webapp's interface
 foundation, and [ADR 0008](../adrs/0008-editor.md) the editor and the
 Markdown it reads and writes.
-The service stores and serves the workspace (18 and 19) while the webapp
+Item 18, the workspace storage story, built the service's
+[writer-domain](../../service/crates/writer-domain/) and
+[writer-storage](../../service/crates/writer-storage/) crates, which keep the
+workspace as directories and Markdown files. The service serves the
+workspace (19) while the webapp
 builds its shell (20) and browser tests against it (21). The
 keyboard-navigable navigator (22) and
 the writing surface (23) together make the first usable release. Drag and

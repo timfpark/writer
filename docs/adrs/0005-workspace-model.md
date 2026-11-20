@@ -735,9 +735,9 @@ ReplacePositionRequest: {
 
 ### Domain crate
 
-The model's types and rules live in `writer-domain` (planned, at
-`service/crates/writer-domain/`), the pure domain crate ADR 0002 anticipates.
-[Backlog 18](../backlog/0018-workspace-storage.md) creates it.
+The model's types and rules live in
+[writer-domain](../../service/crates/writer-domain/), the pure domain crate
+ADR 0002 anticipates, which backlog 18, the workspace storage story, built.
 
 * It defines identifiers, item kinds, titles, content, revisions as opaque
   values, the limits, and a workspace tree that upholds the rules above:
