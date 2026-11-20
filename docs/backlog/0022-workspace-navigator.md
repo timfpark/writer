@@ -22,8 +22,8 @@ The service's workspace API, in [openapi.json](../../service/openapi.json),
 serves the operations, and
 [ADR 0005](../adrs/0005-workspace-model.md) sets the title rules and what
 deleting a folder does. [ADR 0007](../adrs/0007-webapp-interface.md#components)
-chooses the tree primitive and server-state caching, and
-[backlog 20](./0020-workspace-shell.md) provides the pane.
+chooses the tree primitive and server-state caching, and the workspace
+shell in [webapp/src/shell/](../../webapp/src/shell/) provides the pane.
 Moving and reordering by drag and drop arrive in
 [backlog 24](./0024-tree-drag-and-drop.md). The tree's keyboard structure
 belongs here because adding it later means rebuilding the component;
@@ -67,5 +67,4 @@ shortcuts beyond moving through the tree arrive in
 
 ## Prerequisites
 
-* [Build the workspace shell](./0020-workspace-shell.md)
 * [Add browser end-to-end tests to the gate](./0021-browser-tests.md)

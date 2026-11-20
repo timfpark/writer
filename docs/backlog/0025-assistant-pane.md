@@ -21,7 +21,8 @@ main way the writer and the AI interact. The agent itself arrives with
 [backlog 10](./0010-agent-architecture-adr.md) and
 [backlog 12](./0012-first-pair-writing-agent.md). Until then the pane is a
 mechanical prototype, and effort stays small.
-[Backlog 20](./0020-workspace-shell.md) provides the collapsible pane.
+The workspace shell provides the collapsible pane, in
+[webapp/src/shell/](../../webapp/src/shell/).
 
 ## Scope
 
@@ -46,4 +47,4 @@ mechanical prototype, and effort stays small.
 
 ## Prerequisites
 
-* [Build the workspace shell](./0020-workspace-shell.md)
+None.

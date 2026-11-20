@@ -1,0 +1,104 @@
+/*
+ * Design tokens, as ADR 0007 defines them. Primitive tokens name raw values
+ * and appear only in this file; components use the semantic tokens. The light
+ * theme is the default and the operating system's dark preference switches
+ * every semantic color. src/styles/tokens.test.ts checks each contrast target.
+ */
+
+:root {
+  /* Primitive palette */
+  --paper-50: #fffefa;
+  --paper-100: #fbfaf7;
+  --paper-200: #f3f1ec;
+  --stone-500: #8a8478;
+  --stone-600: #605b52;
+  --stone-700: #57524a;
+  --stone-900: #26241f;
+  --stone-950: #1f1d1a;
+  --night-50: #e6e1d8;
+  --night-100: #e2ded6;
+  --night-250: #b9b3a8;
+  --night-300: #a8a397;
+  --night-500: #78736a;
+  --night-850: #1f1e1c;
+  --night-900: #1d1c1a;
+  --night-950: #141312;
+  --blue-100: #e2e7f4;
+  --blue-300: #8db0ff;
+  --blue-600: #2b5bc6;
+  --blue-900: #28303f;
+
+  /* Semantic colors, light theme */
+  color-scheme: light;
+  --color-chrome: var(--paper-200);
+  --color-chrome-raised: var(--paper-100);
+  --color-text: var(--stone-900);
+  --color-text-muted: var(--stone-600);
+  --color-border: var(--stone-500);
+  --color-accent: var(--blue-600);
+  --color-current: var(--blue-100);
+  --color-page: var(--paper-50);
+  --color-ink: var(--stone-950);
+  --color-ink-muted: var(--stone-700);
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  /* Interface type */
+  --text-sm: 0.8125rem;
+  --text-md: 0.875rem;
+  --text-lg: 1rem;
+  --text-xl: 1.25rem;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Writing type */
+  --writing-size: 1.25rem;
+  --writing-leading: 1.6;
+  --writing-measure: 36em;
+  --writing-heading-1: 2rem;
+  --writing-heading-2: 1.5rem;
+  --writing-heading-3: 1.25rem;
+  --writing-heading-weight: 600;
+
+  /* Families */
+  --font-interface: "Inter Variable", system-ui, sans-serif;
+  --font-writing: "Newsreader Variable", Georgia, serif;
+  --font-mono:
+    ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  /* Shape and motion */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --duration-fast: 150ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --color-chrome: var(--night-950);
+    --color-chrome-raised: var(--night-850);
+    --color-text: var(--night-100);
+    --color-text-muted: var(--night-300);
+    --color-border: var(--night-500);
+    --color-accent: var(--blue-300);
+    --color-current: var(--blue-900);
+    --color-page: var(--night-900);
+    --color-ink: var(--night-50);
+    --color-ink-muted: var(--night-250);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+  }
+}

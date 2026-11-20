@@ -1,0 +1,65 @@
+/* The writing page: a sheet on --color-page, centered at the writing measure. */
+
+.page {
+  flex: 1 0 auto;
+  inline-size: 100%;
+  max-inline-size: calc(var(--writing-measure) + 2 * var(--space-8));
+  margin-inline: auto;
+  padding: var(--space-12) var(--space-8);
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-writing);
+  font-size: var(--writing-size);
+  font-optical-sizing: auto;
+  line-height: var(--writing-leading);
+}
+
+.message {
+  font-family: var(--font-interface);
+  font-size: var(--text-lg);
+  line-height: 1.4;
+}
+
+.messageTitle {
+  margin: 0 0 var(--space-2);
+  color: var(--color-ink);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+
+.messageBody {
+  margin: 0 0 var(--space-4);
+  color: var(--color-ink-muted);
+}
+
+.action {
+  min-block-size: 2rem;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-size: var(--text-md);
+}
+
+.action[data-hovered] {
+  background: var(--color-current);
+}
+
+.action[data-focus-visible] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+@media (max-width: 60rem) {
+  .page {
+    max-inline-size: calc(var(--writing-measure) + 2 * var(--space-6));
+    padding: var(--space-8) var(--space-6);
+  }
+}
+
+@media (pointer: coarse) {
+  .action {
+    min-block-size: 2.75rem;
+  }
+}

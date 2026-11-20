@@ -1,0 +1,23 @@
+.shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  block-size: 100vh;
+  block-size: 100dvh;
+  background: var(--color-chrome);
+}
+
+.body {
+  display: flex;
+  min-block-size: 0;
+  padding-inline: env(safe-area-inset-left) env(safe-area-inset-right);
+  padding-block-end: env(safe-area-inset-bottom);
+}
+
+/* The writing region takes every pixel the side panes do not use. */
+.writing {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  min-inline-size: 0;
+  overflow: auto;
+}
