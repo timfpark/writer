@@ -34,8 +34,9 @@ single page showing service health. Later stories fill the regions: the navigato
 * Apply ADR 0007's tooling: generated CSS Module declarations in
   `typecheck`, the token contrast test, the font license files in the build,
   the Oxlint allowance for CSS imports, and the Dependabot cooldown.
-* Lay out a header bar above three regions. The central writing region takes
-  every pixel the side panes do not use.
+* Lay out a header bar above three regions, following ADR 0007's
+  [layout and density](../adrs/0007-webapp-interface.md#layout-and-density).
+  The central writing region takes every pixel the side panes do not use.
 * Put a title slot on the left of the header, pane toggles, and a placeholder
   profile avatar and menu on the right for the one local user, with no
   authentication.

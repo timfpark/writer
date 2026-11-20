@@ -459,6 +459,28 @@ build therefore emits each package's `LICENSE` file into `webapp/dist/assets/`
 beside the fonts, through a small plugin in `vite.config.ts`, and
 `webapp/README.md` credits both typefaces.
 
+### Layout and density
+
+The interface stays quiet so the page carries the eye. Color comes from two
+surfaces and one accent: the chrome around the page, the page itself, and
+`--color-accent` for focus and drop targets. Nothing uses gradients, shadows,
+or decorative borders, and motion is limited to state changes of
+`--duration-fast`. The prototype established these starting values, which
+backlogs 20, 22, and 23 may tune within the tokens:
+
+| Element            | Starting treatment                                                                                                                                         |
+|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Header             | One row padded `--space-2` by `--space-4`, separated from the regions below by a single 1 px `--color-border` line                                         |
+| Side panes         | 16 rem navigator and 18 rem assistant on `--color-chrome`, the header's color, with no divider of their own                                                |
+| Writing page       | A sheet on `--color-page`, centered at `--writing-measure`, padded `--space-12` by `--space-8`, with no border or shadow; it stands out by lightness alone |
+| Page headings      | Newsreader at 2 rem with line height 1.2, its optical size following the font size                                                                         |
+| Interface text     | Inter at `--text-md` with line height 1.4; secondary text in `--color-text-muted`                                                                          |
+| Tree rows          | At least 1.75 rem tall with a 4 px radius, indented 1 rem per level, with 16 px folder and document icons                                                  |
+| Row controls       | 24 px drag handle and chevron with 14 px icons; the chevron turns 90 degrees over `--duration-fast` when a folder expands                                  |
+| Row states         | The open document tinted `--color-current` with no border, focus shown by a 2 px `--color-accent` outline inset 2 px, a dragged row at half opacity        |
+| Menus and popovers | `--color-chrome-raised` with a 1 px `--color-border` edge and a 6 px radius; the focused item tinted `--color-current`                                     |
+| Icons              | Lucide's default 2 px stroke in `currentColor`, 16 to 18 px                                                                                                |
+
 ### Components
 
 Build the tree, menus, popovers, dialogs, tooltips, and toolbars on React
