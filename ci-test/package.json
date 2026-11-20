@@ -1,0 +1,7 @@
+{
+  "name": "ci-test-vulnerable",
+  "private": true,
+  "devDependencies": {
+    "lodash": "4.17.20"
+  }
+}
