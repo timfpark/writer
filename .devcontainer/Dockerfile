@@ -6,7 +6,7 @@
 
 # Debian trixie with Python 3.14, Bash, and Git. The digest pins every tool
 # the image provides, including the Python patch release.
-FROM mcr.microsoft.com/devcontainers/python:3.3.3-3.14-trixie@sha256:2e0589f0725c951ac8ae0d7169784a9694f5818ec5264ed5231f23c6bf0ab7be
+FROM mcr.microsoft.com/devcontainers/python:3.15-trixie@sha256:0ae003ea761a00b8f8809cfdd08a04edfb1c7f17e76c413b27882ce5939a65f4
 
 # npm's global config normally lives under each Node.js install prefix, which
 # nvm creates later and per version, so point every version at /etc/npmrc.
