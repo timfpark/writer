@@ -36,7 +36,6 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                             | Subsystems             | Outcome                                                                        | Prerequisite |
 |----|---------------------------------------------------------------------------------------|------------------------|--------------------------------------------------------------------------------|--------------|
-| 14 | [Add dependency review to pull request CI](./0014-dependency-review.md)               | `repository`           | Pull requests fail CI when a lockfile change introduces a known vulnerability. | None         |
 | 6  | [Establish the service subsystem foundation](./0006-service-foundation.md)            | `service`              | `service/` serves a health endpoint behind a verified contract and phase.      | None         |
 | 7  | [Establish the webapp subsystem foundation](./0007-webapp-foundation.md)              | `webapp`               | `webapp/` shows service health through a generated, verified client.           | 6            |
 | 15 | [Record the workspace model and API ADR](./0015-workspace-model-adr.md)               | `service`, `webapp`    | An accepted ADR fixes folders, documents, ordering, autosave, and their API.   | None         |

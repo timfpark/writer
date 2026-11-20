@@ -1,5 +1,6 @@
 # Runs the repository validation gate, tools/check, inside the development
-# container, as ADR 0001 decides. Branch protection requires only the
+# container, and reviews pull request dependency changes for known
+# vulnerabilities, as ADR 0001 decides. Branch protection requires only the
 # "CI result" job, so add every new job to its needs list.
 name: CI
 
@@ -35,19 +36,42 @@ jobs:
           push: never
           runCmd: tools/check
 
+  # Compares the pull request's dependency graph with its base through the
+  # GitHub API, so it needs no checkout. It runs only on pull requests.
+  dependency-review:
+    name: Dependency review
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Fail on dependency changes with known vulnerabilities
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec # v5.0.1
+        with:
+          # The default scope is runtime only, which would skip the
+          # development dependencies in tools/package-lock.json.
+          fail-on-scopes: runtime, development, unknown
+          fail-on-severity: low
+
   result:
     name: CI result
     if: always()
     needs:
       - check
+      - dependency-review
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
       - name: Require every needed job to succeed
         env:
           NEEDS: ${{ toJSON(needs) }}
+          EVENT_NAME: ${{ github.event_name }}
+        # Dependency review may be skipped only outside pull requests.
         run: |
-          failed="$(jq -r 'to_entries[] | select(.value.result != "success") | "\(.key): \(.value.result)"' <<<"$NEEDS")"
+          failed="$(jq -r --arg event "$EVENT_NAME" '
+            to_entries[]
+            | select(.value.result != "success")
+            | select((.key == "dependency-review" and .value.result == "skipped" and $event != "pull_request") | not)
+            | "\(.key): \(.value.result)"' <<<"$NEEDS")"
           if [[ -n "$failed" ]]; then
             echo "::error::Required jobs did not succeed:"
             echo "$failed"
