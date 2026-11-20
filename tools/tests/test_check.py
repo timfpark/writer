@@ -44,6 +44,8 @@ class CheckGateTest(unittest.TestCase):
             "README.md",
             "---\ntitle: Test\ndescription: Synthetic workspace\n---\n\n## Overview\n\nClean paragraph.\n",
         )
+        (self.root / "service").mkdir()
+        self.cargo_log = self.add_cargo_stub()
 
     def tearDown(self):
         self._tmp.cleanup()
@@ -92,8 +94,23 @@ cli.chmod(cli.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         )
         return log
 
-    def run_check(self, *args):
-        env = dict(os.environ, PATH=str(self.bin))
+    def add_cargo_stub(self, fail_subcommand=""):
+        log = self.root / "cargo-calls.log"
+        self.write_exec(
+            self.bin / "cargo",
+            f"""#!/usr/bin/env python3
+import os, sys
+with open({str(log)!r}, "a", encoding="utf-8") as fh:
+    fh.write(f"{{os.getcwd()}}|{{os.environ.get('UPDATE_OPENAPI', '<unset>')}}|{{' '.join(sys.argv[1:])}}\\n")
+if sys.argv[1:2] == [{fail_subcommand!r}]:
+    sys.stderr.write("cargo " + sys.argv[1] + " simulated failure\\n")
+    sys.exit(101)
+""",
+        )
+        return log
+
+    def run_check(self, *args, **extra_env):
+        env = dict(os.environ, PATH=str(self.bin), **extra_env)
         return subprocess.run(
             [str(self.root / "tools/check"), *args],
             cwd=self.root,
@@ -153,6 +170,42 @@ cli.chmod(cli.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
         self.assertEqual(res.returncode, 1)
         self.assertIn("README.md:7:18", res.stderr)
         self.assertIn("FAILED phases: docs", res.stderr)
+
+    def test_missing_cargo_exits_2_and_names_prerequisite(self):
+        self.add_node_stub()
+        self.add_npm_stub()
+        (self.bin / "cargo").unlink()
+        res = self.run_check()
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("cargo (installed with rustup) must be on PATH", res.stderr)
+        self.assertEqual(res.stdout, "")
+
+    def test_service_phase_checks_workspace_in_service_without_update_openapi(self):
+        self.add_node_stub()
+        self.add_npm_stub()
+        res = self.run_check(UPDATE_OPENAPI="1")
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertIn("<== service: passed", res.stdout)
+        service = str((self.root / "service").resolve())
+        self.assertEqual(
+            self.cargo_log.read_text(encoding="utf-8").splitlines(),
+            [
+                f"{service}|<unset>|fmt --all --check",
+                f"{service}|<unset>|clippy --workspace --all-targets --locked -- -D warnings",
+                f"{service}|<unset>|build --workspace --all-targets --locked",
+                f"{service}|<unset>|test --workspace --locked",
+            ],
+        )
+
+    def test_failing_cargo_step_fails_service_phase_with_exit_1_and_runs_the_rest(self):
+        self.add_node_stub()
+        self.add_npm_stub()
+        self.add_cargo_stub(fail_subcommand="fmt")
+        res = self.run_check()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("cargo fmt simulated failure", res.stderr)
+        self.assertIn("FAILED phases: service", res.stderr)
+        self.assertEqual(len(self.cargo_log.read_text(encoding="utf-8").splitlines()), 4)
 
 
 if __name__ == "__main__":

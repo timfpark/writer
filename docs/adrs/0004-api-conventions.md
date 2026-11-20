@@ -60,7 +60,7 @@ through openapi-fetch, and proxies every path under `/api/` to the service
 without rewriting it. It leaves versioning and naming below `/api/` to this
 decision, and names the prefix, chosen before these conventions, as a risk.
 
-No route exists yet. [Backlog 6](../backlog/0006-service-foundation.md) creates
+No route exists yet. Backlog 6, the service foundation, creates
 the health endpoint, and [backlog 12](../backlog/0012-first-pair-writing-agent.md)
 adds the first endpoint with real request, response, and error bodies, possibly
 streamed. Whatever those two routes do becomes precedent, so the conventions
@@ -371,8 +371,8 @@ story or ADR that designs it.
 
 ### Enforcement
 
-[Backlog 6](../backlog/0006-service-foundation.md) adds a conventions test,
-`service/crates/writer-api/tests/conventions.rs` (planned), that walks the
+Backlog 6, the service foundation, added a conventions test,
+[conventions.rs](../../service/crates/writer-api/tests/conventions.rs), that walks the
 generated document and fails with the path or schema that breaks a rule here:
 a path outside `/api/v{major}/` or with a segment that is not lowercase
 kebab-case, a parameter, property, or enum value that is not camelCase, an

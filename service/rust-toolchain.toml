@@ -1,0 +1,6 @@
+# Matches the Rust version in .devcontainer/devcontainer.json; change both
+# together.
+[toolchain]
+channel = "1.100.0"
+profile = "minimal"
+components = ["clippy", "rustfmt"]

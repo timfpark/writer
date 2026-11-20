@@ -286,15 +286,18 @@ agent framework or model provider is deferred to a later service ADR.
 `tools/check` is the single validation entry point for hosts, the development
 container, and CI. It runs every phase without arguments, reports each phase's
 result, and exits 0 when all pass, 1 when a phase fails, and 2 on a usage or
-prerequisite error. It requires Bash, Python 3.9 or newer, and Node.js 22 or
-newer with npm.
+prerequisite error. It requires Bash, Python 3.9 or newer, Node.js 22 or newer
+with npm, and Cargo installed with rustup.
 
 The implemented phases are `tools`, which unit-tests the repository tooling,
 and `docs`, which checks every Markdown file for frontmatter with a `title` and
 `description`, ISO 8601 `ms.date` values, no H1 under a frontmatter title,
 working relative links and heading fragments, a `subsystems` list on numbered
 ADRs and backlog items, an index row for each of those documents, and Markdown
-style rules via a pinned `markdownlint-cli2` package in `tools/`.
+style rules via a pinned `markdownlint-cli2` package in `tools/`. The `service`
+phase, added by the service foundation (backlog 6), checks formatting, lints
+with warnings denied, builds, and tests every Cargo workspace member, including
+the contract freshness test.
 
 Markdown style lint landed in backlog 5 after the development container
 provided Node.js.
@@ -352,8 +355,9 @@ beside each `package.json`. Repository tooling that needs npm packages keeps
 its manifest in `tools/`, never at the root. Python tooling uses only the
 standard library. If a tool later needs a Python package, install it with `uv`
 through the `https://packagefeedproxy.microsoft.io/pypi/simple/` proxy and pin
-it in a lockfile. The service foundation story confirms whether Cargo also
-needs an organizational proxy before it adds a crate dependency.
+it in a lockfile. The service foundation confirmed that the organization
+requires no registry proxy for Cargo, so Cargo downloads crates from crates.io
+directly.
 
 Dependabot updates GitHub Actions and the development container first, and each
 subsystem adds its ecosystem when its manifest lands. npm entries use the proxy
@@ -406,9 +410,9 @@ them.
   the root guide stays short.
 * Internal crates make service boundaries explicit, at the cost of maintaining
   member manifests and checking the whole workspace.
-* The gate validates documentation and Markdown style today, locally and in CI.
-  It does not yet check code, so a green result covers only the phases it
-  lists.
+* The gate validates documentation, Markdown style, and the service locally
+  and in CI. A green result covers only the phases it lists, so each later
+  subsystem must add its own.
 * Subsystem stories must apply the [Adding a subsystem](#adding-a-subsystem)
   checklist above, including a scoped guide, a `tools/check` phase, a
   Dependabot entry, and the container toolchain.

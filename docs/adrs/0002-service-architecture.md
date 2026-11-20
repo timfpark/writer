@@ -211,7 +211,7 @@ stories that create them, within these rules:
   and from domain types. An internal refactor cannot change the contract
   without the freshness test noticing.
 * Every crate sets `publish = false`. Cargo rejects dependency cycles; review
-  enforces direction, and `service/AGENTS.md` (planned) restates these rules.
+  enforces direction, and [service/AGENTS.md](../../service/AGENTS.md) restates these rules.
 
 ### Contract production and freshness
 
@@ -225,7 +225,7 @@ TypeScript generator reads it.
 The document must be deterministic: it carries no host names, ports, build
 timestamps, or other machine-specific values.
 
-An integration test, `service/crates/writer-api/tests/openapi.rs` (planned),
+An integration test, [openapi.rs](../../service/crates/writer-api/tests/openapi.rs),
 generates the document and compares it byte for byte with
 `service/openapi.json`. On a mismatch it fails with a message naming
 `service/openapi.json` and the command that regenerates it. Running that test

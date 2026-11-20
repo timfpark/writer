@@ -19,7 +19,7 @@ behind the API contract, with prompts and evaluations in the places
 ## Context
 
 ADR 0001 places agent prompts in `service/prompts/` and evaluation cases in
-`service/evals/`. [Backlog 6](./0006-service-foundation.md) leaves both folders
+`service/evals/`. Backlog 6, the service foundation, left both folders
 to this story rather than creating them empty. The agent ADR from
 [backlog 10](./0010-agent-architecture-adr.md) chooses the framework, model
 provider, prompt loading, and evaluation running.
@@ -59,5 +59,4 @@ flaw in the agent ADR, amend it in the same pull request.
 
 ## Prerequisites
 
-* [Establish the service subsystem foundation](./0006-service-foundation.md)
 * [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)
