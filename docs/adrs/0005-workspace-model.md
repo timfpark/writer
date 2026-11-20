@@ -39,6 +39,12 @@ settles the webapp interface [follow-up decisions](#follow-up-decisions):
 order and rolling back by refetching the tree, and IndexedDB holding
 unacknowledged text per document and browser tab.
 
+Amended on 2026-11-20 by [ADR 0008](./0008-editor.md), which settles the
+editor [follow-up decisions](#follow-up-decisions): the supported Markdown
+subset and its canonical form, raw source for Markdown outside it, identical
+bytes for content the writer has not changed, and the autosave timing and
+flush events.
+
 ## Decision summary
 
 * Model the workspace as one tree of folders and documents. Folders nest up
@@ -93,7 +99,7 @@ first collection whose size the service might not bound.
 Later decisions build on this one. The storage ADR
 ([ADR 0006](./0006-storage-architecture.md)) persists the model
 and derives revision tokens, the editor ADR
-([backlog 17](../backlog/0017-editor-adr.md)) chooses the Markdown subset and
+([ADR 0008](./0008-editor.md)) chooses the Markdown subset and
 when autosave fires, and the webapp interface ADR
 ([ADR 0007](./0007-webapp-interface.md)) chooses routing and server-state
 caching. A later release adds change control in the style of
@@ -284,7 +290,7 @@ one constraint: the tree the service returns stays within the bounds above.
 ### Content
 
 * A document's content is UTF-8 Markdown, carried as the JSON string field
-  `markdown`. The [editor ADR](../backlog/0017-editor-adr.md) decides the
+  `markdown`. The [editor ADR](./0008-editor.md#supported-markdown) decides the
   supported subset and the canonical form the editor writes.
 * The service does not parse, reformat, or normalize content, including line
   endings and Unicode, and returns exactly the text it stores. The one
@@ -454,8 +460,9 @@ the sense of later history, and history will not expose it.
 * A client keeps at most one save in flight per document, because the next
   save needs the revision the current one returns. Edits made meanwhile go
   into the next save.
-* The editor ADR sets when saves happen: the idle delay, the maximum delay
-  while typing continues, and the events that flush pending changes.
+* The [editor ADR](./0008-editor.md#autosave-timing-and-flush-events) sets
+  when saves happen: the idle delay, the maximum delay while typing
+  continues, and the events that flush pending changes.
 
 #### The stale-write rule
 
@@ -848,7 +855,7 @@ Trade-offs and risks:
   of content and how it guards against edits made outside Writer, revision
   derivation, external edits, all-or-nothing subtree deletion, and content
   created outside Writer that breaks a limit
-* Editor ([backlog 17](../backlog/0017-editor-adr.md)): the Markdown subset,
+* Editor ([ADR 0008](./0008-editor.md)): the Markdown subset,
   canonical form, and autosave timing and flush events
 * Webapp interface ([ADR 0007](./0007-webapp-interface.md)):
   the URL scheme for open documents, the server-state cache that applies

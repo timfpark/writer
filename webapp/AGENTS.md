@@ -19,7 +19,9 @@ service's health. People start with [README.md](./README.md).
 * Add no server rendering, framework server, or second server process.
   Routing, styling, components, server-state caching, and browser storage
   follow [ADR 0007](../docs/adrs/0007-webapp-interface.md), which backlog 20
-  installs; authentication waits for the story and ADR that choose it.
+  installs, and the editor, its Markdown bridge, and autosave follow
+  [ADR 0008](../docs/adrs/0008-editor.md), which backlog 23 installs;
+  authentication waits for the story and ADR that choose it.
 
 ## Operational rules
 
@@ -80,6 +82,11 @@ Consult these when changing architecture, dependencies, or conventions:
   design tokens, themes and contrast targets, typefaces, React Aria
   Components, drag and drop, routes, server-state caching, unsaved-text
   storage, icons, and supported browsers
+* [ADR 0008](../docs/adrs/0008-editor.md): Tiptap and the Markdown bridge,
+  the supported subset and canonical form, raw source for other Markdown,
+  the round-trip guarantee, input rules, undo history, autosave timing and
+  flush events, document styles, the bundle budget, and responsiveness
+  targets
 
 ## Commands
 
