@@ -92,6 +92,16 @@ Node.js with npm for Markdown style lint and the webapp. Use the versions the
 container pins, and configure npm and pip or uv to use the registry proxies
 above.
 
-CI and subsystem toolchains are pending work in the
+Subsystem toolchains are pending work in the
 [backlog](./docs/backlog/README.md); setup steps for them arrive with those
 items.
+
+### Continuous integration
+
+The [CI workflow](./.github/workflows/ci.yml) builds the development container
+and runs `tools/check` inside it on every pull request and every push to
+`main`. A newer push to a pull request cancels that pull request's running
+checks. The final `CI result` check passes only when every CI job succeeds,
+so a failed, skipped, or cancelled job never reports success. The workflow
+uses a read-only token, no repository secrets, and actions pinned to full
+commit SHAs.

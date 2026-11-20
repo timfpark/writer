@@ -17,8 +17,9 @@ Writer is a constant pair writer: it asks questions, suggests other ideas, and
 checks prose for quality and consistency. The repository is a monorepo with a
 planned Rust service and a planned TypeScript/React web client.
 
-Today the repository holds documentation, the validation gate, and the
-development container. No subsystem code or CI exists yet.
+Today the repository holds documentation, the validation gate, the
+development container, and the CI workflow that runs the gate. No subsystem
+code exists yet.
 [ADR 0001](./docs/adrs/0001-monorepo-structure.md) records the layout,
 subsystem boundaries, and tooling baseline; the
 [backlog](./docs/backlog/README.md) orders the work that implements it.
@@ -49,18 +50,19 @@ these boundaries and where tests, fixtures, and generated files belong.
 
 ## Repository map
 
-| Path                  | Purpose                                                           | Status   |
-|-----------------------|-------------------------------------------------------------------|----------|
-| `README.md`           | Project overview and contributor setup                            | Existing |
-| `AGENTS.md`           | Repository-wide rules for coding agents                           | Existing |
-| `docs/adrs/`          | Architecture decisions, indexed by its README                     | Existing |
-| `docs/backlog/`       | Prioritized planned work, indexed by its README                   | Existing |
-| `tools/`              | Validation gate and its tests                                     | Existing |
-| `.gitignore`          | Build output, secrets, and local-only data kept out of git        | Existing |
-| `.editorconfig`       | Editor formatting conventions                                     | Existing |
-| `.devcontainer/`      | Shared development container with every toolchain                 | Existing |
-| `.github/`            | CI workflow, Dependabot, and pull request template                | Planned  |
-| `service/`, `webapp/` | Subsystems, each owning its manifest, lockfile, and toolchain pin | Planned  |
+| Path                                                         | Purpose                                                           | Status   |
+|--------------------------------------------------------------|-------------------------------------------------------------------|----------|
+| `README.md`                                                  | Project overview and contributor setup                            | Existing |
+| `AGENTS.md`                                                  | Repository-wide rules for coding agents                           | Existing |
+| `docs/adrs/`                                                 | Architecture decisions, indexed by its README                     | Existing |
+| `docs/backlog/`                                              | Prioritized planned work, indexed by its README                   | Existing |
+| `tools/`                                                     | Validation gate and its tests                                     | Existing |
+| `.gitignore`                                                 | Build output, secrets, and local-only data kept out of git        | Existing |
+| `.editorconfig`                                              | Editor formatting conventions                                     | Existing |
+| `.devcontainer/`                                             | Shared development container with every toolchain                 | Existing |
+| `.github/workflows/ci.yml`                                   | CI that runs `tools/check` in the development container           | Existing |
+| `.github/dependabot.yml`, `.github/pull_request_template.md` | Dependency updates and the pull request template                  | Planned  |
+| `service/`, `webapp/`                                        | Subsystems, each owning its manifest, lockfile, and toolchain pin | Planned  |
 
 The [backlog](./docs/backlog/README.md) names the item that creates each
 planned path.
@@ -146,6 +148,13 @@ including documentation-only changes. After any edit, rerun it. If a check
 fails or cannot run, report the blocker and do not commit or claim validation
 passed. An editor diagnostic, a focused test, or a single phase is not a
 substitute.
+
+The [CI workflow](./.github/workflows/ci.yml) runs the same gate in the
+development container on every pull request and push to `main`. Its final
+`CI result` check fails unless every CI job succeeded, so when you add a CI
+job, add it to that check's `needs` list. Keep `permissions: contents: read`,
+never use `pull_request_target` or repository secrets, and pin every action to
+a full commit SHA with a version comment.
 
 ## Adding a subsystem
 

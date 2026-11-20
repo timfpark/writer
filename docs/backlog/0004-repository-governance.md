@@ -47,4 +47,5 @@ it lists. CODEOWNERS and dependency review are deferred.
 
 ## Prerequisites
 
-* [Run the validation gate in GitHub Actions](./0003-continuous-integration.md)
+None. The [CI workflow](../../.github/workflows/ci.yml) already reports the
+`CI result` check that the ruleset requires.
