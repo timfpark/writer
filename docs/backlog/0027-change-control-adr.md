@@ -82,5 +82,4 @@ happen, not only on how they are stored.
 
 ## Prerequisites
 
-* [Build workspace storage with the filesystem backend](./0018-workspace-storage.md)
 * [Serve the workspace API](./0019-workspace-api.md)

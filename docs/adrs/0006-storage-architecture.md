@@ -24,10 +24,22 @@ estimated_reading_time: 25
 
 Accepted on 2026-11-20.
 
+Amended on 2026-11-20, when the workspace storage story (backlog 18) built
+[writer-domain](../../service/crates/writer-domain/) and
+[writer-storage](../../service/crates/writer-storage/) with the filesystem
+backend on this record. `writer-storage` also depends on `tracing`, for the
+reconciliation and recovery log lines this record calls for, and on `uuid`,
+to generate version 4 identifiers for entries added outside Writer and
+unique names in `.writer/`. `replace_content` returns the `Document` it
+saved, since only documents have content. A deletion renames the item,
+file or directory, to a new UUID name in `.writer/trash/`. The conformance
+module also compiles for `writer-storage`'s own tests, which run it against
+the filesystem backend.
+
 ## Decision summary
 
 * Define the storage interface as `WorkspaceStore`, an object-safe async
-  trait in a `writer-storage` crate (planned) with one method per
+  trait in a `writer-storage` crate with one method per
   [ADR 0005](./0005-workspace-model.md) operation, taking and returning
   `writer-domain` types. `writer-api` holds it as `Arc<dyn WorkspaceStore>`,
   `writer-server` opens the configured backend, and a conformance suite in
@@ -247,13 +259,13 @@ resolves to the existing file.
 
 ### Storage crates
 
-| Crate                          | Kind    | Responsibility                                                                                         | May depend on                                                                                       |
-|--------------------------------|---------|--------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|
-| `writer-storage` (planned)     | Library | `WorkspaceStore`, `StoreError`, revision derivation, the conformance suite, and the filesystem backend | `writer-domain`, Tokio, serde, `serde_json`, `sha2`, `tempfile`, `unicase`, `unicode-normalization` |
-| `writer-storage-sql` (planned) | Library | The SQLite and PostgreSQL backends, their schemas, and their migrations                                | `writer-storage`, `writer-domain`, SQLx                                                             |
+| Crate                          | Kind    | Responsibility                                                                                         | May depend on                                                                                                          |
+|--------------------------------|---------|--------------------------------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------|
+| `writer-storage`               | Library | `WorkspaceStore`, `StoreError`, revision derivation, the conformance suite, and the filesystem backend | `writer-domain`, Tokio, serde, `serde_json`, `sha2`, `tempfile`, `unicase`, `unicode-normalization`, `uuid`, `tracing` |
+| `writer-storage-sql` (planned) | Library | The SQLite and PostgreSQL backends, their schemas, and their migrations                                | `writer-storage`, `writer-domain`, SQLx                                                                                |
 
-[Backlog 18](../backlog/0018-workspace-storage.md) creates `writer-storage`;
-the story that delivers the second backend creates `writer-storage-sql`. The
+Backlog 18, the workspace storage story, built `writer-storage`; the story
+that delivers the second backend creates `writer-storage-sql`. The
 dependency direction becomes `writer-server` → `writer-api` →
 `writer-storage` → `writer-domain`, with `writer-storage-sql` →
 `writer-storage`. `writer-server` also depends on the storage crates to open
@@ -271,8 +283,8 @@ database error code, never a path, a title, content, or a database message.
 
 `WorkspaceStore` has one method per ADR 0005 operation. Methods take
 validated `writer-domain` values, return futures boxed so the trait is
-object-safe, and are `Send` so handlers can await them. Story 18 settles the
-exact names; the shape is:
+object-safe, and are `Send` so handlers can await them. Backlog 18 settled
+the exact names:
 
 ```rust
 pub type StoreFuture<'a, T> = Pin<Box<dyn Future<Output = Result<T, StoreError>> + Send + 'a>>;
@@ -284,7 +296,7 @@ pub trait WorkspaceStore: Send + Sync {
     fn create(&self, item: NewItem) -> StoreFuture<'_, Created>;
     fn rename(&self, id: ItemId, kind: ItemKind, title: Title) -> StoreFuture<'_, Item>;
     fn place(&self, id: ItemId, kind: ItemKind, to: Placement) -> StoreFuture<'_, Item>;
-    fn replace_content(&self, id: ItemId, markdown: Markdown, base: Revision) -> StoreFuture<'_, Item>;
+    fn replace_content(&self, id: ItemId, markdown: Markdown, base: Revision) -> StoreFuture<'_, Document>;
     fn delete(&self, id: ItemId, kind: ItemKind) -> StoreFuture<'_, ()>;
 }
 ```
@@ -601,7 +613,7 @@ one rename on disk, recorded in the index before it happens:
 | Create a document       | A temporary file holding its content to its final path            |
 | Create a folder         | An empty directory made in `.writer/tmp/` to its final path       |
 | Rename or move an item  | Its current path to its new path; a directory carries its subtree |
-| Delete an item          | Its path to a directory named by a new UUID in `.writer/trash/`   |
+| Delete an item          | Its path to a new UUID name in `.writer/trash/`                   |
 | Reorder within a parent | None; only the index changes                                      |
 
 That rename is the change's commit point. The backend validates the change
@@ -615,7 +627,7 @@ file or directory, and then:
 2. Performs the rename, which commits the change, and syncs the directories
    it touched.
 3. Writes the index again with `pending` set to `null`.
-4. For a deletion, removes the directory in `.writer/trash/`.
+4. For a deletion, removes its entry in `.writer/trash/`.
 
 Before the commit point, a failure rolls the change back: the backend
 restores the previous entry in memory, writes the index without `pending`,
@@ -784,10 +796,11 @@ The service reads storage settings from its environment, as it reads
 | `WRITER_STORAGE` (planned)      | `filesystem`        | The backend: `filesystem`, then `sqlite`, then `postgres`. It arrives with the second backend; until then the filesystem is the only one. |
 | `WRITER_DATABASE_URL` (planned) | None                | The PostgreSQL connection URL, required with `postgres`. `.env.example` shows it with a placeholder password.                             |
 
-* Story 18 adds `WRITER_DATA_DIR` to `service/.env.example` and the service
-  README. An empty value, or a value that is not valid Unicode, is invalid
-  configuration, and the service exits with status 2 naming the variable. A
-  relative path is resolved against the working directory at startup.
+* Backlog 18 added `WRITER_DATA_DIR` to `service/.env.example` and the
+  service README. An empty value, or a value that is not valid Unicode, is
+  invalid configuration, and the service exits with status 2 naming the
+  variable. A relative path is resolved against the working directory at
+  startup.
 * The service opens the store before binding its listener, creating the data
   folder on first use, and logs the resolved data location once. A data
   folder it cannot create, lock, or recover stops it with a log line naming
