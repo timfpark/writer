@@ -6,8 +6,8 @@ description: Repository-wide rules, navigation, and validation for contributors 
 ## Overview and navigation
 
 Writer is a local-first writing workspace and AI pair writer (see
-[README.md](./README.md)). Neither subsystem exists yet; start with the
-[backlog index](./docs/backlog/README.md) for prioritized work and the
+[README.md](./README.md)). `service/` exists and `webapp/` is planned; start
+with the [backlog index](./docs/backlog/README.md) for prioritized work and the
 [ADR index](./docs/adrs/README.md) for governing decisions, beginning with
 [ADR 0001](./docs/adrs/0001-monorepo-structure.md).
 
@@ -18,22 +18,23 @@ Writer is a local-first writing workspace and AI pair writer (see
    `Decision summary` first; read full ADR bodies only when changing
    architecture, dependencies, or conventions.
 3. Follow the [Adding a subsystem](./docs/adrs/0001-monorepo-structure.md#adding-a-subsystem)
-   checklist when creating `service/` or `webapp/`.
+   checklist when creating `webapp/`.
 
-| Subsystem  | Responsibility                                               | Stack                  | Guide                         | Status  |
-|------------|--------------------------------------------------------------|------------------------|-------------------------------|---------|
-| `service/` | Workspace storage, domain rules, `/api/v1/` API, pair writer | Rust, Cargo            | `service/AGENTS.md` (planned) | Planned |
-| `webapp/`  | React editing workspace consuming the generated API client   | TypeScript, React, npm | `webapp/AGENTS.md` (planned)  | Planned |
+| Subsystem  | Responsibility                                               | Stack                  | Guide                                    | Status  |
+|------------|--------------------------------------------------------------|------------------------|------------------------------------------|---------|
+| `service/` | Workspace storage, domain rules, `/api/v1/` API, pair writer | Rust, Cargo            | [service/AGENTS.md](./service/AGENTS.md) | Active  |
+| `webapp/`  | React editing workspace consuming the generated API client   | TypeScript, React, npm | `webapp/AGENTS.md` (planned)             | Planned |
 
 * Couple clients to `service/` only through its HTTP API and committed
-  `service/openapi.json` (planned) contract; never import across subsystems.
+  [service/openapi.json](./service/openapi.json) contract; never import across
+  subsystems.
 * Keep coding-agent files (`AGENTS.md` and `.github/`) separate from product
   pair-writer prompts (`service/prompts/`, planned) and evaluations
   (`service/evals/`, planned).
 * Target [tools/check](./tools/check), [tools/check_docs.py](./tools/check_docs.py),
   and `tools/tests/` directly when inspecting repository tooling; avoid broad
   globs under `tools/` because `tools/node_modules/` holds installed lint
-  packages.
+  packages, and skip `service/target/`, which holds Cargo build output.
 * Treat [.devcontainer/](./.devcontainer/) as the canonical source of pinned
   toolchain versions and global registry proxies, and keep local scratch or
   manuscripts inside ignored `.local/`.
@@ -44,8 +45,8 @@ Writer is a local-first writing workspace and AI pair writer (see
   placeholders in sanitized `*.example` files.
 * Never commit real manuscripts or paste them into code, fixtures, evaluations,
   logs, issues, or pull requests; use synthetic prose, names, and identifiers.
-* Regenerate generated files (`service/openapi.json` and
-  `webapp/src/api/generated/`, both planned) with their generators rather than
+* Regenerate generated files ([service/openapi.json](./service/openapi.json)
+  and `webapp/src/api/generated/`, planned) with their generators rather than
   editing them by hand.
 * Do not create empty placeholder folders; write non-existent paths and
   commands in code spans labeled planned, never as Markdown links.
@@ -57,6 +58,7 @@ Writer is a local-first writing workspace and AI pair writer (see
   configured in an `.npmrc` beside each `package.json`. Keep Python tooling on
   the standard library only (or `uv` via
   `https://packagefeedproxy.microsoft.io/pypi/simple/` if ever required).
+  Cargo uses crates.io directly; no registry proxy is required.
 * Record consequential architectural choices in `docs/adrs/` and maintain the
   ADR and backlog indexes as [docs/adrs/README.md](./docs/adrs/README.md) and
   [docs/backlog/README.md](./docs/backlog/README.md) specify.
@@ -84,7 +86,7 @@ Writer is a local-first writing workspace and AI pair writer (see
 
 * Use fast targeted commands while iterating: `python3 tools/check_docs.py`,
   `python3 -m unittest discover --start-directory tools/tests`, or the affected
-  subsystem's test runner.
+  subsystem's test runner, such as `cargo test --workspace` in `service/`.
 * Before every commit and before reporting work complete, run `tools/check`
   with no arguments from the repository root on the final contents of the
   change, and rerun it after any edit. If `tools/check` fails or cannot run,

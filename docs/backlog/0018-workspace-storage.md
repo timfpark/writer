@@ -60,6 +60,5 @@ building reveals a flaw in either ADR, amend it in the same pull request.
 
 ## Prerequisites
 
-* [Establish the service subsystem foundation](./0006-service-foundation.md)
 * [Record the service storage ADR](./0011-storage-architecture-adr.md)
 * [Record the workspace model and API ADR](./0015-workspace-model-adr.md)

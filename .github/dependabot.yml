@@ -1,7 +1,8 @@
 # Weekly version updates, as ADR 0001 decides. Each subsystem adds its
 # ecosystem here when its manifest lands; npm entries must use the
-# packagefeedproxy.microsoft.io registry proxy. Commit prefixes follow the
-# repository's conventional commit scopes.
+# packagefeedproxy.microsoft.io registry proxy, while Cargo uses crates.io
+# directly. Commit prefixes follow the repository's conventional commit
+# scopes.
 version: 2
 
 registries:
@@ -44,3 +45,11 @@ updates:
       interval: weekly
     commit-message:
       prefix: build(tools)
+
+  # The service's Cargo workspace in service/Cargo.toml and service/Cargo.lock.
+  - package-ecosystem: cargo
+    directory: /service
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: build(service)

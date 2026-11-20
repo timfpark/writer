@@ -16,13 +16,15 @@ Writer is a writing application where an AI agent is always there with you,
 pairing on the writing. It asks questions, suggests other ideas, and checks
 prose for quality and consistency.
 
-| Subsystem | Purpose                                        | Status  |
-|-----------|------------------------------------------------|---------|
-| Service   | Text storage, HTTP API, and the AI pair writer | Planned |
-| Webapp    | The first client for the system                | Planned |
+| Subsystem                      | Purpose                                        | Status  |
+|--------------------------------|------------------------------------------------|---------|
+| [Service](./service/README.md) | Text storage, HTTP API, and the AI pair writer | Active  |
+| Webapp                         | The first client for the system                | Planned |
 
-Neither subsystem exists yet. The repository currently holds its architecture
-decisions, backlog, validation gate, and development container.
+The service serves a health endpoint behind a verified API contract; its
+[guide](./service/README.md) covers setup and commands. The webapp does not
+exist yet. The repository also holds its architecture decisions, backlog,
+validation gate, and development container.
 
 ## Product direction
 
@@ -71,7 +73,8 @@ deliver the workspace, followed by the pair-writing agent.
 ## Where to look
 
 * [AGENTS.md](./AGENTS.md) holds repository-wide rules for contributors and
-  coding agents.
+  coding agents, and [service/AGENTS.md](./service/AGENTS.md) holds the
+  service's rules.
 * [ADR 0001](./docs/adrs/0001-monorepo-structure.md) records the repository
   layout, subsystem boundaries, and tooling baseline. The
   [ADR index](./docs/adrs/README.md) lists every decision.
@@ -109,6 +112,9 @@ unless a project overrides them:
 | pip  | `/etc/pip.conf`   | `https://packagefeedproxy.microsoft.io/pypi/simple/` |
 | uv   | `/etc/uv/uv.toml` | `https://packagefeedproxy.microsoft.io/pypi/simple/` |
 
+Cargo downloads crates from crates.io directly. The organization requires no
+registry proxy for Cargo, so the image configures none.
+
 To use it, you need Git and Docker, or another Docker-compatible engine, plus
 one of these clients:
 
@@ -123,22 +129,27 @@ one of these clients:
   devcontainer exec --workspace-folder . tools/check
   ```
 
-Port 8080 is reserved for the service and port 5173 for the webapp's
-development server; neither is forwarded until its subsystem exists. The
-container holds no credentials; supply any secret at run time rather than in
-the image, the repository, or build arguments.
+The container forwards port 8888, where the service listens, so a request from
+the host reaches a service running in the container when you use VS Code. The
+Dev Container CLI does not forward ports; use `devcontainer exec` to make
+requests inside the container instead. Port 5173 is reserved for the webapp's
+development server and is forwarded once the webapp exists. The container
+holds no credentials; supply any secret at run time rather than in the image,
+the repository, or build arguments.
 
 ### Host setup
 
-On a host, `tools/check` needs Git, Bash, Python 3.9 or newer, and Node.js 22
-or newer with npm. Later phases need the container's other toolchains: rustup
-for the service, and the container's pinned Node.js version for the webapp. Use
-the versions the container pins, and configure npm and pip or uv to use the
-registry proxies above.
+On a host, `tools/check` needs Git, Bash, Python 3.9 or newer, Node.js 22 or
+newer with npm, and [rustup](https://rustup.rs/) with `cargo` on `PATH`.
+In `service/`, rustup installs the Rust version that
+`service/rust-toolchain.toml` pins, with `clippy` and `rustfmt`, the first
+time Cargo runs. The webapp phase, once it exists, will need the container's
+pinned Node.js version. Configure npm and pip or uv to use the registry
+proxies above; Cargo needs no proxy.
 
-Subsystem toolchains are pending work in the
-[backlog](./docs/backlog/README.md); setup steps for them arrive with those
-items.
+The [service guide](./service/README.md) covers running and configuring the
+service. Setup steps for the webapp arrive with its
+[backlog](./docs/backlog/README.md) item.
 
 ### Continuous integration
 
@@ -166,9 +177,9 @@ decides.
 
 * [dependabot.yml](./.github/dependabot.yml) opens weekly update pull requests
   for GitHub Actions, the development container features, the container's
-  digest-pinned base image, and the npm tooling manifest in `tools/`. Each
-  subsystem adds its ecosystem when its manifest lands, and npm entries use the
-  registry proxy.
+  digest-pinned base image, the npm tooling manifest in `tools/`, and the
+  service's Cargo workspace. Each subsystem adds its ecosystem when its
+  manifest lands, and npm entries use the registry proxy.
 * The [pull request template](./.github/pull_request_template.md) asks for the
   backlog item, the governing ADRs, and the `tools/check` result. GitHub
   inserts it verbatim, so it is the one Markdown file without frontmatter.

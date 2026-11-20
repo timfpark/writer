@@ -62,4 +62,4 @@ which the generated client types as `Problem`.
 
 ## Prerequisites
 
-* [Establish the service subsystem foundation](./0006-service-foundation.md)
+None.
