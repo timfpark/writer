@@ -115,7 +115,9 @@ asked:
    [pull request template](./.github/pull_request_template.md), including
    the last lines of `tools/check` and where it ran.
 4. Monitor it with `gh pr checks <number> --watch` until `CI result`
-   finishes. On a failure, read the log with `gh run view <run-id> --log-failed`,
+   finishes; if it reports no checks because CI has not registered yet, wait
+   briefly and rerun it. On a failure, read the log with
+   `gh run view <run-id> --log-failed`,
    fix the cause, rerun `tools/check`, push a new commit rather than
    rewriting history, and watch again. Address review comments the same way.
 5. Report the pull request URL and its final check status. Leave merging to
