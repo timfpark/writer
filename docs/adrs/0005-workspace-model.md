@@ -24,6 +24,15 @@ estimated_reading_time: 20
 
 Accepted on 2026-11-20.
 
+Amended on 2026-11-20 by [ADR 0006](./0006-storage-architecture.md), which
+settles the storage [follow-up decisions](#follow-up-decisions): identifiers,
+titles, and order live in one workspace index, revisions are content hashes,
+and saves check the file again immediately before replacing it. It reads the
+promise that two contents never share a revision as holding up to a hash
+collision. It also amends [Deleting an item](#deleting-an-item): a 500 from
+a structural change may follow a change that committed, which the retry
+rules here make safe, and the tree is still entirely old or entirely new.
+
 ## Decision summary
 
 * Model the workspace as one tree of folders and documents. Folders nest up
@@ -76,7 +85,7 @@ is the first `POST` that creates durable state, and the workspace tree is the
 first collection whose size the service might not bound.
 
 Later decisions build on this one. The storage ADR
-([backlog 11](../backlog/0011-storage-architecture-adr.md)) persists the model
+([ADR 0006](./0006-storage-architecture.md)) persists the model
 and derives revision tokens, the editor ADR
 ([backlog 17](../backlog/0017-editor-adr.md)) chooses the Markdown subset and
 when autosave fires, and the webapp interface ADR
@@ -405,8 +414,10 @@ both succeed, in the order the service receives them.
 #### Deleting an item
 
 * Deleting a folder deletes it and every item below it. The deletion is all
-  or nothing: afterwards either the whole subtree is gone or, on failure,
-  all of it remains. The storage ADR decides how each backend achieves that.
+  or nothing: afterwards either the whole subtree is gone or all of it
+  remains. A failure response usually means all of it remains, but a 500
+  can follow a deletion that committed, as ADR 0006 explains, and a retry
+  then returns 404. The storage ADR decides how each backend achieves that.
 * Deletion is permanent. There is no trash in the first release; the
   navigator confirms first and says how many items a folder deletion
   removes, as [backlog 22](../backlog/0022-workspace-navigator.md) describes.
@@ -826,7 +837,7 @@ Trade-offs and risks:
 
 ## Follow-up decisions
 
-* Storage ([backlog 11](../backlog/0011-storage-architecture-adr.md)): where
+* Storage ([ADR 0006](./0006-storage-architecture.md)): where
   identifiers and order live, title-to-name mapping, the compare-and-replace
   of content and how it guards against edits made outside Writer, revision
   derivation, external edits, all-or-nothing subtree deletion, and content

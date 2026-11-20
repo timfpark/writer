@@ -107,6 +107,9 @@ Consult these when changing architecture, dependencies, or conventions:
 * [ADR 0005](../docs/adrs/0005-workspace-model.md): the folder and document
   model, its limits, the workspace operations, revision-checked saves, and
   the `writer-domain` crate
+* [ADR 0006](../docs/adrs/0006-storage-architecture.md): the
+  `WorkspaceStore` interface and conformance suite, the filesystem backend,
+  content-hash revisions, `WRITER_DATA_DIR`, and the SQLx path
 
 ## Commands
 
