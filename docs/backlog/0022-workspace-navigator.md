@@ -24,7 +24,9 @@ deleting a folder does. [Backlog 16](./0016-webapp-interface-adr.md) chooses
 the tree primitive and server-state caching, and
 [backlog 20](./0020-workspace-shell.md) provides the pane.
 Moving and reordering by drag and drop arrive in
-[backlog 24](./0024-tree-drag-and-drop.md), and full keyboard operation in
+[backlog 24](./0024-tree-drag-and-drop.md). The tree's keyboard structure
+belongs here because adding it later means rebuilding the component;
+shortcuts beyond moving through the tree arrive in
 [backlog 26](./0026-keyboard-accessibility.md).
 
 ## Scope
@@ -42,9 +44,13 @@ Moving and reordering by drag and drop arrive in
   folder deletion removes.
 * Open a document by selecting it, highlight the open document, and expand
   its ancestors when it is opened by URL.
+* Build the tree on the WAI-ARIA tree pattern: `tree` and `treeitem` roles,
+  one tab stop with roving focus, arrow keys to move focus and to expand or
+  collapse folders, `Home` and `End`, and `Enter` to open a document.
 * Apply changes optimistically, roll back on failure, and show failures by
   their problem `code` without blocking the page.
-* Add browser tests for each behavior above.
+* Give each browser test run a temporary data folder, and add browser tests
+  for each behavior above.
 
 ## Acceptance criteria
 
@@ -53,6 +59,8 @@ Moving and reordering by drag and drop arrive in
 * [ ] Collapsing a folder hides its whole subtree, and expanding it restores
   each descendant's previous state.
 * [ ] A failed rename or delete restores the tree and shows a message.
+* [ ] A writer can move through the tree, expand and collapse folders, and
+  open a document with the keyboard alone.
 * [ ] `tools/check` exits 0.
 
 ## Prerequisites
