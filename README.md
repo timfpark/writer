@@ -86,11 +86,11 @@ the image, the repository, or build arguments.
 
 ### Host setup
 
-On a host, `tools/check` needs Git, Bash, and Python 3.9 or newer. Later
-phases need the container's other toolchains: rustup for the service, and
-Node.js with npm for Markdown style lint and the webapp. Use the versions the
-container pins, and configure npm and pip or uv to use the registry proxies
-above.
+On a host, `tools/check` needs Git, Bash, Python 3.9 or newer, and Node.js 22
+or newer with npm. Later phases need the container's other toolchains: rustup
+for the service, and the container's pinned Node.js version for the webapp. Use
+the versions the container pins, and configure npm and pip or uv to use the
+registry proxies above.
 
 Subsystem toolchains are pending work in the
 [backlog](./docs/backlog/README.md); setup steps for them arrive with those
@@ -114,9 +114,10 @@ commit SHAs.
 decides.
 
 * [dependabot.yml](./.github/dependabot.yml) opens weekly update pull requests
-  for GitHub Actions, the development container features, and the container's
-  digest-pinned base image. Each subsystem adds its ecosystem when its
-  manifest lands, and npm entries use the registry proxy.
+  for GitHub Actions, the development container features, the container's
+  digest-pinned base image, and the npm tooling manifest in `tools/`. Each
+  subsystem adds its ecosystem when its manifest lands, and npm entries use the
+  registry proxy.
 * The [pull request template](./.github/pull_request_template.md) asks for the
   backlog item, the governing ADRs, and the `tools/check` result. GitHub
   inserts it verbatim, so it is the one Markdown file without frontmatter.

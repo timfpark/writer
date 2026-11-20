@@ -1,0 +1,11 @@
+{
+  "name": "writer-tools",
+  "private": true,
+  "description": "Pinned repository-wide validation tooling for Writer",
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "markdownlint-cli2": "0.24.1"
+  }
+}

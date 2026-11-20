@@ -10,7 +10,7 @@ Usage: tools/check
 
 Runs every validation phase from the repository root:
   tools  unit tests for the repository tooling (Python 3.9+)
-  docs   Markdown frontmatter, relative links, and docs index coverage
+  docs   Markdown frontmatter, relative links, index coverage, and style lint (Node.js 22+)
 
 Exit codes: 0 all phases passed, 1 a phase failed, 2 usage or prerequisite error.
 USAGE
@@ -31,6 +31,48 @@ if ! command -v python3 >/dev/null 2>&1 ||
   exit 2
 fi
 
+if ! command -v node >/dev/null 2>&1 ||
+  ! node -e 'process.exit(Number(process.versions.node.split(".")[0]) < 22 ? 1 : 0)'; then
+  echo "check: prerequisite missing: Node.js 22 or newer (node) must be on PATH" >&2
+  exit 2
+fi
+
+if ! command -v npm >/dev/null 2>&1; then
+  echo "check: prerequisite missing: npm must be on PATH" >&2
+  exit 2
+fi
+
+tools_lock_stamp() {
+  python3 - tools/.npmrc tools/package.json tools/package-lock.json <<'PY'
+import hashlib, pathlib, sys
+digest = hashlib.sha256()
+for arg in sys.argv[1:]:
+    digest.update(arg.encode("utf-8") + b"\0")
+    digest.update(pathlib.Path(arg).read_bytes() + b"\0")
+print(digest.hexdigest())
+PY
+}
+
+ensure_tools_npm() {
+  local bin="$root/tools/node_modules/.bin/markdownlint-cli2"
+  local stamp_file="$root/tools/node_modules/.lock-stamp"
+  local expected
+  expected="$(tools_lock_stamp)" || return 1
+  if [[ -x "$bin" && -f "$stamp_file" && "$(<"$stamp_file")" == "$expected" ]]; then
+    return 0
+  fi
+  (cd "$root/tools" && npm ci --include=dev --no-audit --no-fund) || return 1
+  printf '%s\n' "$expected" >"$stamp_file" || return 1
+}
+
+run_docs_phase() {
+  ensure_tools_npm || return 1
+  local rc=0
+  python3 tools/check_docs.py || rc=1
+  "$root/tools/node_modules/.bin/markdownlint-cli2" || rc=1
+  return "$rc"
+}
+
 failed=()
 run_phase() {
   local name="$1"
@@ -45,7 +87,7 @@ run_phase() {
 }
 
 run_phase tools env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover --start-directory tools/tests --quiet
-run_phase docs python3 tools/check_docs.py
+run_phase docs run_docs_phase
 
 if ((${#failed[@]})); then
   echo "check: FAILED phases: ${failed[*]}" >&2

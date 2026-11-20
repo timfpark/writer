@@ -108,7 +108,7 @@ November 2026.
 | hey-api openapi-ts                 | A function per operation plus a client, with typed SSE helpers         | No; request open                                               | About 8 million; pre-1.0 with breaking changes in most minor releases    |
 | Orval 8                            | Functions per operation for fetch, Axios, or TanStack Query, and mocks | Not documented                                                 | About 4 million; weekly releases                                         |
 | Kubb 5                             | A plugin pipeline producing types, clients, Zod schemas, and hooks     | Documented as read                                             | About 0.6 million; frequent releases                                     |
-| OpenAPI Generator `typescript-*`   | Classes per tag                                                        | Not relevant                                                   | Needs a Java virtual machine the development container does not carry   |
+| OpenAPI Generator `typescript-*`   | Classes per tag                                                        | Not relevant                                                   | Needs a Java virtual machine the development container does not carry    |
 
 Generating only types keeps the committed output to one file whose diff shows
 exactly how the contract changed. openapi-fetch takes paths, methods,
@@ -313,9 +313,9 @@ to a hosting decision, which keeps that routing or revisits this one.
   enable Oxlint's `--type-check`.
 * **Format:** Prettier 3 with its default options, starting on 3.10.1.
   `webapp/.prettierignore` excludes the generated client and Markdown files.
-  Markdown style belongs to the repository-wide lint from
-  [backlog 5](../backlog/0005-markdown-style-lint.md), and Prettier would
-  rewrite the `*` list markers this repository uses.
+  Markdown style belongs to the repository-wide lint in
+  [.markdownlint-cli2.jsonc](../../.markdownlint-cli2.jsonc), and Prettier
+  would rewrite the `*` list markers this repository uses.
 * **Test:** Vitest 5 with jsdom and React Testing Library, configured in
   `webapp/vite.config.ts` and run once with `vitest run`. Start on `vitest`
   5.1.0, `jsdom` 31.0.0, and `@testing-library/react` 16.3.3. Tests sit next

@@ -1,0 +1,74 @@
+// Markdown style rules enforced by tools/check across the repository.
+{
+  "globs": [
+    "**/*.md"
+  ],
+  "ignores": [
+    ".git/**",
+    ".local/**",
+    "**/coverage/**",
+    "**/dist/**",
+    "**/node_modules/**",
+    "**/target/**"
+  ],
+  "config": {
+    "default": true,
+    "MD003": {
+      "style": "atx"
+    },
+    "MD004": {
+      "style": "asterisk"
+    },
+    "MD009": {
+      "br_spaces": 0,
+      "strict": true
+    },
+    "MD013": {
+      "line_length": 500,
+      "heading_line_length": 80,
+      "code_blocks": false,
+      "tables": false,
+      "stern": true
+    },
+    "MD024": {
+      "siblings_only": true
+    },
+    "MD033": {
+      "allowed_elements": [
+        "details",
+        "summary"
+      ]
+    },
+    "MD046": {
+      "style": "fenced"
+    },
+    "MD048": {
+      "style": "backtick"
+    },
+    "MD049": {
+      "style": "asterisk"
+    },
+    "MD050": {
+      "style": "asterisk"
+    },
+    "MD055": {
+      "style": "leading_and_trailing"
+    },
+    "MD060": {
+      "style": "aligned"
+    }
+  },
+  // GitHub copies the pull request template verbatim into new pull request
+  // bodies, so it carries no frontmatter and starts at an H2 heading.
+  "overrides": [
+    {
+      "filter": [
+        ".github/pull_request_template.md"
+      ],
+      "config": {
+        "MD041": false
+      },
+      "combine": "merge"
+    }
+  ]
+}
