@@ -55,7 +55,6 @@ these boundaries and where tests, fixtures, and generated files belong.
 | `AGENTS.md`           | Repository-wide rules for coding agents                           | Existing |
 | `docs/adrs/`          | Architecture decisions, indexed by its README                     | Existing |
 | `docs/backlog/`       | Prioritized planned work, indexed by its README                   | Existing |
-| `docs/previous-work/` | Reference designs from an earlier project; the gate skips it      | Existing |
 | `tools/`              | Validation gate and its tests                                     | Existing |
 | `.gitignore`          | Build output, secrets, and local-only data kept out of git        | Existing |
 | `.editorconfig`       | Editor formatting conventions                                     | Existing |

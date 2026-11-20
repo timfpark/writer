@@ -23,9 +23,9 @@ service responsibility and leaves the storage engine to a later ADR.
 [ADR 0002](../adrs/0002-service-architecture.md) lists "Storage engine, schema
 ownership, and migrations" as a follow-up decision. It expects a storage crate
 below `writer-api` shaped by this ADR, and requires blocking work to run
-through `spawn_blocking` behind a bounded permit. An earlier project's
-[SQLite decision](../previous-work/0001-api-runtime-and-sqlite.md) is
-reference material, not a validated choice for Writer.
+through `spawn_blocking` behind a bounded permit. An earlier project chose
+SQLite through SQLx; treat that as a starting point, not a validated choice
+for Writer.
 
 ## Scope
 

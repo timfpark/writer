@@ -69,7 +69,6 @@ writer/
   docs/
     adrs/                      existing   decision records, indexed by README.md
     backlog/                   existing   prioritized work, indexed by README.md
-    previous-work/             existing   earlier-project designs, not validated
   tools/
     check                      existing   validation gate
     check_docs.py              existing   docs phase of the gate
@@ -243,9 +242,7 @@ The implemented phases are `tools`, which unit-tests the repository tooling,
 and `docs`, which checks every Markdown file for frontmatter with a `title` and
 `description`, ISO 8601 `ms.date` values, no H1 under a frontmatter title,
 working relative links and heading fragments, a `subsystems` list on numbered
-ADRs and backlog items, and an index row for each of those documents. It skips
-`docs/previous-work/`, reference designs imported from an earlier project
-whose links point into that project.
+ADRs and backlog items, and an index row for each of those documents.
 
 Markdown style lint needs Node.js, which the host does not guarantee. It is
 adopted and lands in [backlog 5](../backlog/0005-markdown-style-lint.md) after

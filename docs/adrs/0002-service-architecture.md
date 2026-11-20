@@ -22,6 +22,12 @@ estimated_reading_time: 10
 
 Accepted on 2026-11-19.
 
+[ADR 0003](./0003-webapp-architecture.md) settles the cross-origin question
+this record leaves open: the webapp's development server proxies `/api/` to the
+service, so the service serves every API route under `/api/` and adds no CORS
+layer. ADR 0003 also records that its chosen generator does not yet read
+OpenAPI 3.2.
+
 ## Context
 
 The Writer service stores text, applies business rules, serves the HTTP API,
@@ -36,7 +42,7 @@ this decision.
 The first deployment is local: one user, one service process, listening on
 loopback port 8080. The webapp calls the service only through a TypeScript
 client generated from the contract (though other clients are potentially
-envisioned), chosen in [backlog 9](../backlog/0009-webapp-architecture-adr.md).
+envisioned), chosen in [ADR 0003](./0003-webapp-architecture.md).
 The pair-writing agent will make slow outbound calls to model providers and
 will likely stream suggestions back to the browser as they arrive, so request
 handling must overlap long-lived I/O without blocking other requests.
@@ -129,7 +135,7 @@ regenerating the contract.
    each event in an SSE or JSON Lines stream, which suits streamed agent
    suggestions. As of November 2026, hey-api and openapi-typescript, two of
    the leading TypeScript generators, still have open requests to read 3.2
-   documents. Choosing it now would constrain backlog 9 to generators that
+   documents. Choosing it now would constrain the webapp ADR to generators that
    may not exist.
 3. OpenAPI 3.0 has the widest legacy support but a JSON Schema dialect that
    differs from 3.1's, including its own `nullable` keyword. Nothing in our

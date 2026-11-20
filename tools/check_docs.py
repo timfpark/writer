@@ -19,8 +19,6 @@ REQUIRED_KEYS = ("title", "description")
 INDEXED_DIRS = ("docs/adrs", "docs/backlog")
 NUMBERED_DOC = re.compile(r"^\d{4}-[a-z0-9-]+\.md$")
 SKIP_DIRS = {".git", "node_modules", "target", "dist", ".local"}
-# Reference material imported from an earlier project; its links point there.
-EXCLUDED_DIRS = ("docs/previous-work",)
 
 FENCE = re.compile(r"^\s{0,3}(```|~~~)")
 INLINE_CODE = re.compile(r"(`+).*?\1")
@@ -30,16 +28,7 @@ HEADING = re.compile(r"^\s{0,3}(#{1,6})\s+(.*?)\s*#*\s*$")
 SCHEME = re.compile(r"^[a-zA-Z][a-zA-Z0-9+.-]*:")
 
 
-def excluded(root, path):
-    rel = path.relative_to(root).as_posix()
-    return any(rel == d or rel.startswith(d + "/") for d in EXCLUDED_DIRS)
-
-
 def markdown_files(root):
-    return [p for p in _all_markdown_files(root) if not excluded(root, p)]
-
-
-def _all_markdown_files(root):
     if (root / ".git").exists():
         try:
             out = subprocess.run(

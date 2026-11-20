@@ -26,7 +26,8 @@
   },
   "containerUser": "vscode",
   "remoteUser": "vscode"
-  // Port 8080 is reserved for the service. Add it to "forwardPorts" in the
-  // change that creates service/, not before. Supply any credential at run
-  // time, never through this folder, the image, or build arguments.
+  // Port 8080 is reserved for the service and port 5173 for the webapp's
+  // development server. Add each to "forwardPorts" in the change that creates
+  // its subsystem, not before. Supply any credential at run time, never
+  // through this folder, the image, or build arguments.
 }

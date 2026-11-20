@@ -34,20 +34,22 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 ## Backlog
 
-| #  | Work item                                                                             | Subsystems   | Outcome                                                                     | Prerequisite |
-|----|---------------------------------------------------------------------------------------|--------------|-----------------------------------------------------------------------------|--------------|
-| 3  | [Run the validation gate in GitHub Actions](./0003-continuous-integration.md)         | `repository` | Pull requests and `main` run `tools/check` behind one required `CI result`. | None         |
-| 4  | [Configure repository governance on GitHub](./0004-repository-governance.md)          | `repository` | Dependabot, a PR template, branch protection, and secret scanning are live. | 3            |
-| 5  | [Add Markdown style lint to the validation gate](./0005-markdown-style-lint.md)       | `repository` | `tools/check` reports Markdown style violations with file and line.         | 4            |
-| 9  | [Record the webapp architecture ADR](./0009-webapp-architecture-adr.md)               | `webapp`     | An accepted ADR fixes the webapp build tool, client generator, and port.    | None         |
-| 6  | [Establish the service subsystem foundation](./0006-service-foundation.md)            | `service`    | `service/` serves a health endpoint behind a verified contract and phase.   | 4            |
-| 7  | [Establish the webapp subsystem foundation](./0007-webapp-foundation.md)              | `webapp`     | `webapp/` shows service health through a generated, verified client.        | 6, 9         |
-| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)    | `service`    | An accepted ADR fixes the agent framework, provider, prompts, and evals.    | None         |
-| 12 | [Deliver the first pair-writing agent capability](./0012-first-pair-writing-agent.md) | `service`    | The service returns pair-writer questions backed by prompts and evals.      | 6, 10        |
-| 11 | [Record the service storage ADR](./0011-storage-architecture-adr.md)                  | `service`    | An accepted ADR fixes the storage engine, schema owner, and migrations.     | None         |
+| #  | Work item                                                                             | Subsystems          | Outcome                                                                     | Prerequisite |
+|----|---------------------------------------------------------------------------------------|---------------------|-----------------------------------------------------------------------------|--------------|
+| 3  | [Run the validation gate in GitHub Actions](./0003-continuous-integration.md)         | `repository`        | Pull requests and `main` run `tools/check` behind one required `CI result`. | None         |
+| 4  | [Configure repository governance on GitHub](./0004-repository-governance.md)          | `repository`        | Dependabot, a PR template, branch protection, and secret scanning are live. | 3            |
+| 5  | [Add Markdown style lint to the validation gate](./0005-markdown-style-lint.md)       | `repository`        | `tools/check` reports Markdown style violations with file and line.         | 4            |
+| 13 | [Record the API conventions ADR](./0013-api-conventions-adr.md)                       | `service`, `webapp` | An accepted ADR fixes API versioning, path and field naming, and errors.    | None         |
+| 6  | [Establish the service subsystem foundation](./0006-service-foundation.md)            | `service`           | `service/` serves a health endpoint behind a verified contract and phase.   | 4, 13        |
+| 7  | [Establish the webapp subsystem foundation](./0007-webapp-foundation.md)              | `webapp`            | `webapp/` shows service health through a generated, verified client.        | 6            |
+| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)    | `service`           | An accepted ADR fixes the agent framework, provider, prompts, and evals.    | None         |
+| 12 | [Deliver the first pair-writing agent capability](./0012-first-pair-writing-agent.md) | `service`           | The service returns pair-writer questions backed by prompts and evals.      | 6, 10        |
+| 11 | [Record the service storage ADR](./0011-storage-architecture-adr.md)                  | `service`           | An accepted ADR fixes the storage engine, schema owner, and migrations.     | None         |
 
-Item 9 records the webapp architecture ADR before any webapp code exists;
-[ADR 0002](../adrs/0002-service-architecture.md) already records the service's.
+[ADR 0002](../adrs/0002-service-architecture.md) and
+[ADR 0003](../adrs/0003-webapp-architecture.md) record the service and webapp
+architecture before any subsystem code exists. Item 13 records the API
+conventions those decisions leave open before item 6 creates the first route.
 Items 6 and 7 build on those decisions and apply the "Adding a subsystem"
 checklist in the [agent guide](../../AGENTS.md#adding-a-subsystem). Item 10
 likewise records the agent decision before item 12 creates `service/prompts/`

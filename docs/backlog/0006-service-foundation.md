@@ -27,14 +27,20 @@ Tokio, the `writer-server` and `writer-api` crates and their dependency
 direction, and a `service/openapi.json` contract emitted by utoipa as OpenAPI
 3.1 and checked by a freshness test. If building reveals a flaw in that
 decision, amend the ADR in the same pull request.
+[ADR 0003](../adrs/0003-webapp-architecture.md#development-server-and-service-access)
+has the webapp reach the service through a same-origin proxy, so every API
+route lives under `/api/` and the service adds no CORS layer. The API
+conventions ADR from [backlog 13](./0013-api-conventions-adr.md) sets
+versioning, path naming, and error payloads below that prefix.
 
 ## Scope
 
 * Confirm whether Cargo must use an organizational registry proxy and
   configure it before adding any crate.
 * Create `service/` with a virtual workspace `Cargo.toml`, a shared
-  `Cargo.lock` and `rust-toolchain.toml`, a health endpoint on loopback port
-  8080, and an `.env.example` with no real values.
+  `Cargo.lock` and `rust-toolchain.toml`, a health endpoint at the path the
+  API conventions ADR names, on loopback port 8080, and an `.env.example`
+  with no real values.
 * Put the thin `writer-server` executable and the `writer-api` library under
   `service/crates/`, with `publish = false` and the dependency direction ADR
   0002 sets. Create only crates needed by this deliverable.
@@ -53,8 +59,9 @@ decision, amend the ADR in the same pull request.
 ## Acceptance criteria
 
 * [ ] The framework, crates, and contract production match
-  [ADR 0002](../adrs/0002-service-architecture.md), and `service/AGENTS.md`
-  links it and ADR 0001 under Governing decisions.
+  [ADR 0002](../adrs/0002-service-architecture.md), the health endpoint
+  follows the API conventions ADR, and `service/AGENTS.md` links those two
+  ADRs, ADR 0001, and ADR 0003 under Governing decisions.
 * [ ] The service workspace contains a thin executable and at least one
   internal library crate, and the gate checks every member.
 * [ ] Following `service/README.md`, a request to the health endpoint on
@@ -68,3 +75,4 @@ decision, amend the ADR in the same pull request.
 ## Prerequisites
 
 * [Configure repository governance on GitHub](./0004-repository-governance.md)
+* [Record the API conventions ADR](./0013-api-conventions-adr.md)

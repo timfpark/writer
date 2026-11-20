@@ -34,3 +34,4 @@ records that name it in a Governing decisions section, as
 |----------------------------------------|------------------------------------------------------------|----------|------------|
 | [0001](./0001-monorepo-structure.md)   | Monorepo structure, agent navigation, and tooling baseline | Accepted | 2026-11-19 |
 | [0002](./0002-service-architecture.md) | Service HTTP framework, crate layout, and API contract     | Accepted | 2026-11-19 |
+| [0003](./0003-webapp-architecture.md)  | Webapp build tool, API client, and development server      | Accepted | 2026-11-19 |
