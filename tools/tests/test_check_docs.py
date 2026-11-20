@@ -87,6 +87,37 @@ class CheckDocsTest(unittest.TestCase):
             "docs/backlog/0002-thing.md:1: not linked from 'docs/backlog/README.md'; add a row to the index",
         ])
 
+    def test_invalid_or_duplicate_subsystems_are_rejected(self):
+        self.write(
+            "docs/adrs/README.md",
+            FRONTMATTER
+            + "## Records\n\n"
+            + "| ADR | Subsystems |\n|---|---|\n"
+            + "| [0001](./0001-bad.md) | `backend` |\n"
+            + "| [0002](./0002-dup.md) | `service`, `service` |\n",
+        )
+        self.write("docs/adrs/0001-bad.md", "---\ntitle: T\ndescription: D\nsubsystems:\n  - backend\n---\n## Context\n")
+        self.write("docs/adrs/0002-dup.md", "---\ntitle: T\ndescription: D\nsubsystems: [service, service]\n---\n## Context\n")
+        self.assertEqual(self.problems(), [
+            "docs/adrs/0001-bad.md:1: frontmatter 'subsystems' entry 'backend' must be one of: repository, service, webapp",
+            "docs/adrs/0002-dup.md:1: frontmatter 'subsystems' must not contain duplicates",
+        ])
+
+    def test_index_subsystems_column_must_match_frontmatter(self):
+        self.write(
+            "docs/backlog/README.md",
+            FRONTMATTER
+            + "## Backlog\n\n"
+            + "| # | Work item | Subsystems |\n|---|---|---|\n"
+            + "| 1 | [Match](./0001-match.md) | `service`, `webapp` |\n"
+            + "| 2 | [Drift](./0002-drift.md) | `repository` |\n",
+        )
+        self.write("docs/backlog/0001-match.md", "---\ntitle: T\ndescription: D\nsubsystems: [service, webapp]\n---\n## Story\n")
+        self.write("docs/backlog/0002-drift.md", "---\ntitle: T\ndescription: D\nsubsystems: [service]\n---\n## Story\n")
+        self.assertEqual(self.problems(), [
+            "docs/backlog/README.md:10: Subsystems cell for '0002-drift.md' has ['repository'], expected ['service'] from frontmatter",
+        ])
+
     def test_h1_with_title_is_rejected(self):
         self.write("a.md", FRONTMATTER + "# Title again\n")
         self.assertEqual(self.problems(), ["a.md:5: H1 heading duplicates the frontmatter title; start at H2"])

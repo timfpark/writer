@@ -2,7 +2,7 @@
 title: Writer
 description: Monorepo for the Writer service and clients
 author: Tim Park
-ms.date: 2026-11-19
+ms.date: 2026-11-20
 ms.topic: overview
 keywords:
   - writer
@@ -23,6 +23,50 @@ prose for quality and consistency.
 
 Neither subsystem exists yet. The repository currently holds its architecture
 decisions, backlog, validation gate, and development container.
+
+## Product direction
+
+Writer's first release is a writing application in its own right: a calm
+place to organize documents into projects and write them, with storage you
+can trust. The AI pair writer builds on that foundation in later releases, so
+the first release leaves room for it without depending on it.
+
+### The writing workspace
+
+The webapp is one screen with a header bar above three regions:
+
+| Region                   | Purpose                                                                                                     |
+|--------------------------|-------------------------------------------------------------------------------------------------------------|
+| Header bar               | Shows and edits the open document's title, toggles the side panes, and holds the user profile on the right  |
+| Navigator, left          | A tree of folders and documents, indented by level, for grouping work into projects and subprojects         |
+| Writing surface, center  | The open document in a rich-text editor with a carefully chosen typeface on a high-contrast writing surface |
+| Assistant, right         | A conversation with the AI pair writer and a box for writing to it, prototyped without an agent at first    |
+
+The writing surface is the focus, and it takes every bit of width the side
+panes do not use. Both side panes collapse, so a writer can give the whole
+screen to the text. In the navigator, a writer creates documents and folders
+at any level, renames, deletes, drags items to move or reorder them, and
+collapses whole subtrees to concentrate on one part of a project. The first
+release has one local user, so the profile is a placeholder without sign-in.
+
+### Saving and storage
+
+* Changes save automatically in the background. There is no save button; the
+  header shows whether the latest change has reached the service.
+* Documents are Markdown, edited in a rich-text surface that hides the markup.
+* The workspace is mutable: each save replaces a document's current state. A
+  later release adds change control in the style of Git, where a writer
+  commits a set of changes as one atomic revision and can view or roll back
+  to earlier states. The first release's design leaves room for it without
+  building it.
+* The service stores the workspace on the writer's machine, behind a storage
+  interface with interchangeable backends. The first backend uses plain
+  files: folders become directories and documents become `.md` files, so the
+  workspace stays readable with other tools. SQLite and then PostgreSQL
+  backends can follow without changing the API.
+
+The [backlog](./docs/backlog/README.md) orders the decisions and stories that
+deliver the workspace, followed by the pair-writing agent.
 
 ## Where to look
 

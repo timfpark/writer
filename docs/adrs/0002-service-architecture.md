@@ -2,7 +2,7 @@
 title: "ADR 0002: Service HTTP framework, crate layout, and API contract"
 description: Selects axum on Tokio for the service, defines its first internal crates and their dependency direction, and emits a verified OpenAPI 3.1 contract from code with utoipa
 author: Tim Park
-ms.date: 2026-11-19
+ms.date: 2026-11-20
 ms.topic: reference
 status: Accepted
 subsystems:
@@ -27,6 +27,29 @@ this record leaves open: the webapp's development server proxies `/api/` to the
 service, so the service serves every API route under `/api/` and adds no CORS
 layer. ADR 0003 also records that its chosen generator does not yet read
 OpenAPI 3.2.
+
+[ADR 0004](./0004-api-conventions.md) settles the API conventions follow-up:
+routes live under `/api/v1/`, errors are RFC 9457 problem details, and it sets
+path, field, operation ID, and SSE framing rules. It defers pagination and
+idempotency, each with the trigger that reopens it. It also refines the
+router-test rule below: an error status produced by shared code is tested once
+against that code rather than through every operation.
+
+## Decision summary
+
+* Build the HTTP service on axum 0.8 and Tokio 1's multithreaded runtime,
+  binding `127.0.0.1:8080` by default with graceful shutdown and no CORS layer.
+* Organize `service/` as a Cargo workspace (Rust edition 2024, resolver 3,
+  `publish = false`) with downward-only dependencies: thin `writer-server`
+  executable to `writer-api` library to feature crates to pure domain crate.
+* Confine axum and Tower types to `writer-server` and `writer-api`, and utoipa
+  types to `writer-api`.
+* Emit deterministic OpenAPI 3.1.0 JSON from `OpenApiRouter` to
+  `service/openapi.json`; verify freshness in tests and regenerate from
+  `service/` with `UPDATE_OPENAPI=1 cargo test -p writer-api --test openapi`.
+* Run blocking or CPU-heavy work via `tokio::task::spawn_blocking` behind a
+  bounded permit, stream incremental responses over SSE, and test handlers
+  through the router as a Tower service without binding a socket.
 
 ## Context
 

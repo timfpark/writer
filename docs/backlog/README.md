@@ -2,7 +2,7 @@
 title: Backlog
 description: Prioritized index of planned work for the Writer service and clients
 author: Tim Park
-ms.date: 2026-11-19
+ms.date: 2026-11-20
 ms.topic: reference
 keywords:
   - backlog
@@ -34,22 +34,44 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 ## Backlog
 
-| #  | Work item                                                                             | Subsystems          | Outcome                                                                         | Prerequisite |
-|----|---------------------------------------------------------------------------------------|---------------------|---------------------------------------------------------------------------------|--------------|
-| 14 | [Add dependency review to pull request CI](./0014-dependency-review.md)               | `repository`        | Pull requests fail CI when a lockfile change introduces a known vulnerability.  | None         |
-| 13 | [Record the API conventions ADR](./0013-api-conventions-adr.md)                       | `service`, `webapp` | An accepted ADR fixes API versioning, path and field naming, and errors.        | None         |
-| 6  | [Establish the service subsystem foundation](./0006-service-foundation.md)            | `service`           | `service/` serves a health endpoint behind a verified contract and phase.       | 13           |
-| 7  | [Establish the webapp subsystem foundation](./0007-webapp-foundation.md)              | `webapp`            | `webapp/` shows service health through a generated, verified client.            | 6            |
-| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)    | `service`           | An accepted ADR fixes the agent framework, provider, prompts, and evals.        | None         |
-| 12 | [Deliver the first pair-writing agent capability](./0012-first-pair-writing-agent.md) | `service`           | The service returns pair-writer questions backed by prompts and evals.          | 6, 10        |
-| 11 | [Record the service storage ADR](./0011-storage-architecture-adr.md)                  | `service`           | An accepted ADR fixes the storage engine, schema owner, and migrations.         | None         |
+| #  | Work item                                                                             | Subsystems             | Outcome                                                                        | Prerequisite |
+|----|---------------------------------------------------------------------------------------|------------------------|--------------------------------------------------------------------------------|--------------|
+| 14 | [Add dependency review to pull request CI](./0014-dependency-review.md)               | `repository`           | Pull requests fail CI when a lockfile change introduces a known vulnerability. | None         |
+| 6  | [Establish the service subsystem foundation](./0006-service-foundation.md)            | `service`              | `service/` serves a health endpoint behind a verified contract and phase.      | None         |
+| 7  | [Establish the webapp subsystem foundation](./0007-webapp-foundation.md)              | `webapp`               | `webapp/` shows service health through a generated, verified client.           | 6            |
+| 15 | [Record the workspace model and API ADR](./0015-workspace-model-adr.md)               | `service`, `webapp`    | An accepted ADR fixes folders, documents, ordering, autosave, and their API.   | None         |
+| 11 | [Record the service storage ADR](./0011-storage-architecture-adr.md)                  | `service`              | An accepted ADR fixes the storage interface, filesystem backend, and SQL path. | 15           |
+| 16 | [Record the webapp interface foundation ADR](./0016-webapp-interface-adr.md)          | `webapp`               | An accepted ADR fixes styling, typefaces, primitives, routing, and caching.    | None         |
+| 17 | [Record the editor ADR](./0017-editor-adr.md)                                         | `webapp`               | An accepted ADR fixes the editor, Markdown subset, and autosave timing.        | None         |
+| 18 | [Build workspace storage with the filesystem backend](./0018-workspace-storage.md)    | `service`              | Folders and documents persist as directories and `.md` files on disk.          | 6, 11, 15    |
+| 19 | [Serve the workspace API](./0019-workspace-api.md)                                    | `service`              | The contract lists, creates, saves, moves, and deletes workspace items.        | 18           |
+| 20 | [Build the workspace shell](./0020-workspace-shell.md)                                | `webapp`               | The webapp shows a header, collapsible side panes, and a writing region.       | 7, 16        |
+| 21 | [Add browser end-to-end tests to the gate](./0021-browser-tests.md)                   | `webapp`, `repository` | Browser and accessibility tests drive the webapp against a real service.       | 19, 20       |
+| 22 | [Navigate and organize the workspace tree](./0022-workspace-navigator.md)             | `webapp`               | The navigator shows, folds, creates, renames, deletes, and opens items.        | 19, 20, 21   |
+| 23 | [Write in the editing surface with autosave](./0023-writing-surface.md)               | `webapp`               | Writers edit documents and titles, and every change saves itself.              | 17, 22       |
+| 24 | [Move and reorder items with drag and drop](./0024-tree-drag-and-drop.md)             | `webapp`               | Writers move and reorder items by dragging or with a menu.                     | 22           |
+| 25 | [Prototype the assistant pane](./0025-assistant-pane.md)                              | `webapp`               | The right pane holds a stubbed conversation ready for the agent.               | 20           |
+| 26 | [Make the workspace fully keyboard operable](./0026-keyboard-accessibility.md)        | `webapp`               | Every workspace operation works from the keyboard and passes checks.           | 22, 24       |
+| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)    | `service`              | An accepted ADR fixes the agent framework, provider, prompts, and evals.       | None         |
+| 12 | [Deliver the first pair-writing agent capability](./0012-first-pair-writing-agent.md) | `service`              | The service returns pair-writer questions backed by prompts and evals.         | 6, 10        |
 
-[ADR 0002](../adrs/0002-service-architecture.md) and
-[ADR 0003](../adrs/0003-webapp-architecture.md) record the service and webapp
-architecture before any subsystem code exists. Item 13 records the API
-conventions those decisions leave open before item 6 creates the first route.
-Items 6 and 7 build on those decisions and apply the "Adding a subsystem"
-checklist in the [agent guide](../../AGENTS.md#adding-a-subsystem). Item 10
-likewise records the agent decision before item 12 creates `service/prompts/`
-and `service/evals/`, and item 11 records the storage decision before any
-story persists text.
+[ADR 0002](../adrs/0002-service-architecture.md),
+[ADR 0003](../adrs/0003-webapp-architecture.md), and
+[ADR 0004](../adrs/0004-api-conventions.md) record the service and webapp
+architecture and the API conventions before any subsystem code exists.
+Items 6 and 7 build on those decisions and apply the
+[Adding a subsystem](../adrs/0001-monorepo-structure.md#adding-a-subsystem)
+checklist in ADR 0001.
+
+Items 15 through 26 deliver the first release, the writing workspace the
+[README](../../README.md#product-direction) describes. Its decisions come
+first: item 15 fixes the workspace model and API, item 11 the storage that
+persists it, item 16 the interface foundation, and item 17 the editor. The
+service then stores and serves the workspace (18 and 19) while the webapp
+builds its shell (20). Browser tests (21) land before the navigator (22) and
+the writing surface (23), which together make the first usable release. Drag
+and drop (24), the assistant pane prototype (25), and full keyboard operation
+(26) complete it.
+
+The pair-writing agent follows the workspace. Item 10 records the agent
+decision before item 12 creates `service/prompts/` and `service/evals/`.
