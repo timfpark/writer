@@ -2,7 +2,7 @@
 title: "ADR 0002: Service HTTP framework, crate layout, and API contract"
 description: Selects axum on Tokio for the service, defines its first internal crates and their dependency direction, and emits a verified OpenAPI 3.1 contract from code with utoipa
 author: Tim Park
-ms.date: 2026-11-19
+ms.date: 2026-11-20
 ms.topic: reference
 status: Accepted
 subsystems:
@@ -27,6 +27,13 @@ this record leaves open: the webapp's development server proxies `/api/` to the
 service, so the service serves every API route under `/api/` and adds no CORS
 layer. ADR 0003 also records that its chosen generator does not yet read
 OpenAPI 3.2.
+
+[ADR 0004](./0004-api-conventions.md) settles the API conventions follow-up:
+routes live under `/api/v1/`, errors are RFC 9457 problem details, and it sets
+path, field, operation ID, and SSE framing rules. It defers pagination and
+idempotency, each with the trigger that reopens it. It also refines the
+router-test rule below: an error status produced by shared code is tested once
+against that code rather than through every operation.
 
 ## Context
 

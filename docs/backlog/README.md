@@ -2,7 +2,7 @@
 title: Backlog
 description: Prioritized index of planned work for the Writer service and clients
 author: Tim Park
-ms.date: 2026-11-19
+ms.date: 2026-11-20
 ms.topic: reference
 keywords:
   - backlog
@@ -37,17 +37,16 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | #  | Work item                                                                             | Subsystems          | Outcome                                                                         | Prerequisite |
 |----|---------------------------------------------------------------------------------------|---------------------|---------------------------------------------------------------------------------|--------------|
 | 14 | [Add dependency review to pull request CI](./0014-dependency-review.md)               | `repository`        | Pull requests fail CI when a lockfile change introduces a known vulnerability.  | None         |
-| 13 | [Record the API conventions ADR](./0013-api-conventions-adr.md)                       | `service`, `webapp` | An accepted ADR fixes API versioning, path and field naming, and errors.        | None         |
-| 6  | [Establish the service subsystem foundation](./0006-service-foundation.md)            | `service`           | `service/` serves a health endpoint behind a verified contract and phase.       | 13           |
+| 6  | [Establish the service subsystem foundation](./0006-service-foundation.md)            | `service`           | `service/` serves a health endpoint behind a verified contract and phase.       | None         |
 | 7  | [Establish the webapp subsystem foundation](./0007-webapp-foundation.md)              | `webapp`            | `webapp/` shows service health through a generated, verified client.            | 6            |
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)    | `service`           | An accepted ADR fixes the agent framework, provider, prompts, and evals.        | None         |
 | 12 | [Deliver the first pair-writing agent capability](./0012-first-pair-writing-agent.md) | `service`           | The service returns pair-writer questions backed by prompts and evals.          | 6, 10        |
 | 11 | [Record the service storage ADR](./0011-storage-architecture-adr.md)                  | `service`           | An accepted ADR fixes the storage engine, schema owner, and migrations.         | None         |
 
-[ADR 0002](../adrs/0002-service-architecture.md) and
-[ADR 0003](../adrs/0003-webapp-architecture.md) record the service and webapp
-architecture before any subsystem code exists. Item 13 records the API
-conventions those decisions leave open before item 6 creates the first route.
+[ADR 0002](../adrs/0002-service-architecture.md),
+[ADR 0003](../adrs/0003-webapp-architecture.md), and
+[ADR 0004](../adrs/0004-api-conventions.md) record the service and webapp
+architecture and the API conventions before any subsystem code exists.
 Items 6 and 7 build on those decisions and apply the "Adding a subsystem"
 checklist in the [agent guide](../../AGENTS.md#adding-a-subsystem). Item 10
 likewise records the agent decision before item 12 creates `service/prompts/`

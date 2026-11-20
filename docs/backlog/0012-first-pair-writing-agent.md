@@ -2,7 +2,7 @@
 title: Deliver the first pair-writing agent capability
 description: Add the agent crate, versioned prompts, synthetic evaluation cases, and one contract endpoint that returns pair-writer questions about a passage.
 author: Tim Park
-ms.date: 2026-11-19
+ms.date: 2026-11-20
 ms.topic: reference
 subsystems:
   - service
@@ -24,7 +24,10 @@ to this story rather than creating them empty. The agent ADR from
 [backlog 10](./0010-agent-architecture-adr.md) chooses the framework, model
 provider, prompt loading, and evaluation running.
 [ADR 0002](../adrs/0002-service-architecture.md) sets the crate rules, the
-contract freshness test, and SSE for streamed results. The capability is
+contract freshness test, and SSE for streamed results.
+[ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint's path, field
+casing and nullability, problem details errors, operation ID, and, if it
+streams, how the stream signals its end and failures. The capability is
 stateless, so it does not wait on the storage decision. If building reveals a
 flaw in the agent ADR, amend it in the same pull request.
 

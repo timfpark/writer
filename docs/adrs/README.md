@@ -2,7 +2,7 @@
 title: Architecture Decision Records
 description: Index of architectural decisions for the Writer service and its clients
 author: Tim Park
-ms.date: 2026-11-19
+ms.date: 2026-11-20
 ms.topic: reference
 keywords:
   - adr
@@ -35,3 +35,4 @@ records that name it in a Governing decisions section, as
 | [0001](./0001-monorepo-structure.md)   | Monorepo structure, agent navigation, and tooling baseline | Accepted | 2026-11-19 |
 | [0002](./0002-service-architecture.md) | Service HTTP framework, crate layout, and API contract     | Accepted | 2026-11-19 |
 | [0003](./0003-webapp-architecture.md)  | Webapp build tool, API client, and development server      | Accepted | 2026-11-19 |
+| [0004](./0004-api-conventions.md)      | API versioning, naming, errors, and streaming conventions  | Accepted | 2026-11-20 |
