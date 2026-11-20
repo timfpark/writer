@@ -99,7 +99,7 @@ Consult these when changing architecture, dependencies, or conventions:
 * [ADR 0002](../docs/adrs/0002-service-architecture.md): axum and Tokio, crate
   layout and dependency direction, and the utoipa contract
 * [ADR 0003](../docs/adrs/0003-webapp-architecture.md): the webapp's
-  same-origin `/api/` proxy to port 8080 and generated client
+  same-origin `/api/` proxy to port 8888 and generated client
 * [ADR 0004](../docs/adrs/0004-api-conventions.md): versioning, naming,
   problem details, operation IDs and tags, and SSE framing
 
@@ -108,9 +108,9 @@ Consult these when changing architecture, dependencies, or conventions:
 Run Cargo commands from `service/`:
 
 ```bash
-cargo run -p writer-server                                 # serve on 127.0.0.1:8080
-WRITER_PORT=8081 cargo run -p writer-server                # serve on another loopback port
-curl http://127.0.0.1:8080/api/v1/health                   # expect {"status":"ok"}
+cargo run -p writer-server                                 # serve on 127.0.0.1:8888
+WRITER_PORT=8889 cargo run -p writer-server                # serve on another loopback port
+curl http://127.0.0.1:8888/api/v1/health                   # expect {"status":"ok"}
 cargo test --workspace                                     # every test, including the contract check
 cargo test -p writer-api --test conventions                # ADR 0004 conventions only
 UPDATE_OPENAPI=1 cargo test -p writer-api --test openapi   # regenerate openapi.json

@@ -22,6 +22,10 @@ estimated_reading_time: 10
 
 Accepted on 2026-11-19.
 
+Amended on 2026-11-20: the default loopback port moved from 8080 to 8888,
+because 8080 is commonly taken by other local services. ADR 0001 and ADR 0003
+follow the new port.
+
 [ADR 0003](./0003-webapp-architecture.md) settles the cross-origin question
 this record leaves open: the webapp's development server proxies `/api/` to the
 service, so the service serves every API route under `/api/` and adds no CORS
@@ -38,7 +42,7 @@ against that code rather than through every operation.
 ## Decision summary
 
 * Build the HTTP service on axum 0.8 and Tokio 1's multithreaded runtime,
-  binding `127.0.0.1:8080` by default with graceful shutdown and no CORS layer.
+  binding `127.0.0.1:8888` by default with graceful shutdown and no CORS layer.
 * Organize `service/` as a Cargo workspace (Rust edition 2024, resolver 3,
   `publish = false`) with downward-only dependencies: thin `writer-server`
   executable to `writer-api` library to feature crates to pure domain crate.
@@ -63,7 +67,7 @@ framework, the crate responsibilities, and how the contract is produced to
 this decision.
 
 The first deployment is local: one user, one service process, listening on
-loopback port 8080. The webapp calls the service only through a TypeScript
+loopback port 8888. The webapp calls the service only through a TypeScript
 client generated from the contract (though other clients are potentially
 envisioned), chosen in [ADR 0003](./0003-webapp-architecture.md).
 The pair-writing agent will make slow outbound calls to model providers and
@@ -255,7 +259,7 @@ and routes without a current need.
 
 ### Request execution
 
-* Bind `127.0.0.1:8080` by default. Exposure beyond loopback requires an
+* Bind `127.0.0.1:8888` by default. Exposure beyond loopback requires an
   authentication and hosting decision first.
 * Await async I/O directly. Run blocking or substantial CPU work, such as
   whole-manuscript analysis, through `tokio::task::spawn_blocking` behind a

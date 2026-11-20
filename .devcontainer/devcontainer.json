@@ -26,13 +26,13 @@
   },
   "containerUser": "vscode",
   "remoteUser": "vscode",
-  // The service listens on loopback port 8080 (service/README.md). Port 5173
+  // The service listens on loopback port 8888 (service/README.md). Port 5173
   // is reserved for the webapp's development server; add it in the change
   // that creates webapp/, not before. Supply any credential at run time,
   // never through this folder, the image, or build arguments.
-  "forwardPorts": [8080],
+  "forwardPorts": [8888],
   "portsAttributes": {
-    "8080": {
+    "8888": {
       "label": "service"
     }
   }

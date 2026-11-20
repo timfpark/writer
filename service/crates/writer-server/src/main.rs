@@ -10,7 +10,7 @@ use tokio::sync::oneshot;
 
 /// Overrides the loopback port the service listens on.
 const PORT_VAR: &str = "WRITER_PORT";
-const DEFAULT_PORT: u16 = 8080;
+const DEFAULT_PORT: u16 = 8888;
 /// How long in-flight requests may run after a shutdown signal.
 const DRAIN_DEADLINE: Duration = Duration::from_secs(10);
 

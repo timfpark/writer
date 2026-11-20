@@ -230,7 +230,7 @@ placeholder, and make these changes in the same pull request:
    pins, and add its ecosystem to
    [dependabot.yml](../../.github/dependabot.yml) (using the proxy `registries`
    entry for npm).
-6. Bind any local server to loopback (`127.0.0.1:8080` for `service`, and a
+6. Bind any local server to loopback (`127.0.0.1:8888` for `service`, and a
    distinct port such as `127.0.0.1:5173` for `webapp`), record it in the
    subsystem README, and add it to the devcontainer's `forwardPorts`.
 
@@ -318,7 +318,7 @@ ten minutes or a third subsystem stack is added.
 One shared `.devcontainer/` carries every toolchain the gate needs: Bash,
 Python 3.9 or newer, rustup, and Node.js with npm. It runs as a non-root user,
 pins its base image and feature versions, and documents forwarded ports: the
-service uses loopback port 8080, and each later server records a distinct
+service uses loopback port 8888, and each later server records a distinct
 port in its subsystem README. Credentials stay out of the image and the
 repository; contributors supply them at run time. Every command documented for
 the container also runs on a host with the same prerequisites.

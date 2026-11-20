@@ -47,15 +47,15 @@ From this folder:
 cargo run -p writer-server
 ```
 
-The service listens on `127.0.0.1:8080` and logs to standard error. From
+The service listens on `127.0.0.1:8888` and logs to standard error. From
 another terminal, check that it answers:
 
 ```bash
-curl http://127.0.0.1:8080/api/v1/health
+curl http://127.0.0.1:8888/api/v1/health
 ```
 
 The response is `{"status":"ok"}`. In VS Code's development container, port
-8080 is forwarded, so the same request also works from the host. With the Dev
+8888 is forwarded, so the same request also works from the host. With the Dev
 Container CLI, which does not forward ports, run `curl` through
 `devcontainer exec` instead.
 
@@ -75,12 +75,12 @@ The service reads settings from its process environment and does not load
 
 | Variable      | Default | Effect                                                                |
 |---------------|---------|-----------------------------------------------------------------------|
-| `WRITER_PORT` | `8080`  | Port from 1 to 65535 to listen on. The address is always `127.0.0.1`. |
+| `WRITER_PORT` | `8888`  | Port from 1 to 65535 to listen on. The address is always `127.0.0.1`. |
 
-To run on another port, for example beside a service already using 8080:
+To run on another port, for example when another process already uses 8888:
 
 ```bash
-WRITER_PORT=8081 cargo run -p writer-server
+WRITER_PORT=8889 cargo run -p writer-server
 ```
 
 ## Checks

@@ -40,7 +40,7 @@ Accepted on 2026-11-19.
   in the gate), and call the API only through `webapp/src/api/client.ts` using
   `openapi-fetch` with same-origin paths.
 * Bind Vite's dev server to `127.0.0.1:5173` (`strictPort`) and proxy `/api/`
-  to `http://127.0.0.1:8080` without path rewriting.
+  to `http://127.0.0.1:8888` without path rewriting.
 * Enforce quality in `tools/check` (after `service`) with `npm ci`,
   `api:check`, Prettier 3 (excluding Markdown and generated files), Oxlint with
   `--type-aware --deny-warnings`, `tsc`, Vitest 5 (`jsdom`), and `vite build`.
@@ -57,7 +57,7 @@ runs after the service's. ADR 0001 leaves the build tool and generator to this
 decision.
 
 [ADR 0002](./0002-service-architecture.md) emits that document as OpenAPI 3.1.0
-JSON at `service/openapi.json`, binds the service to `127.0.0.1:8080`, and
+JSON at `service/openapi.json`, binds the service to `127.0.0.1:8888`, and
 streams incremental agent results over server-sent events (SSE). It adds
 cross-origin support only if this decision requires it. It moves the contract
 to OpenAPI 3.2 once the webapp's generator reads 3.2.
@@ -160,7 +160,7 @@ depend on it.
 ### Development server port
 
 Port 5173 is Vite's default, so documentation, examples, and agents' knowledge
-apply without an override, and it is distinct from the service's 8080. No other
+apply without an override, and it is distinct from the service's 8888. No other
 port offers an advantage.
 
 ### Linter
@@ -302,7 +302,7 @@ open `http://localhost:5173`. In the development container, `forwardPorts`
 lists 5173, and the editor forwards it to the container's loopback interface.
 
 The development server proxies every request whose path starts with `/api/` to
-`http://127.0.0.1:8080`, without rewriting the path, so a path in the browser
+`http://127.0.0.1:8888`, without rewriting the path, so a path in the browser
 is the path in the contract. The target uses the IPv4 literal because the
 service binds only `127.0.0.1`, and `localhost` can resolve to `::1` first. If
 the service's port becomes configurable, the override is an environment

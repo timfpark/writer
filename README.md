@@ -129,7 +129,7 @@ one of these clients:
   devcontainer exec --workspace-folder . tools/check
   ```
 
-The container forwards port 8080, where the service listens, so a request from
+The container forwards port 8888, where the service listens, so a request from
 the host reaches a service running in the container when you use VS Code. The
 Dev Container CLI does not forward ports; use `devcontainer exec` to make
 requests inside the container instead. Port 5173 is reserved for the webapp's
