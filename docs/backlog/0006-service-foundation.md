@@ -74,5 +74,4 @@ versioning, path naming, and error payloads below that prefix.
 
 ## Prerequisites
 
-* [Configure repository governance on GitHub](./0004-repository-governance.md)
 * [Record the API conventions ADR](./0013-api-conventions-adr.md)

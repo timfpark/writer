@@ -71,6 +71,14 @@ class CheckDocsTest(unittest.TestCase):
         self.write("a.md", FRONTMATTER + "`[x](./missing.md)`\n\n```markdown\n[y](./missing.md)\n```\n")
         self.assertEqual(self.problems(), [])
 
+    def test_pull_request_template_needs_no_frontmatter_but_links_are_checked(self):
+        self.write(".github/pull_request_template.md", "## Summary\n\n[x](./missing.md)\n")
+        self.write("docs/pull_request_template.md", "## Summary\n")
+        self.assertEqual(self.problems(), [
+            ".github/pull_request_template.md:3: link target './missing.md' does not exist",
+            "docs/pull_request_template.md:1: missing YAML frontmatter delimited by '---' lines",
+        ])
+
     def test_numbered_doc_needs_subsystems_and_index_row(self):
         self.write("docs/backlog/README.md", FRONTMATTER + "## Backlog\n")
         self.write("docs/backlog/0002-thing.md", FRONTMATTER + "## Story\n")

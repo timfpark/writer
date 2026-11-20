@@ -18,8 +18,8 @@ checks prose for quality and consistency. The repository is a monorepo with a
 planned Rust service and a planned TypeScript/React web client.
 
 Today the repository holds documentation, the validation gate, the
-development container, and the CI workflow that runs the gate. No subsystem
-code exists yet.
+development container, the CI workflow that runs the gate, and the Dependabot
+and pull request configuration. No subsystem code exists yet.
 [ADR 0001](./docs/adrs/0001-monorepo-structure.md) records the layout,
 subsystem boundaries, and tooling baseline; the
 [backlog](./docs/backlog/README.md) orders the work that implements it.
@@ -61,7 +61,7 @@ these boundaries and where tests, fixtures, and generated files belong.
 | `.editorconfig`                                              | Editor formatting conventions                                     | Existing |
 | `.devcontainer/`                                             | Shared development container with every toolchain                 | Existing |
 | `.github/workflows/ci.yml`                                   | CI that runs `tools/check` in the development container           | Existing |
-| `.github/dependabot.yml`, `.github/pull_request_template.md` | Dependency updates and the pull request template                  | Planned  |
+| `.github/dependabot.yml`, `.github/pull_request_template.md` | Dependency updates and the pull request template                  | Existing |
 | `service/`, `webapp/`                                        | Subsystems, each owning its manifest, lockfile, and toolchain pin | Planned  |
 
 The [backlog](./docs/backlog/README.md) names the item that creates each
@@ -174,7 +174,9 @@ placeholder, and make these changes in the same pull request:
 4. Add its validation phase to [tools/check](./tools/check) in dependency
    order, with the service before the webapp.
 5. Add its toolchain to `.devcontainer/`, pinned to the version the subsystem
-   declares, and its ecosystem to `.github/dependabot.yml` once that exists.
+   declares, and its ecosystem to
+   [dependabot.yml](./.github/dependabot.yml). An npm entry needs a
+   `registries` entry for the proxy.
 6. Give any local server a loopback port, 8080 for the service and a
    distinct port for every other server. Record it in the subsystem README and
    add it to the devcontainer's `forwardPorts`.

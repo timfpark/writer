@@ -29,7 +29,9 @@ checks frontmatter, links, and index coverage.
   the root so it does not suggest a JavaScript workspace.
 * Add `.markdownlint-cli2.jsonc` with rules matching the existing
   documentation, including aligned tables and `*` list markers, and ignoring
-  build output.
+  build output. The pull request template has no frontmatter and starts at an
+  H2 heading because GitHub copies it into pull request bodies, so exempt it
+  from the first-line heading rule.
 * Run the lint from the docs phase of `tools/check` using the locked version,
   installing with `npm ci` when needed. Exit 2 with a clear message when
   Node.js is missing.
@@ -55,5 +57,5 @@ checks frontmatter, links, and index coverage.
 
 ## Prerequisites
 
-* [Configure repository governance on GitHub](./0004-repository-governance.md),
-  which creates the Dependabot configuration
+None. The [Dependabot configuration](../../.github/dependabot.yml) that the
+npm entry extends already exists.
