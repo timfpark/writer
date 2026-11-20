@@ -1,12 +1,20 @@
 //! The health operation, exercised through the served router without a socket.
 
+use std::sync::Arc;
+
 use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
 use tower::ServiceExt;
 use writer_api::{Health, HealthStatus, Problem, ProblemCode};
+use writer_storage::FilesystemStore;
 
 async fn send(request: Request<Body>) -> (StatusCode, axum::http::HeaderMap, Vec<u8>) {
-    let response = writer_api::router().oneshot(request).await.unwrap();
+    let data = tempfile::tempdir().unwrap();
+    let store = FilesystemStore::open(data.path()).await.unwrap();
+    let response = writer_api::router(Arc::new(store))
+        .oneshot(request)
+        .await
+        .unwrap();
     let status = response.status();
     let headers = response.headers().clone();
     let body = to_bytes(response.into_body(), usize::MAX).await.unwrap();

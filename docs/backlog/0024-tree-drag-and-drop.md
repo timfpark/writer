@@ -17,7 +17,8 @@ think about my projects.
 
 ## Context
 
-[Backlog 19](./0019-workspace-api.md) serves move and reorder, and
+The service's workspace API, in [openapi.json](../../service/openapi.json),
+serves move and reorder, and
 [ADR 0005](../adrs/0005-workspace-model.md#placing-an-item) defines their rules, including
 rejecting a folder moved into its own subtree.
 [ADR 0007](../adrs/0007-webapp-interface.md#components) chooses the

@@ -838,12 +838,16 @@ dependencies = [
  "axum",
  "serde",
  "serde_json",
+ "tempfile",
  "tokio",
  "tower",
  "tower-http",
  "tracing",
+ "tracing-subscriber",
  "utoipa",
  "utoipa-axum",
+ "writer-domain",
+ "writer-storage",
 ]
 
 [[package]]

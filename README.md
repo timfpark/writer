@@ -21,7 +21,8 @@ prose for quality and consistency.
 | [Service](./service/README.md) | Text storage, HTTP API, and the AI pair writer | Active  |
 | [Webapp](./webapp/README.md)   | The first client for the system                | Active  |
 
-The service serves a health endpoint behind a verified API contract, and the
+The service stores the workspace of folders and documents in a data folder
+and serves it, with a health endpoint, behind a verified API contract. The
 webapp shows that health through a client generated from the contract. Each
 guide, for the [service](./service/README.md) and the
 [webapp](./webapp/README.md), covers its setup and commands. The repository

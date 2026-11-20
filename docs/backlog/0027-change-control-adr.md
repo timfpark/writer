@@ -82,4 +82,4 @@ happen, not only on how they are stored.
 
 ## Prerequisites
 
-* [Serve the workspace API](./0019-workspace-api.md)
+None.

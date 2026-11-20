@@ -6,6 +6,7 @@ use std::ffi::OsString;
 use std::net::{Ipv4Addr, SocketAddr};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::Arc;
 use std::time::Duration;
 
 use tokio::net::TcpListener;
@@ -130,7 +131,8 @@ async fn main() -> ExitCode {
     tracing::info!("listening on http://{address}");
 
     let (signalled_tx, signalled_rx) = oneshot::channel();
-    let server = axum::serve(listener, writer_api::router()).with_graceful_shutdown(async move {
+    let router = writer_api::router(Arc::new(store.clone()));
+    let server = axum::serve(listener, router).with_graceful_shutdown(async move {
         shutdown.await;
         tracing::info!("shutting down");
         let _ = signalled_tx.send(());

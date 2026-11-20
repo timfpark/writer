@@ -6,12 +6,20 @@
 
 use axum::extract::{FromRequest, FromRequestParts, Request};
 use axum::http::request::Parts;
+use axum::response::{IntoResponse, Response};
+use serde::Serialize;
 use serde::de::DeserializeOwned;
 
 use crate::problem::Problem;
 
-/// A JSON request body.
+/// A JSON request or response body.
 pub struct Json<T>(pub T);
+
+impl<T: Serialize> IntoResponse for Json<T> {
+    fn into_response(self) -> Response {
+        axum::Json(self.0).into_response()
+    }
+}
 
 impl<S, T> FromRequest<S> for Json<T>
 where
@@ -44,6 +52,13 @@ where
 }
 
 /// Parameters parsed from the query string.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "handlers that read a query arrive with later stories"
+    )
+)]
 pub struct Query<T>(pub T);
 
 impl<S, T> FromRequestParts<S> for Query<T>
