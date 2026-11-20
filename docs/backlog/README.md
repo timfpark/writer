@@ -36,6 +36,7 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                             | Subsystems             | Outcome                                                                                | Prerequisite   |
 |----|---------------------------------------------------------------------------------------|------------------------|----------------------------------------------------------------------------------------|----------------|
+| 32 | [Resolve the KaTeX advisory in the tools lockfile](./0032-katex-advisory.md)          | `repository`           | No open security alert remains for the tools lockfile.                                 | None           |
 | 18 | [Build workspace storage with the filesystem backend](./0018-workspace-storage.md)    | `service`              | Folders and documents persist as directories and `.md` files on disk.                  | None           |
 | 19 | [Serve the workspace API](./0019-workspace-api.md)                                    | `service`              | The contract lists, creates, saves, moves, and deletes workspace items.                | 18             |
 | 20 | [Build the workspace shell](./0020-workspace-shell.md)                                | `webapp`               | The webapp shows a header, collapsible side panes, and a writing region.               | None           |
