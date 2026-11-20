@@ -88,8 +88,8 @@ The [README](../../README.md#product-direction) describes the workspace: a
 header, a navigator showing folders and documents with drag and drop, a
 writing surface, and an assistant pane, with both side panes collapsible. The
 writing surface is the product's focus, so its typeface and contrast matter
-more than anything else on the page. Backlogs
-[20](../backlog/0020-workspace-shell.md),
+more than anything else on the page. Backlog 20, the workspace shell story,
+installed them, and backlogs
 [22](../backlog/0022-workspace-navigator.md),
 [23](../backlog/0023-writing-surface.md),
 [24](../backlog/0024-tree-drag-and-drop.md), and

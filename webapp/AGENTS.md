@@ -6,8 +6,10 @@ description: Purpose, boundaries, operational rules, governing decisions, and ex
 ## Purpose and boundaries
 
 `webapp/` is a client-rendered React 19 single-page application built with
-Vite 8 that will become Writer's editing workspace. Today it shows the
-service's health. People start with [README.md](./README.md).
+Vite 8: Writer's editing workspace. Today it shows the workspace shell, a
+header above a collapsible navigator, the writing region, and a collapsible
+assistant, with placeholders in the panes. People start with
+[README.md](./README.md), which maps the source folders.
 
 * Reach the service only through its HTTP API, using the client in
   [src/api/client.ts](./src/api/client.ts) and types generated from the
@@ -18,8 +20,8 @@ service's health. People start with [README.md](./README.md).
   variable for one.
 * Add no server rendering, framework server, or second server process.
   Routing, styling, components, server-state caching, and browser storage
-  follow [ADR 0007](../docs/adrs/0007-webapp-interface.md), which backlog 20
-  installs, and the editor, its Markdown bridge, and autosave follow
+  follow [ADR 0007](../docs/adrs/0007-webapp-interface.md), and the editor,
+  its Markdown bridge, and autosave follow
   [ADR 0008](../docs/adrs/0008-editor.md), which backlog 23 installs;
   authentication waits for the story and ADR that choose it.
 
@@ -39,12 +41,42 @@ service's health. People start with [README.md](./README.md).
 * Responses are not validated at run time; rely on the generated types and the
   gate.
 
+### Interface
+
+* Style each component with a `Component.module.css` beside it, using only
+  the semantic tokens in [src/styles/tokens.css](./src/styles/tokens.css),
+  never primitive palette values. Never commit or edit the generated
+  `*.module.css.d.ts` declarations; `npm run typecheck` regenerates them.
+* After changing a color token, keep
+  [tokens.test.ts](./src/styles/tokens.test.ts) passing in both themes; add
+  any new foreground and background pair to its table.
+* Build buttons, menus, popovers, overlays, and tooltips on
+  `react-aria-components`, never a second component library or a hand-built
+  pattern. Icons come from `lucide-react`, marked `aria-hidden`, and every
+  icon-only button has an accessible name.
+* Add routes to the code-based tree in [src/router.tsx](./src/router.tsx);
+  never add TanStack Router's Vite plugin, generated route files, or
+  devtools. Components read server state through the query options in
+  [src/api/queries.ts](./src/api/queries.ts) and never write query keys.
+* Keep small preferences in `localStorage` under keys starting `writer.`,
+  through [preferences.ts](./src/shell/preferences.ts), falling back to the
+  default when a value is missing or unreadable.
+* Keep both breakpoints, 60 and 75 rem, and the touch rules keyed to
+  `(hover: none)` and `(pointer: coarse)` as ADR 0007's responsive layout
+  sets, so the shell works on iPad in both orientations.
+* Import [src/styles/global.css](./src/styles/global.css) first in
+  [main.tsx](./src/main.tsx), so component modules override its base rules.
+* Request nothing from another origin: fonts come from the Fontsource
+  packages, and the build emits their licenses beside them.
+
 ### Code and tests
 
 * Keep `tsc`, Oxlint, and Prettier clean; fix findings rather than disabling
   rules. Lint and formatting skip the generated client, but `tsc` checks it.
 * Place tests next to the code as `*.test.ts` or `*.test.tsx`. Replace `fetch`
   with `vi.stubGlobal`; tests never reach a real service or the network.
+  jsdom has no `matchMedia`, so panes dock unless a test stubs it, as
+  [App.test.tsx](./src/App.test.tsx) does for narrow viewports.
 * Use synthetic prose in tests and fixtures, never a real manuscript.
 
 ### Toolchain and dependencies
@@ -57,7 +89,9 @@ service's health. People start with [README.md](./README.md).
 * Install only through [.npmrc](./.npmrc), which sets the registry proxy,
   `save-exact`, `engine-strict`, and `ignore-scripts`. If a dependency needs an
   install script, name it here and run its step explicitly rather than enabling
-  scripts.
+  scripts. No current dependency needs one.
+* Dependabot proposes webapp updates only after a 7-day cooldown, as ADR 0007
+  decides; keep it in [dependabot.yml](../.github/dependabot.yml).
 * Stay on TypeScript 6.0 and keep the `overrides` entry for
   `openapi-typescript` until it supports TypeScript 7, as
   [ADR 0003](../docs/adrs/0003-webapp-architecture.md#typescript) decides.
@@ -100,7 +134,7 @@ npm run api:generate                     # regenerate src/api/generated/schema.d
 npm run api:check                        # fail if the generated client is stale
 npm run format                           # format with Prettier
 npm run lint                             # Oxlint, type-aware, warnings denied
-npm run typecheck                        # tsc without emitting
+npm run typecheck                        # CSS Module declarations, then tsc without emitting
 npm run test                             # Vitest once
 npm run build                            # production build in dist/
 npm config get registry                  # expect the packagefeedproxy.microsoft.io proxy

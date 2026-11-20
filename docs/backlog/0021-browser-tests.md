@@ -54,4 +54,4 @@ faithfully in a simulated DOM.
 
 ## Prerequisites
 
-* [Build the workspace shell](./0020-workspace-shell.md)
+None.

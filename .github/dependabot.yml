@@ -63,6 +63,10 @@ updates:
       interval: weekly
     commit-message:
       prefix: build(webapp)
+    # ADR 0007 proposes a release only after it has been public for a week,
+    # so a compromised version is likely to carry an advisory first.
+    cooldown:
+      default-days: 7
     ignore:
       # ADR 0003 holds TypeScript at 6.0 until openapi-typescript runs on 7.
       - dependency-name: typescript

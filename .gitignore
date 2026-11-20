@@ -13,6 +13,9 @@ dist/
 coverage/
 __pycache__/
 
+# CSS Module declarations that vite-css-modules writes beside each module
+*.module.css.d.ts
+
 # Operating system and editor files
 .DS_Store
 .idea/

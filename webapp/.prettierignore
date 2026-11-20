@@ -8,3 +8,6 @@ src/api/generated/
 package-lock.json
 dist/
 coverage/
+
+# Written by vite-css-modules beside each CSS Module.
+*.module.css.d.ts
