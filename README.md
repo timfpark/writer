@@ -105,3 +105,5 @@ checks. The final `CI result` check passes only when every CI job succeeds,
 so a failed, skipped, or cancelled job never reports success. The workflow
 uses a read-only token, no repository secrets, and actions pinned to full
 commit SHAs.
+
+See the [missing guide](./does-not-exist.md).
