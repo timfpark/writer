@@ -19,7 +19,7 @@ it.
 ## Context
 
 [Backlog 19](./0019-workspace-api.md) serves the operations, and
-[backlog 15](./0015-workspace-model-adr.md) sets the title rules and what
+[ADR 0005](../adrs/0005-workspace-model.md) sets the title rules and what
 deleting a folder does. [Backlog 16](./0016-webapp-interface-adr.md) chooses
 the tree primitive and server-state caching, and
 [backlog 20](./0020-workspace-shell.md) provides the pane.

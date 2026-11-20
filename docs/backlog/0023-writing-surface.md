@@ -19,7 +19,7 @@ them.
 
 [Backlog 17](./0017-editor-adr.md) chooses the editor, the Markdown subset,
 the round-trip guarantee, and the autosave timing.
-[Backlog 15](./0015-workspace-model-adr.md) defines saving with a revision
+[ADR 0005](../adrs/0005-workspace-model.md#autosave-and-stale-writes) defines saving with a revision
 token and the conflict response. [Backlog 16](./0016-webapp-interface-adr.md)
 chooses the writing typeface and the contrast target for body text.
 [Backlog 22](./0022-workspace-navigator.md) opens documents into the writing
@@ -41,10 +41,10 @@ region.
   dialog.
 * Show a quiet save status in the header: saved, saving, retrying while the
   service is unreachable, or in conflict.
-* Keep unsaved changes until the service acknowledges them, and retry when it
-  returns.
+* Keep unsaved changes until the service acknowledges them, in browser
+  storage so a closed tab or reload loses nothing, and retry when it returns.
 * On a conflict, never overwrite either version silently; offer the recovery
-  path backlog 15 defines.
+  path ADR 0005 defines.
 * Add the round-trip corpus tests and browser tests for typing, reloading,
   renaming, and recovering from an unreachable service.
 

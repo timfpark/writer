@@ -17,8 +17,8 @@ other tools, and never locked inside Writer.
 
 ## Context
 
-[Backlog 15](./0015-workspace-model-adr.md) defines the workspace model and
-names the domain crate. [Backlog 11](./0011-storage-architecture-adr.md)
+[ADR 0005](../adrs/0005-workspace-model.md) defines the workspace model and
+names the domain crate, `writer-domain`. [Backlog 11](./0011-storage-architecture-adr.md)
 defines the storage interface, the conformance suite, and the filesystem
 backend's layout, naming, identifier and order storage, atomic writes, and
 handling of external edits. [ADR 0002](../adrs/0002-service-architecture.md#crate-layout)
@@ -61,4 +61,3 @@ building reveals a flaw in either ADR, amend it in the same pull request.
 ## Prerequisites
 
 * [Record the service storage ADR](./0011-storage-architecture-adr.md)
-* [Record the workspace model and API ADR](./0015-workspace-model-adr.md)

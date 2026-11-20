@@ -44,8 +44,10 @@ start with [README.md](./README.md).
 * Annotate transport types with `#[serde(rename_all = "camelCase")]`; add
   `deny_unknown_fields` to request types. A response `Option<T>` gets
   `#[schema(required = true)]`; an optional request field gets
-  `#[serde(default)]` and `#[schema(nullable = false)]`. Bodies are objects,
-  collections use an `items` array, and arrays are never `null`.
+  `#[serde(default)]` and `#[schema(nullable = false)]`; a request field whose
+  `null` carries meaning, such as `parentId`, gets `#[schema(required = true)]`
+  and rejects omission. Bodies are objects, collections use an `items` array,
+  and arrays are never `null`.
 * Never edit [openapi.json](./openapi.json) by hand. Regenerate it with the
   command under [Commands](#commands) and commit it with the route change.
 * Serve no CORS layer and no documentation UI; the webapp reaches `/api/`
@@ -102,6 +104,9 @@ Consult these when changing architecture, dependencies, or conventions:
   same-origin `/api/` proxy to port 8888 and generated client
 * [ADR 0004](../docs/adrs/0004-api-conventions.md): versioning, naming,
   problem details, operation IDs and tags, and SSE framing
+* [ADR 0005](../docs/adrs/0005-workspace-model.md): the folder and document
+  model, its limits, the workspace operations, revision-checked saves, and
+  the `writer-domain` crate
 
 ## Commands
 

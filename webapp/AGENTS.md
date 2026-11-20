@@ -72,6 +72,9 @@ Consult these when changing architecture, dependencies, or conventions:
   client, the `/api/` development proxy, and the quality toolchain
 * [ADR 0004](../docs/adrs/0004-api-conventions.md): versioning, naming,
   problem details, operation IDs and tags, and SSE framing
+* [ADR 0005](../docs/adrs/0005-workspace-model.md): folders and documents,
+  client-generated identifiers, the workspace operations, and autosave
+  conflict recovery
 
 ## Commands
 

@@ -18,7 +18,7 @@ think about my projects.
 ## Context
 
 [Backlog 19](./0019-workspace-api.md) serves move and reorder, and
-[backlog 15](./0015-workspace-model-adr.md) defines their rules, including
+[ADR 0005](../adrs/0005-workspace-model.md#placing-an-item) defines their rules, including
 rejecting a folder moved into its own subtree.
 [Backlog 16](./0016-webapp-interface-adr.md) chooses the drag-and-drop
 approach and its non-dragging alternative, which WCAG 2.2's dragging
