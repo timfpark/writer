@@ -27,6 +27,24 @@ Accepted on 2026-11-19.
 [ADR 0004](./0004-api-conventions.md) decides versioning and naming below
 `/api/`, which this record leaves open: every route lives under `/api/v1/`.
 
+## Decision summary
+
+* Build `webapp/` as a client-rendered React 19 single-page application
+  compiled to `webapp/dist/` with Vite 8 on Node.js 26 (`engines` matching
+  `.devcontainer/`, `.npmrc` setting the registry proxy, `save-exact=true`,
+  `engine-strict=true`, and `ignore-scripts=true`).
+* Type-check with TypeScript 6.0 (`strict`, `noUncheckedIndexedAccess`,
+  `exactOptionalPropertyTypes`, `verbatimModuleSyntax`).
+* Generate contract types from `service/openapi.json` into
+  `webapp/src/api/generated/schema.d.ts` via `npm run api:generate` (`api:check`
+  in the gate), and call the API only through `webapp/src/api/client.ts` using
+  `openapi-fetch` with same-origin paths.
+* Bind Vite's dev server to `127.0.0.1:5173` (`strictPort`) and proxy `/api/`
+  to `http://127.0.0.1:8080` without path rewriting.
+* Enforce quality in `tools/check` (after `service`) with `npm ci`,
+  `api:check`, Prettier 3 (excluding Markdown and generated files), Oxlint with
+  `--type-aware --deny-warnings`, `tsc`, Vitest 5 (`jsdom`), and `vite build`.
+
 ## Context
 
 [ADR 0001](./0001-monorepo-structure.md) makes the webapp a TypeScript and

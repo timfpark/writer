@@ -23,6 +23,32 @@ estimated_reading_time: 14
 
 Accepted on 2026-11-20.
 
+## Decision summary
+
+* Nest every HTTP API route under `/api/v1/`, reject unknown request fields
+  with `#[serde(deny_unknown_fields)]`, and keep breaking `v1` changes coupled
+  to same-commit client regeneration until a client ships separately.
+* Use lowercase kebab-case plural nouns for collections, singular nouns for
+  singletons (`GET /api/v1/health`), camelCase parameters with opaque string
+  `*Id` identifiers, and `POST` to plural result nouns for stateless
+  computations so manuscript text never enters URLs or query strings.
+* Format all request and response bodies as camelCase JSON objects (`items`
+  array field for collections, never bare arrays or scalars, non-null arrays,
+  and UTC RFC 3339 timestamps).
+* Make every response field required (`Option<T>` with
+  `#[schema(required = true)]` producing `T | null`) and every optional request
+  field non-nullable (`#[serde(default)]` plus `#[schema(nullable = false)]`
+  producing `field?: T`); never mark a property both optional and nullable.
+* Return RFC 9457 `application/problem+json` (`Problem` with `ProblemCode` and
+  `errors`) for every error including extractor rejections and router
+  fallbacks, never echoing manuscript text, credentials, or raw serde messages
+  in responses or logs.
+* Set explicit camelCase `operation_id` values (`getHealth`, `createQuestions`)
+  and one tag matching the first path segment after `/api/v1/` on every
+  operation, enforced by a mechanical OpenAPI conventions test.
+* Frame `200 text/event-stream` SSE endpoints with camelCase event names and
+  single-line JSON `data` payloads ending in `done` or `error` (`Problem`).
+
 ## Context
 
 [ADR 0002](./0002-service-architecture.md) emits the service's contract from

@@ -53,10 +53,12 @@ names the health endpoint `GET /api/v1/health`.
   describes.
 * Add a `service` phase to `tools/check` running formatting, lint, build,
   and tests for every workspace member, plus a contract freshness check.
-* Apply the root guide's "Adding a subsystem" checklist, including
-  `service/README.md`, `service/AGENTS.md` with Governing decisions and exact
-  commands, the container toolchain pinned to `rust-toolchain.toml`, port 8080
-  in the devcontainer's `forwardPorts`, and a `cargo` Dependabot entry.
+* Apply ADR 0001's
+  [Adding a subsystem](../adrs/0001-monorepo-structure.md#adding-a-subsystem)
+  checklist, including `service/README.md`, `service/AGENTS.md` with distilled
+  operational rules, Governing decisions, and exact commands, the container
+  toolchain pinned to `rust-toolchain.toml`, port 8080 in the devcontainer's
+  `forwardPorts`, and a `cargo` Dependabot entry.
 * Leave `service/prompts/` and `service/evals/` to
   [backlog 12](./0012-first-pair-writing-agent.md), the first pair-writing
   agent story, rather than creating them empty.

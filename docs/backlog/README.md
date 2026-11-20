@@ -59,8 +59,9 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 [ADR 0003](../adrs/0003-webapp-architecture.md), and
 [ADR 0004](../adrs/0004-api-conventions.md) record the service and webapp
 architecture and the API conventions before any subsystem code exists.
-Items 6 and 7 build on those decisions and apply the "Adding a subsystem"
-checklist in the [agent guide](../../AGENTS.md#adding-a-subsystem).
+Items 6 and 7 build on those decisions and apply the
+[Adding a subsystem](../adrs/0001-monorepo-structure.md#adding-a-subsystem)
+checklist in ADR 0001.
 
 Items 15 through 26 deliver the first release, the writing workspace the
 [README](../../README.md#product-direction) describes. Its decisions come

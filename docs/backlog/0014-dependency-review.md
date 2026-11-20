@@ -37,9 +37,8 @@ without GitHub Advanced Security would disable that endpoint.
 * Wire the job into `CI result` so a failed or cancelled dependency review
   fails `CI result` on pull requests while `push` runs on `main` (where
   dependency review does not run) still report `CI result` accurately.
-* Update [ADR 0001](../adrs/0001-monorepo-structure.md),
-  [AGENTS.md](../../AGENTS.md), and [README.md](../../README.md) to reflect
-  the active check.
+* Update [ADR 0001](../adrs/0001-monorepo-structure.md) and
+  [README.md](../../README.md) to reflect the active check.
 
 ## Acceptance criteria
 

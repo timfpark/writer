@@ -43,7 +43,7 @@ flaw in the agent ADR, amend it in the same pull request.
   `service/openapi.json`.
 * Add the provider settings to `service/.env.example` with placeholders only.
 * Update `service/README.md` and `service/AGENTS.md` with the new crate,
-  folders, settings, and commands, and update the ADR 0001 repository tree.
+  folders, settings, and commands.
 
 ## Acceptance criteria
 

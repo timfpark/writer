@@ -41,10 +41,12 @@ which the generated client types as `Problem`.
   service through the development server's `/api/` proxy.
 * Add a `webapp` phase to `tools/check`, after the `service` phase, running
   the commands ADR 0003 lists, including the client freshness check.
-* Apply the root guide's "Adding a subsystem" checklist, including
-  `webapp/README.md` with its development port, `webapp/AGENTS.md` with
-  Governing decisions and exact commands, port 5173 in the devcontainer's
-  `forwardPorts`, and an npm Dependabot entry that uses the proxy registry.
+* Apply ADR 0001's
+  [Adding a subsystem](../adrs/0001-monorepo-structure.md#adding-a-subsystem)
+  checklist, including `webapp/README.md` with its development port,
+  `webapp/AGENTS.md` with distilled operational rules, Governing decisions, and
+  exact commands, port 5173 in the devcontainer's `forwardPorts`, and an npm
+  Dependabot entry that uses the proxy registry.
 
 ## Acceptance criteria
 

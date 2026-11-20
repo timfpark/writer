@@ -17,6 +17,7 @@ from urllib.parse import unquote
 
 REQUIRED_KEYS = ("title", "description")
 INDEXED_DIRS = ("docs/adrs", "docs/backlog")
+ALLOWED_SUBSYSTEMS = ("repository", "service", "webapp")
 NUMBERED_DOC = re.compile(r"^\d{4}-[a-z0-9-]+\.md$")
 SKIP_DIRS = {".git", "node_modules", "target", "dist", ".local"}
 # GitHub copies these files verbatim into new pull request bodies, so they
@@ -145,14 +146,23 @@ class Checker:
                 except ValueError:
                     self.report(path, 1, f"ms.date '{date}' is not an ISO 8601 date (YYYY-MM-DD)")
             numbered = NUMBERED_DOC.match(path.name) and str(path.parent.relative_to(self.root).as_posix()) in INDEXED_DIRS
-            if numbered and not (isinstance(fields.get("subsystems"), list) and fields["subsystems"]):
-                self.report(path, 1, "frontmatter is missing a non-empty 'subsystems' list")
+            if numbered:
+                subsystems = fields.get("subsystems")
+                if not (isinstance(subsystems, list) and subsystems):
+                    self.report(path, 1, "frontmatter is missing a non-empty 'subsystems' list")
+                else:
+                    for item in subsystems:
+                        if item not in ALLOWED_SUBSYSTEMS:
+                            allowed = ", ".join(ALLOWED_SUBSYSTEMS)
+                            self.report(path, 1, f"frontmatter 'subsystems' entry '{item}' must be one of: {allowed}")
+                    if len(set(subsystems)) != len(subsystems):
+                        self.report(path, 1, "frontmatter 'subsystems' must not contain duplicates")
         for number, line in scan_body(lines, start):
             if fields is not None and fields.get("title") and re.match(r"^\s{0,3}#\s", line):
                 self.report(path, number, "H1 heading duplicates the frontmatter title; start at H2")
             self.check_links(path, number, line)
         if rel.endswith(".md") and NUMBERED_DOC.match(path.name):
-            self.check_indexed(path)
+            self.check_indexed(path, fields)
 
     def check_links(self, path, number, line):
         stripped = INLINE_CODE.sub("", line)
@@ -185,7 +195,7 @@ class Checker:
             if unquote(fragment).lower() not in anchors(lines, start):
                 self.report(path, number, f"link fragment '#{fragment}' has no matching heading in '{dest.name}'")
 
-    def check_indexed(self, path):
+    def check_indexed(self, path, fields):
         parent = path.parent.relative_to(self.root).as_posix()
         if parent not in INDEXED_DIRS:
             return
@@ -193,9 +203,37 @@ class Checker:
         if not index.is_file():
             self.report(path, 1, f"'{parent}/README.md' index is missing")
             return
-        text = index.read_text(encoding="utf-8")
-        if not re.search(r"\]\(\./" + re.escape(path.name) + r"(#[^)]*)?\)", text):
+        link_re = re.compile(r"\]\(\./" + re.escape(path.name) + r"(#[^)]*)?\)")
+        idx_lines, _, idx_start, _ = self.load(index)
+        text = "\n".join(INLINE_CODE.sub("", line) for _, line in scan_body(idx_lines, idx_start))
+        if not link_re.search(text):
             self.report(path, 1, f"not linked from '{parent}/README.md'; add a row to the index")
+            return
+        expected = fields.get("subsystems") if isinstance(fields, dict) else None
+        if not (isinstance(expected, list) and expected):
+            return
+        subsystems_col, prev_cells = None, None
+        for number, line in scan_body(idx_lines, idx_start):
+            stripped = line.strip()
+            if not (stripped.startswith("|") and stripped.endswith("|")):
+                subsystems_col, prev_cells = None, None
+                continue
+            cells = [c.strip() for c in stripped[1:-1].split("|")]
+            if cells and all(re.match(r"^:?-{3,}:?$", c) for c in cells):
+                if prev_cells is not None:
+                    subsystems_col = next((i for i, h in enumerate(prev_cells) if h.lower() == "subsystems"), None)
+                prev_cells = None
+                continue
+            if subsystems_col is not None and subsystems_col < len(cells) and link_re.search(INLINE_CODE.sub("", stripped)):
+                cell = cells[subsystems_col]
+                listed = re.findall(r"`([^`]+)`", cell) or [c.strip() for c in cell.split(",") if c.strip()]
+                if listed != expected:
+                    self.report(
+                        index,
+                        number,
+                        f"Subsystems cell for '{path.name}' has {listed}, expected {expected} from frontmatter",
+                    )
+            prev_cells = cells
 
 
 def check(root):

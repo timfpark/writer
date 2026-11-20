@@ -25,6 +25,26 @@ Accepted on 2026-11-19.
 record defers: the HTTP framework, internal crate responsibilities, and how the
 OpenAPI contract is produced and verified.
 
+## Decision summary
+
+* Organize the monorepo around self-contained top-level subsystem folders,
+  `service/` (Rust Cargo workspace) and `webapp/` (TypeScript and React),
+  created with their first deliverable rather than as empty placeholders.
+* Couple clients to `service/` only through its HTTP API and committed OpenAPI
+  contract under `service/`, with generated client code in
+  `webapp/src/api/generated/` verified for freshness.
+* Keep coding-agent guidance (`AGENTS.md` and `.github/`) strictly separate
+  from product pair-writing prompts (`service/prompts/`) and evaluations
+  (`service/evals/`).
+* Never commit credentials, `.env` files, or real manuscripts; use sanitized
+  `*.example` files, synthetic prose, and the ignored `.local/` directory.
+* Pin toolchains in `.devcontainer/` alongside subsystem version pins and
+  lockfiles, and install npm or Python packages only through the organization
+  registry proxies.
+* Validate every change locally and in CI with `tools/check` from the
+  repository root (`0` pass, `1` check failure, `2` usage or prerequisite
+  error).
+
 ## Context
 
 Writer is a constant pair writer: it asks questions, suggests other ideas, and
@@ -57,39 +77,41 @@ A subsystem folder is created with its first deliverable, never as an empty
 placeholder. No CLI, shared-library, or separate agent subsystem is planned.
 Internal service crates are part of the service, not separate subsystems.
 
-The tree below marks each path as existing or planned. A planned path names
-the backlog item or subsystem deliverable that creates it.
+The tree below shows the target repository layout. Paths that do not exist yet
+arrive with the backlog story that first needs them; check the filesystem and
+the [backlog](../backlog/README.md) rather than treating this tree as a live
+status board.
 
 ```text
 writer/
-  .editorconfig                existing   editor formatting conventions
-  .gitignore                   existing   build output, secrets, local-only data
-  .markdownlint-cli2.jsonc     existing   Markdown style lint rules
-  AGENTS.md                    existing   root coding-agent guide
-  README.md                    existing   project overview for people
+  .editorconfig                editor formatting conventions
+  .gitignore                   build output, secrets, local-only data
+  .markdownlint-cli2.jsonc     Markdown style lint rules
+  AGENTS.md                    root coding-agent guide
+  README.md                    project overview for people
   docs/
-    adrs/                      existing   decision records, indexed by README.md
-    backlog/                   existing   prioritized work, indexed by README.md
+    adrs/                      decision records, indexed by README.md
+    backlog/                   prioritized work, indexed by README.md
   tools/
-    check                      existing   validation gate
-    check_docs.py              existing   docs phase of the gate
-    package.json, .npmrc       existing   pins markdownlint-cli2 via npm proxy
-    package-lock.json          existing   locked Markdown lint dependencies
-    tests/                     existing   unit tests for repository tooling
-  .devcontainer/               existing   shared development container
+    check                      validation gate
+    check_docs.py              docs phase of the gate
+    package.json, .npmrc       pins markdownlint-cli2 via npm proxy
+    package-lock.json          locked Markdown lint dependencies
+    tests/                     unit tests for repository tooling
+  .devcontainer/               shared development container
   .github/
-    workflows/ci.yml           existing   runs tools/check in the container
-    dependabot.yml             existing   weekly dependency updates
-    pull_request_template.md   existing   pull request checklist
-  service/                     planned    backlog 6
+    workflows/ci.yml           runs tools/check in the container
+    dependabot.yml             weekly dependency updates
+    pull_request_template.md   pull request checklist
+  service/
     AGENTS.md, README.md
     Cargo.toml, Cargo.lock, rust-toolchain.toml
     crates/                    internal Cargo workspace members
-    openapi.*                  API contract of record
-    prompts/                   planned    backlog 12, pair-writing agent prompts
-    evals/                     planned    backlog 12, agent evaluation cases
+    openapi.json               API contract of record
+    prompts/                   pair-writing agent prompts
+    evals/                     agent evaluation cases
     .env.example
-  webapp/                      planned    backlog 7
+  webapp/
     AGENTS.md, README.md
     package.json, package-lock.json, .npmrc
     src/api/generated/         client generated from the service contract
@@ -166,13 +188,16 @@ Agents and people follow one navigation path:
 
 1. The root `README.md` gives the product overview and links to `AGENTS.md`,
    this ADR, the backlog, and the validation gate.
-2. The root `AGENTS.md` holds only repository-wide rules: the subsystem table,
-   the repository map, safety rules, conventions, and validation. It links each
-   subsystem guide once that guide exists.
+2. The root `AGENTS.md` holds concise repository-wide rules: the subsystem
+   table, key shared paths, safety invariants, authoring conventions, and
+   validation. It links each subsystem guide once that guide exists.
 3. Each `<subsystem>/AGENTS.md` holds that subsystem's purpose, dependency
-   boundaries, governing decisions, and exact setup, run, and check commands.
+   boundaries, distilled operational rules, a Governing decisions section
+   linking the ADRs that govern it (consulted when changing architecture,
+   dependencies, or conventions), and exact setup, run, and check commands.
 4. The [ADR index](./README.md) and [backlog index](../backlog/README.md)
-   list every decision and every item of planned work.
+   list every decision and every item of planned work, with their governed
+   subsystems verified against frontmatter by `tools/check`.
 
 GitHub Copilot, including the coding agent, reads `AGENTS.md` files natively,
 and nested guides apply to their folders. A separate
@@ -184,6 +209,31 @@ Commands and paths that do not exist yet are written in code spans and labeled
 planned, never as links. `tools/check` fails on broken relative links, which
 keeps that rule enforced.
 
+### Adding a subsystem
+
+Create a subsystem folder with its first deliverable, never as an empty
+placeholder, and make these changes in the same pull request:
+
+1. Add a `README.md` for people and an `AGENTS.md` guide with the subsystem's
+   purpose, dependency boundaries, active operational rules, a Governing
+   decisions section linking every ADR whose `subsystems` frontmatter names it,
+   exact setup, run, and check commands, and the rule that toolchain,
+   dependency, or environment changes update `.devcontainer/`, version pins,
+   and setup documentation in the same change.
+2. Update the subsystem status and guide link in the root
+   [AGENTS.md](../../AGENTS.md) and [README.md](../../README.md).
+3. Keep the subsystem's manifest, lockfile, toolchain pin, and `.env.example`
+   inside its folder. For an npm project, add an `.npmrc` with the proxy.
+4. Add its validation phase to [tools/check](../../tools/check) in dependency
+   order, with `service` before `webapp`.
+5. Ensure its toolchain in `.devcontainer/` matches the version the subsystem
+   pins, and add its ecosystem to
+   [dependabot.yml](../../.github/dependabot.yml) (using the proxy `registries`
+   entry for npm).
+6. Bind any local server to loopback (`127.0.0.1:8080` for `service`, and a
+   distinct port such as `127.0.0.1:5173` for `webapp`), record it in the
+   subsystem README, and add it to the devcontainer's `forwardPorts`.
+
 ### Coding agents and the product agent
 
 `AGENTS.md` files, and anything under `.github/`, guide the coding agents that
@@ -191,8 +241,7 @@ develop Writer. The pair-writing agent is product behavior. Its prompts live in
 `service/prompts/`, its model integrations in service code, and its evaluation
 cases in `service/evals/`. Product prompts are never placed in coding-agent
 guidance, and coding-agent guidance never becomes product prompts. Choosing an
-agent framework or model provider is deferred to a later service ADR, which
-[backlog 10](../backlog/0010-agent-architecture-adr.md) records.
+agent framework or model provider is deferred to a later service ADR.
 
 ### Safety rules
 
@@ -209,28 +258,28 @@ agent framework or model provider is deferred to a later service ADR, which
 
 ### Development and automation baseline
 
-| Area                                | Decision | Location                                             | Delivered by                                           |
-|-------------------------------------|----------|------------------------------------------------------|--------------------------------------------------------|
-| Validation gate, docs phase         | Adopt    | `tools/check`, `tools/check_docs.py`                 | This decision                                          |
-| Markdown style lint                 | Adopt    | `.markdownlint-cli2.jsonc`, `tools/check` docs phase | Backlog 5                                              |
-| Development container               | Adopt    | `.devcontainer/`                                     | Backlog 2                                              |
-| GitHub Actions CI                   | Adopt    | `.github/workflows/ci.yml`                           | Backlog 3                                              |
-| Selective checks                    | Reject   | Not applicable                                       | Not planned                                            |
-| Reusable workflows                  | Reject   | Not applicable                                       | Not planned                                            |
-| Runtime and toolchain pinning       | Adopt    | Each subsystem; tool versions in `.devcontainer/`    | Backlog 2, 6, 7                                        |
-| Committed lockfiles                 | Adopt    | Each subsystem folder                                | Backlog 6, 7                                           |
-| Approved package registries         | Adopt    | `webapp/.npmrc`, container settings                  | Backlog 2, 6, 7                                        |
-| Dependabot                          | Adopt    | `.github/dependabot.yml`                             | Backlog 4                                              |
-| Ignored files                       | Adopt    | `.gitignore`                                         | This decision                                          |
-| Editor conventions                  | Adopt    | `.editorconfig`                                      | This decision                                          |
-| Code formatters and linters         | Adopt    | Each subsystem's `tools/check` phase                 | Backlog 6, 7                                           |
-| Sanitized environment examples      | Adopt    | `<subsystem>/.env.example`                           | Backlog 6, 7                                           |
-| Contributor setup instructions      | Adopt    | Root `README.md`, subsystem READMEs                  | This decision, then each item                          |
-| Pull request template               | Adopt    | `.github/pull_request_template.md`                   | Backlog 4                                              |
-| Secret scanning and push protection | Adopt    | GitHub repository settings                           | Backlog 4                                              |
-| Code ownership rules                | Defer    | `.github/CODEOWNERS`                                 | Not planned                                            |
-| Dependency review                   | Defer    | `.github/workflows/ci.yml`                           | [Backlog 14](../backlog/0014-dependency-review.md)     |
-| Python packages for tooling         | Reject   | Not applicable                                       | Not planned                                            |
+| Area                                | Decision | Location                                             |
+|-------------------------------------|----------|------------------------------------------------------|
+| Validation gate, docs phase         | Adopt    | `tools/check`, `tools/check_docs.py`                 |
+| Markdown style lint                 | Adopt    | `.markdownlint-cli2.jsonc`, `tools/check` docs phase |
+| Development container               | Adopt    | `.devcontainer/`                                     |
+| GitHub Actions CI                   | Adopt    | `.github/workflows/ci.yml`                           |
+| Selective checks                    | Reject   | Not applicable                                       |
+| Reusable workflows                  | Reject   | Not applicable                                       |
+| Runtime and toolchain pinning       | Adopt    | Each subsystem; tool versions in `.devcontainer/`    |
+| Committed lockfiles                 | Adopt    | Each subsystem folder and `tools/`                   |
+| Approved package registries         | Adopt    | `tools/.npmrc`, `webapp/.npmrc`, container settings  |
+| Dependabot                          | Adopt    | `.github/dependabot.yml`                             |
+| Ignored files                       | Adopt    | `.gitignore`                                         |
+| Editor conventions                  | Adopt    | `.editorconfig`                                      |
+| Code formatters and linters         | Adopt    | Each subsystem's `tools/check` phase                 |
+| Sanitized environment examples      | Adopt    | `<subsystem>/.env.example`                           |
+| Contributor setup instructions      | Adopt    | Root `README.md`, subsystem READMEs                  |
+| Pull request template               | Adopt    | `.github/pull_request_template.md`                   |
+| Secret scanning and push protection | Adopt    | GitHub repository settings                           |
+| Code ownership rules                | Defer    | `.github/CODEOWNERS`                                 |
+| Dependency review                   | Defer    | `.github/workflows/ci.yml`                           |
+| Python packages for tooling         | Reject   | Not applicable                                       |
 
 #### Validation gate
 
@@ -295,9 +344,8 @@ beside each `package.json`. Repository tooling that needs npm packages keeps
 its manifest in `tools/`, never at the root. Python tooling uses only the
 standard library. If a tool later needs a Python package, install it with `uv`
 through the `https://packagefeedproxy.microsoft.io/pypi/simple/` proxy and pin
-it in a lockfile. [Backlog 6](../backlog/0006-service-foundation.md) confirms
-whether Cargo also needs an organizational proxy before it adds a crate
-dependency.
+it in a lockfile. The service foundation story confirms whether Cargo also
+needs an organizational proxy before it adds a crate dependency.
 
 Dependabot updates GitHub Actions and the development container first, and each
 subsystem adds its ecosystem when its manifest lands. npm entries use the proxy
@@ -352,9 +400,9 @@ them.
 * The gate validates documentation and Markdown style today, locally and in CI.
   It does not yet check code, so a green result covers only the phases it
   lists.
-* Subsystem stories must apply the root guide's "Adding a subsystem" checklist,
-  including a scoped guide, a `tools/check` phase, a Dependabot entry, and the
-  container toolchain.
+* Subsystem stories must apply the [Adding a subsystem](#adding-a-subsystem)
+  checklist above, including a scoped guide, a `tools/check` phase, a
+  Dependabot entry, and the container toolchain.
 * Moving to `apps/` and `packages/`, or to a root Cargo workspace, will need a
   new ADR and a mechanical move when its trigger occurs.
 * The webapp cannot start real API integration until the service publishes its
