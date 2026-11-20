@@ -22,9 +22,10 @@ The [README](../../README.md#product-direction) stores documents as Markdown
 and edits them in a rich-text surface that hides the markup. Its first
 storage backend writes each document as a `.md` file that other tools can
 read and edit, so the editor will meet Markdown it did not write.
-[Backlog 11](./0011-storage-architecture-adr.md) decides whether identifiers
-and sibling order live in Markdown front matter, which the editor would then
-have to preserve. [ADR 0005](../adrs/0005-workspace-model.md) defines the
+[ADR 0006](../adrs/0006-storage-architecture.md) keeps identifiers, titles,
+and sibling order out of document files, so a file holds exactly the
+document's content. Front matter that a writer or another tool adds is
+therefore content the editor must preserve. [ADR 0005](../adrs/0005-workspace-model.md) defines the
 content format and autosave semantics on the service side; this ADR decides
 the client side.
 
@@ -65,4 +66,4 @@ The editor must not rule that out.
 
 ## Prerequisites
 
-* [Record the service storage ADR](./0011-storage-architecture-adr.md)
+None.

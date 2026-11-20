@@ -18,22 +18,24 @@ other tools, and never locked inside Writer.
 ## Context
 
 [ADR 0005](../adrs/0005-workspace-model.md) defines the workspace model and
-names the domain crate, `writer-domain`. [Backlog 11](./0011-storage-architecture-adr.md)
-defines the storage interface, the conformance suite, and the filesystem
-backend's layout, naming, identifier and order storage, atomic writes, and
-handling of external edits. [ADR 0002](../adrs/0002-service-architecture.md#crate-layout)
+names the domain crate, `writer-domain`. [ADR 0006](../adrs/0006-storage-architecture.md)
+defines the `writer-storage` crate, the storage interface, the conformance
+suite, and the filesystem backend's layout, naming, identifier and order
+storage, atomic writes, and handling of external edits, and it sets
+`WRITER_DATA_DIR` and its defaults. [ADR 0002](../adrs/0002-service-architecture.md#crate-layout)
 places both crates below `writer-api`, free of axum, Tower, and utoipa types,
 and [its request execution rules](../adrs/0002-service-architecture.md#request-execution)
 run blocking file I/O through `spawn_blocking` behind a bounded permit. If
-building reveals a flaw in either ADR, amend it in the same pull request.
+building reveals a flaw in ADR 0005 or ADR 0006, amend it in the same pull
+request.
 
 ## Scope
 
 * Add the domain crate with the workspace types and rules, tested without a
   runtime or HTTP.
-* Add the storage crate with the storage interface and the filesystem
-  backend, covering create, read, list, rename, move, reorder, delete, and
-  content replacement with stale-write detection.
+* Add the `writer-storage` crate with the storage interface and the
+  filesystem backend, covering create, read, list, rename, move, reorder,
+  delete, and content replacement with stale-write detection.
 * Write the conformance suite so it runs against any backend, and run it
   against the filesystem backend in temporary directories with synthetic
   text.
@@ -60,4 +62,4 @@ building reveals a flaw in either ADR, amend it in the same pull request.
 
 ## Prerequisites
 
-* [Record the service storage ADR](./0011-storage-architecture-adr.md)
+None.

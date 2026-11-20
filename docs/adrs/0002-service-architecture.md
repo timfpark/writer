@@ -44,6 +44,12 @@ against that code rather than through every operation.
 under the storage crate, with `writer-api` also depending on it to map
 transport types.
 
+[ADR 0006](./0006-storage-architecture.md) settles the storage follow-up. It
+names the storage crates `writer-storage` and `writer-storage-sql`, chooses
+SQLx for the SQL backends, and adds one dependency to the crate table below:
+`writer-server` depends on the storage crates to open the backend its
+configuration names.
+
 ## Decision summary
 
 * Build the HTTP service on axum 0.8 and Tokio 1's multithreaded runtime,
