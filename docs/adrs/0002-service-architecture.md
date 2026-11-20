@@ -39,6 +39,11 @@ idempotency, each with the trigger that reopens it. It also refines the
 router-test rule below: an error status produced by shared code is tested once
 against that code rather than through every operation.
 
+[ADR 0005](./0005-workspace-model.md#domain-crate) names the pure domain crate
+`writer-domain` and places it at the bottom of the dependency direction below,
+under the storage crate, with `writer-api` also depending on it to map
+transport types.
+
 ## Decision summary
 
 * Build the HTTP service on axum 0.8 and Tokio 1's multithreaded runtime,

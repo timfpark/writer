@@ -50,6 +50,10 @@ long-form reading and writing, and a surface the text contrasts with clearly.
 * Choose a router and the URL scheme, such as `/documents/{documentId}`.
 * Choose server-state caching, comparing TanStack Query with direct
   openapi-fetch calls, including optimistic updates for tree changes.
+* Choose the browser storage that holds a document's unacknowledged text and
+  base revision across reloads, as
+  [ADR 0005](../adrs/0005-workspace-model.md#presenting-saves-and-recovering)
+  requires.
 * Choose an icon set and state the supported browsers.
 * Validate the choices with a prototype outside the repository that installs
   through the npm proxy with install scripts disabled, as ADR 0003 did.

@@ -31,8 +31,10 @@ then PostgreSQL. The filesystem backend mirrors the workspace tree, with
 folders as directories and documents as `.md` files, so the workspace stays
 readable and editable with other tools. Manual ordering of siblings and
 identifiers that survive rename and move therefore need a home outside the
-file names. [Backlog 15](./0015-workspace-model-adr.md) defines the model
-this storage persists. An earlier project chose SQLite through SQLx; treat
+file names. [ADR 0005](../adrs/0005-workspace-model.md) defines the model
+this storage persists, its limits, and the revision rule for stale writes,
+and its [follow-up decisions](../adrs/0005-workspace-model.md#follow-up-decisions)
+list what it leaves to storage. An earlier project chose SQLite through SQLx; treat
 that as input for the SQL backends, not a validated choice for Writer.
 
 ## Scope
@@ -80,4 +82,4 @@ that as input for the SQL backends, not a validated choice for Writer.
 
 ## Prerequisites
 
-* [Record the workspace model and API ADR](./0015-workspace-model-adr.md)
+None.

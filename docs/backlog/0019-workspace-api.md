@@ -17,7 +17,7 @@ manages the workspace only through the service's contract.
 
 ## Context
 
-[Backlog 15](./0015-workspace-model-adr.md) defines the operations, their
+[ADR 0005](../adrs/0005-workspace-model.md#operations) defines the operations, their
 paths and bodies, and the conflict response for stale writes.
 [ADR 0004](../adrs/0004-api-conventions.md) sets paths, field casing,
 problem details errors, operation IDs, and tags, and forbids manuscript text in

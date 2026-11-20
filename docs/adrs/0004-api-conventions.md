@@ -16,12 +16,23 @@ keywords:
   - problem details
   - rfc 9457
   - server-sent events
-estimated_reading_time: 14
+estimated_reading_time: 15
 ---
 
 ## Status
 
 Accepted on 2026-11-20.
+
+Amended on 2026-11-20 by [ADR 0005](./0005-workspace-model.md), which
+settles or bounds the three [deferred decisions](#deferred-decisions) for the
+workspace API. It changes single aspects of an item with `PUT` on singleton
+sub-resources instead of `PATCH`, makes creation idempotent with
+client-generated identifiers instead of an `Idempotency-Key` header, and
+bounds the workspace tree so it is read whole without pagination. It also
+refines the method rules below: a repeated create returns 200 with the
+existing item, a `PUT` that replaces manuscript text may return the owning
+resource instead of echoing the text, and a request field whose `null`
+carries meaning may be required and nullable.
 
 ## Decision summary
 
@@ -245,7 +256,13 @@ Methods follow HTTP semantics: `GET` reads and returns 200, `POST` creates a
 resource and returns 201 with a `Location` header or computes a result and
 returns 200, `PUT` replaces and returns 200, and `DELETE` returns 204. Partial
 updates with `PATCH` are left to the first story that needs one, because they
-need a rule for distinguishing "unchanged" from "cleared".
+need a rule for distinguishing "unchanged" from "cleared". To change one
+aspect of a resource, `PUT` its singleton sub-resource instead, such as
+`PUT /api/v1/documents/{documentId}/title`, as
+[ADR 0005](./0005-workspace-model.md#operations) does. A create whose
+client-generated identifier already exists returns 200 with the existing
+resource, and a `PUT` that replaces manuscript text may return the owning
+resource rather than echo the text back.
 
 The health endpoint is `GET /api/v1/health`. It returns 200 with
 `{ "status": "ok" }` while the service can serve requests.
@@ -265,6 +282,10 @@ The health endpoint is `GET /api/v1/health`. It returns 200 with
   `Option<T>` with `#[serde(default)]` and `#[schema(nullable = false)]`, which
   generates `field?: T`. The service treats an explicit `null` as omitted, but
   the contract does not offer it.
+* A request field whose `null` carries meaning, such as ADR 0005's `parentId`
+  for the top level, is required and nullable: annotate its `Option<T>` with
+  `#[schema(required = true)]`, generating `field: T | null`, and reject a
+  body that omits it.
 * No property is both optional and nullable.
 * Arrays are never `null`. An empty collection is `[]`.
 * Timestamps are RFC 3339 strings in UTC, documented with `format: date-time`,
@@ -448,14 +469,26 @@ data: {"type":"about:blank","title":"Bad Gateway","status":502,"detail":"The mod
   so paging fields can be added without a breaking change. Decide the scheme,
   likely an opaque cursor, before the first collection operation whose size the
   service does not bound ships; adding paging to a collection clients already
-  read in full is a breaking change.
+  read in full is a breaking change. Bounded by
+  [ADR 0005](./0005-workspace-model.md#reading-the-workspace): the workspace
+  holds at most 10,000 items, so `getWorkspace` returns the whole tree
+  unpaginated. The scheme stays deferred, and version history's commit list
+  is the first expected collection without a bound.
 * Idempotency. `GET`, `PUT`, and `DELETE` are idempotent by their HTTP
   semantics, and a stateless computation such as `createQuestions` is safe to
-  repeat, at the cost of another model call. Decide, likely with an
-  `Idempotency-Key` request header, when the first `POST` that creates durable
-  state ships, or when a separately released client retries requests over an
-  unreliable network.
-* Partial updates with `PATCH`, decided by the first story that needs one.
+  repeat, at the cost of another model call. Settled for the workspace by
+  [ADR 0005](./0005-workspace-model.md#creating-an-item): the client generates
+  each new item's identifier and sends it in the `POST` body, and a repeated
+  create returns the existing item with 200, so no key store is needed. An
+  `Idempotency-Key` request header stays deferred to the first `POST` that
+  creates durable state without a client-chosen identifier, or to a
+  separately released client that retries requests over an unreliable
+  network.
+* Partial updates with `PATCH`. Settled for the workspace by
+  [ADR 0005](./0005-workspace-model.md#operations), which uses no `PATCH`: a
+  title, position, or content is replaced with `PUT` on its own sub-resource.
+  The rule for distinguishing "unchanged" from "cleared" stays deferred to the
+  first story that needs `PATCH`.
 
 ## Consequences
 
@@ -505,9 +538,12 @@ Trade-offs and risks:
 
 ## Follow-up decisions
 
-* Pagination scheme, when its trigger above occurs
-* Idempotency keys, when its trigger above occurs
-* Partial update semantics, with the first `PATCH` operation
+* Pagination scheme, when its trigger above occurs; the workspace tree is
+  bounded instead, as ADR 0005 records
+* Idempotency keys, when its trigger above occurs; workspace creation uses
+  client-generated identifiers instead, as ADR 0005 records
+* Partial update semantics, with the first `PATCH` operation; the workspace
+  uses `PUT` on sub-resources instead, as ADR 0005 records
 * Authentication errors and their codes, alongside the authentication decision
   ADR 0002 lists
 
