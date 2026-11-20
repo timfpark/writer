@@ -2,7 +2,7 @@
 title: "ADR 0001: Monorepo structure, agent navigation, and tooling baseline"
 description: Repository layout, subsystem boundaries, agent discoverability, and the development and automation baseline for Writer
 author: Tim Park
-ms.date: 2026-11-19
+ms.date: 2026-11-20
 ms.topic: reference
 status: Accepted
 subsystems:
@@ -278,7 +278,7 @@ agent framework or model provider is deferred to a later service ADR.
 | Pull request template               | Adopt    | `.github/pull_request_template.md`                   |
 | Secret scanning and push protection | Adopt    | GitHub repository settings                           |
 | Code ownership rules                | Defer    | `.github/CODEOWNERS`                                 |
-| Dependency review                   | Defer    | `.github/workflows/ci.yml`                           |
+| Dependency review                   | Adopt    | `.github/workflows/ci.yml`                           |
 | Python packages for tooling         | Reject   | Not applicable                                       |
 
 #### Validation gate
@@ -331,6 +331,14 @@ every action to a full commit SHA. A final `CI result` job runs with
 cancelled check never reports success. Branch protection requires only
 `CI result`.
 
+On pull requests, a dependency review job runs GitHub's dependency review
+action and fails when a dependency change in any scope, including development
+dependencies, adds a known vulnerability of any severity. It compares the
+dependency graph through the GitHub API, which stays available while the
+repository is public; a private repository would need GitHub Advanced
+Security. Pushes to `main` skip the job, and `CI result` accepts that skip
+only outside pull requests.
+
 #### Versions, lockfiles, and registries
 
 Each subsystem pins its runtime and commits its lockfile in its own folder:
@@ -356,8 +364,9 @@ registry.
 A pull request template asks for the linked backlog item, governing ADRs, and
 the `tools/check` result. CODEOWNERS is deferred while one maintainer owns every
 path; revisit when a second maintainer joins or a path needs a different
-reviewer. The dependency review action is deferred until the first lockfile
-lands and the repository's visibility or plan supports it.
+reviewer. Backlog 14 adopted the dependency review action, described under
+[Continuous integration](#continuous-integration), once `tools/package-lock.json`
+landed and the public repository's dependency graph supported it.
 
 #### GitHub repository settings
 

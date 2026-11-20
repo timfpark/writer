@@ -144,11 +144,18 @@ items.
 
 The [CI workflow](./.github/workflows/ci.yml) builds the development container
 and runs `tools/check` inside it on every pull request and every push to
-`main`. A newer push to a pull request cancels that pull request's running
-checks. The final `CI result` check passes only when every CI job succeeds,
-so a failed, skipped, or cancelled job never reports success. The workflow
-uses a read-only token, no repository secrets, and actions pinned to full
-commit SHAs.
+`main`. On pull requests, a dependency review job also fails when a change to
+a lockfile or other manifest adds a dependency with a known vulnerability, in
+any scope and at any severity. A newer push to a pull request cancels that
+pull request's running checks. The final `CI result` check passes only when
+every CI job succeeds, so a failed, skipped, or cancelled job never reports
+success. The one exception is dependency review on a push to `main`, where
+the job does not run. The workflow uses a read-only token, no repository
+secrets, and actions pinned to full commit SHAs.
+
+Dependency review depends on GitHub's dependency graph, which the repository
+gets for free while it stays public. Making it private would disable the
+check unless GitHub Advanced Security is enabled.
 
 ## Repository governance
 
