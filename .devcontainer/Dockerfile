@@ -5,8 +5,10 @@
 # arguments.
 
 # Debian trixie with Python 3.14, Bash, and Git. The digest pins every tool
-# the image provides, including the Python patch release.
-FROM mcr.microsoft.com/devcontainers/python:3.3.3-3.14-trixie@sha256:2e0589f0725c951ac8ae0d7169784a9694f5818ec5264ed5231f23c6bf0ab7be
+# the image provides, including the Python patch release. The tag names the
+# Python line so Dependabot refreshes the digest and proposes Python upgrades;
+# image-versioned tags such as 3.3.3-3.14-trixie make it misread the version.
+FROM mcr.microsoft.com/devcontainers/python:3.14-trixie@sha256:2e0589f0725c951ac8ae0d7169784a9694f5818ec5264ed5231f23c6bf0ab7be
 
 # npm's global config normally lives under each Node.js install prefix, which
 # nvm creates later and per version, so point every version at /etc/npmrc.
