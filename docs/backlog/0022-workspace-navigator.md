@@ -18,7 +18,8 @@ it.
 
 ## Context
 
-[Backlog 19](./0019-workspace-api.md) serves the operations, and
+The service's workspace API, in [openapi.json](../../service/openapi.json),
+serves the operations, and
 [ADR 0005](../adrs/0005-workspace-model.md) sets the title rules and what
 deleting a folder does. [ADR 0007](../adrs/0007-webapp-interface.md#components)
 chooses the tree primitive and server-state caching, and
@@ -66,6 +67,5 @@ shortcuts beyond moving through the tree arrive in
 
 ## Prerequisites
 
-* [Serve the workspace API](./0019-workspace-api.md)
 * [Build the workspace shell](./0020-workspace-shell.md)
 * [Add browser end-to-end tests to the gate](./0021-browser-tests.md)

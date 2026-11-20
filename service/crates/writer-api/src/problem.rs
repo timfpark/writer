@@ -7,7 +7,9 @@ use axum::extract::rejection::{JsonRejection, PathRejection, QueryRejection};
 use axum::http::{StatusCode, header};
 use axum::response::{IntoResponse, Response};
 use serde::{Deserialize, Serialize};
-use utoipa::ToSchema;
+use utoipa::{IntoResponses, ToSchema};
+use writer_domain::Violation;
+use writer_storage::StoreError;
 
 pub(crate) const PROBLEM_CONTENT_TYPE: &str = "application/problem+json";
 
@@ -99,6 +101,19 @@ impl Problem {
         }
     }
 
+    /// A 422 listing each broken workspace rule against its field.
+    pub(crate) fn violations(violations: impl IntoIterator<Item = Violation>) -> Self {
+        Self::validation_failed(
+            violations
+                .into_iter()
+                .map(|violation| ProblemFieldError {
+                    pointer: violation.pointer().to_owned(),
+                    detail: violation.detail().to_owned(),
+                })
+                .collect(),
+        )
+    }
+
     pub fn not_found() -> Self {
         Self::new(
             ProblemCode::NotFound,
@@ -131,6 +146,57 @@ impl IntoResponse for Problem {
             Err(_) => status.into_response(),
         }
     }
+}
+
+/// ADR 0006's mapping. Every `StoreError` is safe to log, and none is passed
+/// into `detail`.
+impl From<StoreError> for Problem {
+    fn from(error: StoreError) -> Self {
+        match error {
+            StoreError::NotFound => Self::new(
+                ProblemCode::NotFound,
+                "The requested resource does not exist.",
+            ),
+            StoreError::Conflict(conflict) => Self::new(ProblemCode::Conflict, conflict.detail()),
+            StoreError::Invalid(violation) => Self::violations([violation]),
+            // The store has already logged the identifier and reason.
+            StoreError::Unreadable { .. } => Self::internal_error(),
+            StoreError::Internal(error) => {
+                tracing::error!("{error}");
+                Self::internal_error()
+            }
+        }
+    }
+}
+
+/// The failures every operation with a request body documents, besides 500.
+#[derive(IntoResponses)]
+#[expect(dead_code, reason = "only documents responses")]
+pub(crate) enum BodyProblems {
+    #[response(
+        status = 400,
+        description = "The request body is not valid JSON.",
+        content_type = "application/problem+json"
+    )]
+    MalformedRequest(Problem),
+    #[response(
+        status = 413,
+        description = "The request body exceeds the size limit.",
+        content_type = "application/problem+json"
+    )]
+    PayloadTooLarge(Problem),
+    #[response(
+        status = 415,
+        description = "The request body is not sent as application/json.",
+        content_type = "application/problem+json"
+    )]
+    UnsupportedMediaType(Problem),
+    #[response(
+        status = 422,
+        description = "The request body breaks the schema or a workspace rule; `errors` names each field.",
+        content_type = "application/problem+json"
+    )]
+    ValidationFailed(Problem),
 }
 
 impl From<JsonRejection> for Problem {

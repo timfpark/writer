@@ -15,10 +15,9 @@ keywords:
 ## Overview
 
 The service stores text, applies business rules, serves the HTTP API, and will
-run the pair-writing agent. Today it serves one operation,
-`GET /api/v1/health`, behind a verified OpenAPI contract, and keeps the
-workspace of folders and documents in a data folder on your machine, which the
-workspace API (backlog 19) will expose. Coding agents start with
+run the pair-writing agent. Today it keeps the workspace of folders and
+documents in a data folder on your machine and serves it through the
+workspace API, behind a verified OpenAPI contract. Coding agents start with
 [AGENTS.md](./AGENTS.md); the architecture is recorded in
 [ADR 0002](../docs/adrs/0002-service-architecture.md), the API conventions in
 [ADR 0004](../docs/adrs/0004-api-conventions.md), the workspace model in
@@ -148,6 +147,124 @@ identifiers, exact titles, and order, but no text.
 3. To restore, stop the service, replace the data folder with the copy, and
    start the service again.
 
+## Walk through the workspace API
+
+The workspace API lists, creates, reads, saves, renames, moves, and deletes
+folders and documents, as [ADR 0005](../docs/adrs/0005-workspace-model.md#operations)
+defines. This walkthrough drives it with `curl` against a scratch data folder,
+so your own workspace stays untouched. Every title and sentence is synthetic.
+
+1. Start the service from this folder with a scratch data folder:
+
+   ```bash
+   WRITER_DATA_DIR=../.local/walkthrough cargo run -p writer-server
+   ```
+
+2. In a second terminal, also in this folder, name the API and the scratch
+   workspace. Each request below prints the response body followed by its
+   status code.
+
+   ```bash
+   api=http://127.0.0.1:8888/api/v1
+   data=../.local/walkthrough/workspace
+   ```
+
+3. Create the `The lighthouse` folder at the top level. The client chooses
+   each new item's identifier, a lowercase UUID.
+
+   ```bash
+   curl -sS -w ' %{http_code}\n' -X POST "$api/folders" \
+     -H 'Content-Type: application/json' \
+     -d '{"folderId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","parentId":null,"beforeId":null,"title":"The lighthouse"}'
+   ls "$data"
+   ```
+
+   The response is the folder with status `201`, and `ls` lists
+   `The lighthouse`. Sending the same request again returns `200` and
+   changes nothing.
+
+4. Create the empty `Chapter one` document inside it:
+
+   ```bash
+   curl -sS -w ' %{http_code}\n' -X POST "$api/documents" \
+     -H 'Content-Type: application/json' \
+     -d '{"documentId":"c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","beforeId":null,"title":"Chapter one"}'
+   ls "$data/The lighthouse"
+   ```
+
+   The response carries `"revision":"e3b0c44298fc1c149afbf4c8996fb924"`, the
+   revision of empty content, and `ls` lists `Chapter one.md`.
+
+5. Save content, naming the revision your edits started from:
+
+   ```bash
+   curl -sS -w ' %{http_code}\n' -X PUT "$api/documents/c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a/content" \
+     -H 'Content-Type: application/json' \
+     -d '{"markdown":"The keeper climbed the stairs twice before lighting the lamp.\n","baseRevision":"e3b0c44298fc1c149afbf4c8996fb924"}'
+   cat "$data/The lighthouse/Chapter one.md"
+   ```
+
+   The response is `200` with the new revision
+   `50a52a64cb33d03e10dc09540168aec7`, and the file holds exactly the
+   sentence.
+
+6. Save different text from the same, now stale, revision, as a second tab
+   would:
+
+   ```bash
+   curl -sS -w ' %{http_code}\n' -X PUT "$api/documents/c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a/content" \
+     -H 'Content-Type: application/json' \
+     -d '{"markdown":"The keeper waited for the tide.\n","baseRevision":"e3b0c44298fc1c149afbf4c8996fb924"}'
+   cat "$data/The lighthouse/Chapter one.md"
+   ```
+
+   The response is a `409` problem with code `conflict`, and the file still
+   holds the sentence from step 5.
+
+7. Rename the document:
+
+   ```bash
+   curl -sS -w ' %{http_code}\n' -X PUT "$api/documents/c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a/title" \
+     -H 'Content-Type: application/json' \
+     -d '{"title":"Chapter 1"}'
+   ls "$data/The lighthouse"
+   ```
+
+   The response is `200` with the same identifier and revision, and `ls`
+   lists `Chapter 1.md`.
+
+8. Move it to the end of the top level:
+
+   ```bash
+   curl -sS -w ' %{http_code}\n' -X PUT "$api/documents/c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a/position" \
+     -H 'Content-Type: application/json' \
+     -d '{"parentId":null,"beforeId":null}'
+   ls "$data" "$data/The lighthouse"
+   curl -sS -w ' %{http_code}\n' "$api/workspace"
+   ```
+
+   The response is `200` with `"parentId":null`. `ls` lists `Chapter 1.md`
+   beside `The lighthouse`, which is now empty, and the workspace lists the
+   folder, then the document.
+
+9. Delete the document and the folder:
+
+   ```bash
+   curl -sS -w ' %{http_code}\n' -X DELETE "$api/documents/c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a"
+   curl -sS -w ' %{http_code}\n' -X DELETE "$api/folders/3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3"
+   ls -A "$data"
+   ```
+
+   Each deletion prints `204`, and `ls -A` lists only Writer's own
+   `.writer` directory. Deleting either again returns a `404` problem.
+
+10. Stop the service with Ctrl+C, then remove the scratch folder with
+    `rm -rf ../.local/walkthrough`.
+
+In the development container the same commands work in its terminal. From
+the host, VS Code forwards port 8888, so the `curl` commands work there too,
+while the data folder stays inside the container.
+
 ## Checks
 
 The `service` phase of [tools/check](../tools/check), run from the repository
@@ -155,6 +272,9 @@ root, checks formatting, lints with warnings denied, builds, and runs every
 test in the workspace with `--locked`. The tests include:
 
 * Router tests for each documented response, run without binding a socket
+  against the filesystem backend in a temporary directory, which also
+  assert that a synthetic marker sent in titles and content appears in no
+  problem response and no log line
 * `writer-domain` tests of every workspace rule and limit, without storage
 * The storage conformance suite, run against the filesystem backend in
   temporary directories, and tests of the backend's own rules: names on disk,

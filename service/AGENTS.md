@@ -39,6 +39,11 @@ start with [README.md](./README.md).
   [writer-api/src/lib.rs](./crates/writer-api/src/lib.rs) through
   `OpenApiRouter` with `routes!`, so it is served and documented together.
   Handler paths are relative to `/api/v1`.
+* Handlers reach storage only through the `State<Store>` (an
+  `Arc<dyn WorkspaceStore>`) that `writer_api::router(store)` takes, and map
+  transport types to `writer-domain` types before calling it. Raise a body
+  limit per route with `routes!(...).layer(DefaultBodyLimit::max(...))`, as
+  the two operations that carry content do.
 * Give every `#[utoipa::path]` an explicit camelCase `operation_id` (such as
   `getHealth`) and exactly one `tag` equal to the first path segment after the
   version, declared in `ApiDoc`'s `tags(...)`.
@@ -67,7 +72,11 @@ start with [README.md](./README.md).
 * Pick the `ProblemCode` from ADR 0004's table; each code has one status.
 * Document every error status an operation can return, including 500, with
   `body = Problem, content_type = "application/problem+json"`. Operations
-  with a body also document 400, 413, 415, and 422.
+  with a body also document 400, 413, 415, and 422, by listing
+  `BodyProblems` in `responses(...)`.
+* Convert a `StoreError` into a `Problem` with `?`, which applies ADR 0006's
+  mapping and logs internal failures by operation, identifier, and error
+  kind only.
 * Never place request content, manuscript text, credentials, serde or
   rejection messages, or provider responses in `detail`, `errors`, or logs.
   Never log bodies or query strings.
@@ -77,11 +86,14 @@ start with [README.md](./README.md).
 * Await async I/O directly. Run blocking or CPU-heavy work with
   `tokio::task::spawn_blocking` behind a bounded permit. Stream incremental
   results over SSE with ADR 0004's `done` and `error` framing.
-* Test each documented response through `writer_api::router()` as a Tower
-  service without binding a socket, decoding its body into the documented
-  type. Test shared error code once, in
+* Test each documented response through `writer_api::router(store)` as a
+  Tower service without binding a socket, over a `FilesystemStore` opened in
+  a `tempfile::TempDir`, decoding its body into the documented type. Test
+  shared error code once, in
   [writer-api/src/tests.rs](./crates/writer-api/src/tests.rs), with the
-  synthetic marker.
+  synthetic marker. Send the marker in titles and content in
+  [writer-api/tests/workspace.rs](./crates/writer-api/tests/workspace.rs),
+  whose captured logs must never contain it.
 * Use synthetic prose in tests and fixtures, never a real manuscript.
 
 ### Storage
@@ -152,6 +164,7 @@ cargo test -p writer-storage                               # conformance suite a
 cargo test -p writer-storage conformance::                 # conformance suite only
 WRITER_DATA_DIR=/tmp/writer-data cargo run -p writer-server # serve with data in another folder
 cargo test -p writer-api --test conventions                # ADR 0004 conventions only
+cargo test -p writer-api --test workspace                  # workspace operations through the router
 UPDATE_OPENAPI=1 cargo test -p writer-api --test openapi   # regenerate openapi.json
 cargo fmt --all                                            # format
 ```
