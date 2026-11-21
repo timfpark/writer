@@ -1,0 +1,140 @@
+/* Fills the pane, so the transcript scrolls and the message box stays put. */
+.assistant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.empty {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.transcript {
+  flex: 1;
+  min-block-size: 0;
+  overflow: auto;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-inline-size: 90%;
+}
+
+.message[data-role="writer"] {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.message[data-role="assistant"] {
+  align-self: flex-start;
+}
+
+.speaker {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.text {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.message[data-role="writer"] .text {
+  background: var(--color-current);
+  color: var(--color-text);
+}
+
+.message[data-role="assistant"] .text {
+  border: 1px solid var(--color-border);
+  background: var(--color-chrome-raised);
+  color: var(--color-text);
+}
+
+/*
+ * One rounded box, like a chat input: the text area on top and a row of
+ * actions below it, with the box showing the focus ring for the field.
+ */
+.composer {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-chrome-raised);
+}
+
+.composer:has(.input:focus-visible) {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -1px;
+}
+
+.field {
+  display: flex;
+}
+
+/* At least 16 px, so Safari on iPadOS does not zoom to the field. */
+.input {
+  inline-size: 100%;
+  max-block-size: 12rem;
+  padding: var(--space-3) var(--space-3) var(--space-1);
+  border: 0;
+  background: transparent;
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-lg);
+  line-height: 1.4;
+  resize: none;
+  outline: none;
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: var(--space-1) var(--space-2) var(--space-2);
+}
+
+/* A filled circle once there is something to send. */
+.send {
+  border-radius: 50%;
+  cursor: default;
+}
+
+.send:not([data-disabled]) {
+  background: var(--color-accent);
+  color: var(--color-page);
+}
+
+.send:not([data-disabled])[data-hovered],
+.send:not([data-disabled])[data-pressed] {
+  background: var(--color-accent);
+  color: var(--color-page);
+  opacity: 0.85;
+}
+
+.send[data-disabled] {
+  color: var(--color-text-muted);
+  opacity: 0.6;
+}

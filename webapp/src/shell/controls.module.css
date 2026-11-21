@@ -5,8 +5,8 @@
   flex: none;
   align-items: center;
   justify-content: center;
-  inline-size: 2rem;
-  block-size: 2rem;
+  inline-size: var(--control-size);
+  block-size: var(--control-size);
   padding: 0;
   border: 0;
   border-radius: var(--radius-sm);
@@ -40,11 +40,4 @@
   background: var(--color-chrome-raised);
   color: var(--color-text);
   font-size: var(--text-sm);
-}
-
-@media (pointer: coarse) {
-  .iconButton {
-    inline-size: 2.75rem;
-    block-size: 2.75rem;
-  }
 }

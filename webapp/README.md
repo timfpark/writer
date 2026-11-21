@@ -2,7 +2,7 @@
 title: Writer webapp
 description: How to set up, run, configure, and check the Writer webapp, a React single-page writing workspace that calls the service through a generated API client
 author: Tim Park
-ms.date: 2026-11-20
+ms.date: 2026-11-21
 ms.topic: overview
 keywords:
   - webapp
@@ -21,7 +21,8 @@ left, the writing region in the center, and an assistant on the right. Both
 side panes collapse, so the writing region can take the whole width. The
 navigator shows the workspace's folders and documents as a tree, the writing
 region edits the open document as formatted text that saves itself, and the
-assistant holds a placeholder until a later story fills it.
+assistant holds a conversation answered by a stub until the pair-writing
+agent joins.
 Coding agents start with [AGENTS.md](./AGENTS.md); the architecture is
 recorded in [ADR 0003](../docs/adrs/0003-webapp-architecture.md), the API
 conventions in [ADR 0004](../docs/adrs/0004-api-conventions.md), the
@@ -98,7 +99,9 @@ folders around it.
 
 `Mod` is Command on macOS and iPadOS and Control elsewhere. In a window 75 rem
 (1,200 px at the default text size) or wider, both panes dock beside the
-writing region. From 60 to 75 rem the assistant opens over the writing region,
+writing region, each growing into the room the page leaves, up to 24 rem for
+the navigator and 32 rem for the assistant. From 60 to 75 rem the assistant
+opens over the writing region,
 and below 60 rem both do, so the region keeps its width on an iPad in either
 orientation. A pane over the writing region closes on `Escape`, a tap outside
 it, its toggle in the header, or a change of route. Whether each docked pane is
@@ -106,8 +109,17 @@ collapsed is kept in `localStorage` under `writer.navigator.collapsed` and
 `writer.assistant.collapsed`, so it survives a reload.
 
 The header's title slot shows the open document's title, or Writer's name at
-`/`. When the service cannot be reached, the writing region says so and
+`/`, starting where the writing page's text starts whichever panes are open.
+When the service cannot be reached, the writing region says so and
 offers to try again.
+
+The assistant shows a conversation with the pair writer above a message box
+that grows with its text.
+`Enter` or the Send button sends, and `Shift+Enter` starts a new line. Until
+the pair-writing agent arrives, a stub in the browser answers that the
+assistant is not connected yet, so a message sends no request. The
+conversation lives only in memory: it stays while the pane closes and
+reopens, and a reload clears it.
 
 ### Writing
 
@@ -131,7 +143,8 @@ as it was.
 Every change saves itself a second after typing pauses, and at least every
 five seconds while it continues, and again on leaving the document, leaving
 the writing surface, hiding the tab, or closing it. Beside the title, the
-header says Saved, Saving, Retrying while the service is unreachable,
+header shows a green Saved badge with a check, or says Saving, Retrying while
+the service is unreachable,
 Conflict, or Not saved when the service refuses the text, such as a document
 over 1 MiB. Until the service acknowledges text, it is also kept in the
 browser's IndexedDB database `writer`, so a reload or a closed tab loses

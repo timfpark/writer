@@ -9,8 +9,9 @@ description: Purpose, boundaries, operational rules, governing decisions, and ex
 Vite 8: Writer's editing workspace. Today it shows the workspace shell, a
 header with the open document's editable title and save status above a
 collapsible navigator holding the workspace tree, the writing region editing
-the open document with autosave, and a collapsible assistant holding a
-placeholder. Browser tests in `e2e/` drive it
+the open document with autosave, and a collapsible assistant holding an
+in-memory conversation answered by a client-side stub. Browser tests in
+`e2e/` drive it
 against a running service. People start with
 [README.md](./README.md), which maps the source folders.
 
@@ -70,6 +71,18 @@ against a running service. People start with
 * Keep small preferences in `localStorage` under keys starting `writer.`,
   through [preferences.ts](./src/shell/preferences.ts), falling back to the
   default when a value is missing or unreadable.
+* Get the assistant's replies only through the `Assistant` interface in
+  [conversation.ts](./src/workspace/conversation.ts), whose default is the
+  client-side stub. Keep the conversation in `WorkspaceShell`, never in the
+  pane, because an overlaid pane unmounts while it is closed.
+* Size the docked panes, the writing region, and the header's matching
+  columns from the same layout tokens in
+  [tokens.css](./src/styles/tokens.css) (`--page-width`, `--page-inset`, the
+  pane widths and maximums, and `--control-size`), and change a column's flex
+  sizing in [Pane.module.css](./src/shell/Pane.module.css) or
+  [WorkspaceShell.module.css](./src/shell/WorkspaceShell.module.css) together
+  with [Header.module.css](./src/shell/Header.module.css), so the title stays
+  over the page's text.
 * Keep both breakpoints, 60 and 75 rem, and the touch rules keyed to
   `(hover: none)` and `(pointer: coarse)` as ADR 0007's responsive layout
   sets, so the shell works on iPad in both orientations.
