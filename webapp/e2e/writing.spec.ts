@@ -157,6 +157,91 @@ function isContentPath(url: URL): boolean {
   return /^\/api\/v1\/documents\/[^/]+\/content$/.test(url.pathname);
 }
 
+// Where the header's title text starts, where the document's text starts,
+// and the boxes the title must not overlap, in CSS pixels.
+async function headerLayout(page: Page) {
+  return page.evaluate(() => {
+    const textLeft = (element: Element | null) => {
+      if (!element) throw new Error("element missing");
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      return range.getBoundingClientRect().left;
+    };
+    const box = (element: Element | null) => {
+      if (!element) throw new Error("element missing");
+      const { left, right } = element.getBoundingClientRect();
+      return { left, right };
+    };
+    const banner = document.querySelector("header");
+    const buttons = [...(banner?.querySelectorAll("button") ?? [])];
+    const named = (name: string) =>
+      buttons.find((button) => button.getAttribute("aria-label") === name) ??
+      null;
+    return {
+      title: textLeft(document.querySelector("h1 button")),
+      text: textLeft(document.querySelector("[role=textbox] p")),
+      heading: box(document.querySelector("h1")),
+      status: box(banner?.querySelector("[data-state]") ?? null),
+      navigator: box(named("Navigator")),
+      assistant: box(named("Assistant")),
+    };
+  });
+}
+
+test("starts the title over the document's text in each pane layout without covering the controls", async ({
+  page,
+  viewport,
+  hasTouch,
+}) => {
+  const title = unique(
+    "Harbor at the end of a very long day of rain, wind, and gulls over the quay",
+  );
+  const documentId = await createDocument(
+    page,
+    title,
+    "Gulls wheeled over the harbor at dawn.\n",
+  );
+  await openDocument(page, documentId, title);
+  await expect(saveStatus(page, "Saved")).toBeVisible();
+  await expect(
+    page.getByRole("banner").getByRole("button", { name: title }),
+  ).toBeVisible();
+
+  const expectLayout = async () => {
+    const layout = await headerLayout(page);
+    // Where the text starts under the navigator's button, the title starts
+    // after it instead.
+    if (layout.text >= layout.navigator.right + 16) {
+      expect(Math.abs(layout.title - layout.text)).toBeLessThanOrEqual(1);
+    } else {
+      expect(layout.title).toBeGreaterThan(layout.navigator.right);
+    }
+    expect(layout.heading.left).toBeGreaterThanOrEqual(layout.navigator.right);
+    expect(layout.heading.right).toBeLessThanOrEqual(layout.status.left);
+    expect(layout.status.right).toBeLessThanOrEqual(layout.assistant.left);
+  };
+
+  await expectLayout();
+  const width = viewport?.width ?? 0;
+  for (const [name, docksFrom] of [
+    ["Navigator", 960],
+    ["Assistant", 1200],
+  ] as const) {
+    if (width < docksFrom) continue;
+    await press(
+      page.getByRole("banner").getByRole("button", { name, exact: true }),
+      hasTouch,
+    );
+    await expect(
+      page.getByRole(name === "Navigator" ? "navigation" : "complementary", {
+        name,
+      }),
+    ).toBeHidden();
+    await expectLayout();
+  }
+  await expectAccessible(page);
+});
+
 test("saves typed text without an explicit save and keeps it after a reload", async ({
   page,
   hasTouch,

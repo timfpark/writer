@@ -2,7 +2,7 @@
 title: "ADR 0007: Webapp styling, typefaces, components, routing, and server state"
 description: Selects CSS Modules with typed declarations and design tokens in custom properties, light and dark themes, Newsreader and Inter served from the webapp's own build, React Aria Components for the tree, menus, dialogs, and drag and drop, TanStack Router with /documents/{documentId}, TanStack Query with ordered optimistic tree changes, IndexedDB for unsaved text, Lucide icons, contrast targets, and the supported browsers
 author: Tim Park
-ms.date: 2026-11-20
+ms.date: 2026-11-21
 ms.topic: reference
 status: Accepted
 subsystems:
@@ -48,6 +48,12 @@ Amended on 2026-11-21 to drop Firefox from the
 Safari, and testing a fourth engine cost more than it returned: Firefox's
 content process crashed under automated accessibility checks of the
 navigator's tree, a failure no supported browser shares.
+
+Amended on 2026-11-21 by backlog items 25 and 33. They add the
+`--color-success` and `--color-success-surface` tokens for the header's Saved
+badge, with their contrast pair, and layout tokens shared by the header and
+the writing page. The header's title now starts where the writing page's text
+starts.
 
 ## Decision summary
 
@@ -382,13 +388,14 @@ Tokens come in two layers. Primitive tokens name raw values, such as
 name roles, such as `--color-page` and `--color-ink`, and are the only color
 tokens components use. Other tokens:
 
-| Group            | Tokens                                                                                                                                                           |
-|------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Spacing          | `--space-1`, `-2`, `-3`, `-4`, `-6`, `-8`, `-12`, and `-16`: 0.25, 0.5, 0.75, 1, 1.5, 2, 3, and 4 rem                                                            |
-| Interface type   | `--text-sm` 0.8125 rem, `--text-md` 0.875 rem (the default), `--text-lg` 1 rem, `--text-xl` 1.25 rem; weights 400, 500, and 600                                  |
-| Writing type     | `--writing-size` 1.25 rem, `--writing-leading` 1.6, `--writing-measure` 36 em (about 70 characters); headings 2, 1.5, and 1.25 rem at weight 600                 |
-| Families         | `--font-interface`: Inter, then `system-ui`; `--font-writing`: Newsreader, then Georgia; `--font-mono`: `ui-monospace` and system faces, downloaded from nowhere |
-| Shape and motion | `--radius-sm` 4 px, `--radius-md` 6 px, `--duration-fast` 150 ms, set to 0 under `prefers-reduced-motion`                                                        |
+| Group            | Tokens                                                                                                                                                               |
+|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Spacing          | `--space-1`, `-2`, `-3`, `-4`, `-6`, `-8`, `-12`, and `-16`: 0.25, 0.5, 0.75, 1, 1.5, 2, 3, and 4 rem                                                                |
+| Interface type   | `--text-sm` 0.8125 rem, `--text-md` 0.875 rem (the default), `--text-lg` 1 rem, `--text-xl` 1.25 rem; weights 400, 500, and 600                                      |
+| Writing type     | `--writing-size` 1.25 rem, `--writing-leading` 1.6, `--writing-measure` 36 em (about 70 characters); headings 2, 1.5, and 1.25 rem at weight 600                     |
+| Families         | `--font-interface`: Inter, then `system-ui`; `--font-writing`: Newsreader, then Georgia; `--font-mono`: `ui-monospace` and system faces, downloaded from nowhere     |
+| Shape and motion | `--radius-sm` 4 px, `--radius-md` 6 px, `--duration-fast` 150 ms, set to 0 under `prefers-reduced-motion`                                                            |
+| Layout           | `--navigator-width` 16 rem, `--assistant-width` 18 rem, `--control-size` 2 rem (2.75 rem for coarse pointers), `--page-inset` `--space-8` (`--space-6` below 60 rem) |
 
 Sizes are in `rem`, so a writer's browser font size scales the whole
 interface. Backlogs 20 and 23 may refine values within these structures;
@@ -402,18 +409,20 @@ and `color-scheme: dark` inside `@media (prefers-color-scheme: dark)`, so
 native controls and scroll bars follow. No component, test, or script
 chooses a theme.
 
-| Semantic token          | Role                                  | Light     | Dark      |
-|-------------------------|---------------------------------------|-----------|-----------|
-| `--color-chrome`        | Header and side panes                 | `#f3f1ec` | `#141312` |
-| `--color-chrome-raised` | Menus, popovers, and dialogs          | `#fbfaf7` | `#1f1e1c` |
-| `--color-text`          | Interface text                        | `#26241f` | `#e2ded6` |
-| `--color-text-muted`    | Secondary interface text              | `#605b52` | `#a8a397` |
-| `--color-border`        | Control boundaries                    | `#8a8478` | `#78736a` |
-| `--color-accent`        | Focus rings, drop indicators, links   | `#2b5bc6` | `#8db0ff` |
-| `--color-current`       | The open document's row               | `#e2e7f4` | `#28303f` |
-| `--color-page`          | The writing surface                   | `#fffefa` | `#1d1c1a` |
-| `--color-ink`           | Body text on the writing surface      | `#1f1d1a` | `#e6e1d8` |
-| `--color-ink-muted`     | Secondary text on the writing surface | `#57524a` | `#b9b3a8` |
+| Semantic token            | Role                                  | Light     | Dark      |
+|---------------------------|---------------------------------------|-----------|-----------|
+| `--color-chrome`          | Header and side panes                 | `#f3f1ec` | `#141312` |
+| `--color-chrome-raised`   | Menus, popovers, and dialogs          | `#fbfaf7` | `#1f1e1c` |
+| `--color-text`            | Interface text                        | `#26241f` | `#e2ded6` |
+| `--color-text-muted`      | Secondary interface text              | `#605b52` | `#a8a397` |
+| `--color-border`          | Control boundaries                    | `#8a8478` | `#78736a` |
+| `--color-accent`          | Focus rings, drop indicators, links   | `#2b5bc6` | `#8db0ff` |
+| `--color-current`         | The open document's row               | `#e2e7f4` | `#28303f` |
+| `--color-page`            | The writing surface                   | `#fffefa` | `#1d1c1a` |
+| `--color-ink`             | Body text on the writing surface      | `#1f1d1a` | `#e6e1d8` |
+| `--color-ink-muted`       | Secondary text on the writing surface | `#57524a` | `#b9b3a8` |
+| `--color-success`         | Text and icon of a success badge      | `#1d6b35` | `#a6dcb4` |
+| `--color-success-surface` | A success badge's fill                | `#dcefe1` | `#173a24` |
 
 In both themes the writing surface is lighter than the chrome around it, so
 the page reads as a sheet laid on the workspace. Dark body text is off-white rather than white, which keeps
@@ -447,6 +456,7 @@ The tokens above measure:
 | `--color-accent` on `--color-chrome`            | 3:1    | 5.45:1  | 8.65:1  |
 | `--color-accent` on `--color-page`              | 3:1    | 6.09:1  | 7.94:1  |
 | `--color-accent` on `--color-current`           | 3:1    | 4.97:1  | 6.18:1  |
+| `--color-success` on `--color-success-surface`  | 4.5:1  | 5.45:1  | 8.11:1  |
 
 A Vitest test, `src/styles/tokens.test.ts`, reads `tokens.css`, resolves each
 semantic token in both themes, and asserts every pair in this table with the
@@ -493,18 +503,18 @@ or decorative borders, and motion is limited to state changes of
 `--duration-fast`. The prototype established these starting values, which
 backlogs 20, 22, and 23 may tune within the tokens:
 
-| Element            | Starting treatment                                                                                                                                         |
-|--------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Header             | One row padded `--space-2` by `--space-4`, separated from the regions below by a single 1 px `--color-border` line                                         |
-| Side panes         | 16 rem navigator and 18 rem assistant on `--color-chrome`, the header's color, with no divider of their own                                                |
-| Writing page       | A sheet on `--color-page`, centered at `--writing-measure`, padded `--space-12` by `--space-8`, with no border or shadow; it stands out by lightness alone |
-| Page headings      | Newsreader at 2 rem with line height 1.2, its optical size following the font size                                                                         |
-| Interface text     | Inter at `--text-md` with line height 1.4; secondary text in `--color-text-muted`                                                                          |
-| Tree rows          | At least 1.75 rem tall with a 4 px radius, indented 1 rem per level, with 16 px folder and document icons                                                  |
-| Row controls       | 24 px drag handle and chevron with 14 px icons; the chevron turns 90 degrees over `--duration-fast` when a folder expands                                  |
-| Row states         | The open document tinted `--color-current` with no border, focus shown by a 2 px `--color-accent` outline inset 2 px, a dragged row at half opacity        |
-| Menus and popovers | `--color-chrome-raised` with a 1 px `--color-border` edge and a 6 px radius; the focused item tinted `--color-current`                                     |
-| Icons              | Lucide's default 2 px stroke in `currentColor`, 16 to 18 px                                                                                                |
+| Element            | Starting treatment                                                                                                                                                |
+|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Header             | One row padded `--space-2` by `--space-4`, separated from the regions below by a single 1 px `--color-border` line; the title starts where the page's text starts |
+| Side panes         | 16 rem navigator and 18 rem assistant on `--color-chrome`, the header's color, with no divider of their own                                                       |
+| Writing page       | A sheet on `--color-page`, centered at `--writing-measure`, padded `--space-12` by `--space-8`, with no border or shadow; it stands out by lightness alone        |
+| Page headings      | Newsreader at 2 rem with line height 1.2, its optical size following the font size                                                                                |
+| Interface text     | Inter at `--text-md` with line height 1.4; secondary text in `--color-text-muted`                                                                                 |
+| Tree rows          | At least 1.75 rem tall with a 4 px radius, indented 1 rem per level, with 16 px folder and document icons                                                         |
+| Row controls       | 24 px drag handle and chevron with 14 px icons; the chevron turns 90 degrees over `--duration-fast` when a folder expands                                         |
+| Row states         | The open document tinted `--color-current` with no border, focus shown by a 2 px `--color-accent` outline inset 2 px, a dragged row at half opacity               |
+| Menus and popovers | `--color-chrome-raised` with a 1 px `--color-border` edge and a 6 px radius; the focused item tinted `--color-current`                                            |
+| Icons              | Lucide's default 2 px stroke in `currentColor`, 16 to 18 px                                                                                                       |
 
 ### Responsive layout and touch
 

@@ -18,6 +18,7 @@ const pairs: [foreground: string, background: string, target: number][] = [
   ["--color-accent", "--color-chrome", 3],
   ["--color-accent", "--color-page", 3],
   ["--color-accent", "--color-current", 3],
+  ["--color-success", "--color-success-surface", 4.5],
 ];
 
 function declarationsIn(block: string): Declarations {

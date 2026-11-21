@@ -13,11 +13,16 @@
   padding-block-end: env(safe-area-inset-bottom);
 }
 
-/* The writing region takes every pixel the side panes do not use. */
+/*
+ * The writing region takes every pixel the side panes do not use. Its gutter
+ * is reserved on both edges, so a scroll bar never moves the page off the
+ * center the header's title shares.
+ */
 .writing {
   display: flex;
   flex: 1 1 0;
   flex-direction: column;
   min-inline-size: 0;
   overflow: auto;
+  scrollbar-gutter: stable both-edges;
 }

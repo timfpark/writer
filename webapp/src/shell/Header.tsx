@@ -8,14 +8,14 @@ import {
   Tooltip,
   TooltipTrigger,
 } from "react-aria-components";
-import { documentQueryOptions, ServiceError } from "../api/queries";
+import { documentQueryOptions } from "../api/queries";
 import { useWorkspaceChange, useWorkspaceTree } from "../api/workspaceChanges";
-import type { SaveStatus } from "../saving/documentSaver";
 import { useSaveStatus } from "../saving/saveManager";
 import controls from "./controls.module.css";
 import styles from "./Header.module.css";
 import { paneId } from "./Pane";
 import { ProfileMenu } from "./ProfileMenu";
+import { SaveIndicator } from "./SaveIndicator";
 import { ariaShortcut, shortcutLabel } from "./shortcuts";
 import type { PaneState } from "./usePane";
 
@@ -24,13 +24,19 @@ interface HeaderProps {
   assistant: PaneState;
 }
 
+// Lays out over the same columns as the region below, so the title centers
+// over the writing column whichever side panes are docked open.
 export function Header({ navigator, assistant }: HeaderProps) {
   return (
-    <header className={styles.header}>
+    <header
+      className={styles.header}
+      data-navigator={navigator.docked && navigator.open ? "docked" : undefined}
+      data-assistant={assistant.docked && assistant.open ? "docked" : undefined}
+    >
       <div className={styles.start}>
         <PaneToggle pane={navigator} label="Navigator" icon={PanelLeft} />
-        <DocumentTitle />
       </div>
+      <DocumentTitle />
       <div className={styles.end}>
         <PaneToggle pane={assistant} label="Assistant" icon={PanelRight} />
         <ProfileMenu />
@@ -53,17 +59,29 @@ function DocumentTitle() {
     document.data?.title;
   if (!documentId || title === undefined) {
     return (
-      <h1 id={titleId} className={styles.title}>
-        Writer
-      </h1>
+      <div className={styles.center}>
+        <div className={styles.lead}>
+          <h1 id={titleId} className={styles.title}>
+            Writer
+          </h1>
+        </div>
+      </div>
     );
   }
   return (
-    <>
-      <TitleField key={documentId} documentId={documentId} title={title} />
-      <SaveIndicator documentId={documentId} />
-    </>
+    <div className={styles.center}>
+      <div className={styles.lead}>
+        <TitleField key={documentId} documentId={documentId} title={title} />
+        <div className={styles.status}>
+          <DocumentSaveIndicator documentId={documentId} />
+        </div>
+      </div>
+    </div>
   );
+}
+
+function DocumentSaveIndicator({ documentId }: { documentId: string }) {
+  return <SaveIndicator status={useSaveStatus(documentId)} />;
 }
 
 // Shows the title as a button that turns into a field. Enter or leaving the
@@ -126,7 +144,7 @@ function TitleField({
       <span id={`${titleId}-hint`} hidden>
         Rename
       </span>
-      <h1 id={titleId} className={styles.title}>
+      <h1 id={titleId} className={`${styles.title} ${styles.editable}`}>
         {editing ? (
           <input
             ref={inputRef}
@@ -154,57 +172,6 @@ function TitleField({
           </TooltipTrigger>
         )}
       </h1>
-    </>
-  );
-}
-
-const statusLabels: Record<SaveStatus["state"], string> = {
-  saved: "Saved",
-  saving: "Saving…",
-  retrying: "Retrying…",
-  conflict: "Conflict",
-  failed: "Not saved",
-};
-
-// What a screen reader hears, only when saving needs the writer's attention.
-function statusMessage(status: SaveStatus): string {
-  const problem =
-    status.problem instanceof ServiceError ? status.problem.problem : undefined;
-  switch (status.state) {
-    case "retrying":
-      return "Writer can't reach the service and keeps retrying. Your text is kept in this browser.";
-    case "conflict":
-      if (problem?.code === "validationFailed") {
-        return "This document changed elsewhere, and Writer can't keep both versions because the workspace is full. Your text is kept in this browser.";
-      }
-      return "This document changed elsewhere. Writer is keeping both versions.";
-    case "failed":
-      if (
-        problem?.code === "payloadTooLarge" ||
-        problem?.code === "validationFailed"
-      ) {
-        return "This document is over 1 MiB, the most Writer saves. Your text is kept in this browser until it is shorter.";
-      }
-      return "The service refused to save this document. Your text is kept in this browser.";
-    default:
-      return "";
-  }
-}
-
-// A quiet save status beside the title.
-function SaveIndicator({ documentId }: { documentId: string }) {
-  const status = useSaveStatus(documentId);
-  const message = statusMessage(status);
-  return (
-    <>
-      <span
-        className={styles.status}
-        data-state={status.state}
-        {...(message ? { title: message } : {})}
-      >
-        {statusLabels[status.state]}
-      </span>
-      <output className={styles.visuallyHidden}>{message}</output>
     </>
   );
 }

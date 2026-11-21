@@ -1,0 +1,112 @@
+/* Fills the pane, so the transcript scrolls and the message box stays put. */
+.assistant {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  block-size: 100%;
+  min-block-size: 0;
+}
+
+.empty {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.transcript {
+  flex: 1;
+  min-block-size: 0;
+  overflow: auto;
+}
+
+.messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-inline-size: 90%;
+}
+
+.message[data-role="writer"] {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.message[data-role="assistant"] {
+  align-self: flex-start;
+}
+
+.speaker {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.text {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-md);
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.message[data-role="writer"] .text {
+  background: var(--color-current);
+  color: var(--color-text);
+}
+
+.message[data-role="assistant"] .text {
+  border: 1px solid var(--color-border);
+  background: var(--color-chrome-raised);
+  color: var(--color-text);
+}
+
+.composer {
+  display: flex;
+  flex: none;
+  align-items: flex-end;
+  gap: var(--space-2);
+}
+
+.field {
+  display: flex;
+  flex: 1;
+  min-inline-size: 0;
+}
+
+/* At least 16 px, so Safari on iPadOS does not zoom to the field. */
+.input {
+  inline-size: 100%;
+  max-block-size: 12rem;
+  padding: var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-chrome-raised);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-lg);
+  line-height: 1.4;
+  resize: none;
+}
+
+.input::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
+.input[data-focus-visible],
+.input:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 0;
+}
+
+.send[data-disabled] {
+  opacity: 0.5;
+}

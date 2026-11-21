@@ -27,6 +27,10 @@
   --blue-300: #8db0ff;
   --blue-600: #2b5bc6;
   --blue-900: #28303f;
+  --green-100: #dcefe1;
+  --green-200: #a6dcb4;
+  --green-700: #1d6b35;
+  --green-900: #173a24;
 
   /* Semantic colors, light theme */
   color-scheme: light;
@@ -40,6 +44,8 @@
   --color-page: var(--paper-50);
   --color-ink: var(--stone-950);
   --color-ink-muted: var(--stone-700);
+  --color-success: var(--green-700);
+  --color-success-surface: var(--green-100);
 
   /* Spacing */
   --space-1: 0.25rem;
@@ -79,6 +85,24 @@
   --radius-sm: 4px;
   --radius-md: 6px;
   --duration-fast: 150ms;
+
+  /* Layout */
+  --navigator-width: 16rem;
+  --assistant-width: 18rem;
+  --control-size: 2rem;
+  --page-inset: var(--space-8);
+}
+
+@media (max-width: 60rem) {
+  :root {
+    --page-inset: var(--space-6);
+  }
+}
+
+@media (pointer: coarse) {
+  :root {
+    --control-size: 2.75rem;
+  }
 }
 
 @media (prefers-color-scheme: dark) {
@@ -94,6 +118,8 @@
     --color-page: var(--night-900);
     --color-ink: var(--night-50);
     --color-ink-muted: var(--night-250);
+    --color-success: var(--green-200);
+    --color-success-surface: var(--green-900);
   }
 }
 

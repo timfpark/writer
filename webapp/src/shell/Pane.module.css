@@ -12,11 +12,11 @@
 }
 
 .navigator {
-  inline-size: 16rem;
+  inline-size: var(--navigator-width);
 }
 
 .assistant {
-  inline-size: 18rem;
+  inline-size: var(--assistant-width);
 }
 
 .overlay {
