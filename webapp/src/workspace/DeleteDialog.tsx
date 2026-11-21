@@ -6,7 +6,7 @@ import {
   ModalOverlay,
 } from "react-aria-components";
 import type { ItemKind } from "../api/client";
-import styles from "./DeleteDialog.module.css";
+import styles from "./dialog.module.css";
 
 interface DeleteDialogProps {
   kind: ItemKind;

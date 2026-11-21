@@ -8,6 +8,7 @@ import {
   Folder,
   FolderOpen,
   FolderPlus,
+  GripVertical,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -24,6 +25,7 @@ import {
 } from "react";
 import {
   Button,
+  DropIndicator,
   Menu,
   MenuItem,
   MenuTrigger,
@@ -35,8 +37,10 @@ import {
   Tree,
   TreeItem,
   TreeItemContent,
+  useDragAndDrop,
+  type Key,
 } from "react-aria-components";
-import type { ItemKind } from "../api/client";
+import type { ItemKind, WorkspaceItem } from "../api/client";
 import { useQueryFailure } from "../api/useQueryFailure";
 import {
   useChangeFailures,
@@ -46,7 +50,10 @@ import {
 import {
   ancestorIds,
   buildTree,
+  dropPlacement,
+  siblingPlacement,
   subtreeIds,
+  type Placement,
   type TreeNode,
 } from "../api/workspaceTree";
 import controls from "../shell/controls.module.css";
@@ -54,17 +61,25 @@ import { useSaveManager } from "../saving/saveManager";
 import { useStoredSet } from "../shell/preferences";
 import { failureMessage } from "./changeFailure";
 import { DeleteDialog } from "./DeleteDialog";
+import { MoveDialog } from "./MoveDialog";
 import styles from "./Navigator.module.css";
 
 const commands = [
   "newDocument",
   "newFolder",
   "rename",
+  "moveUp",
+  "moveDown",
+  "moveTo",
   "expandAll",
   "collapseAll",
   "delete",
 ] as const;
 type Command = (typeof commands)[number];
+
+// A drag type private to the navigator, so nothing from outside the tree,
+// such as text or files, can be dropped into it.
+const itemDragType = "application/x-writer-item";
 
 function isCommand(key: unknown): key is Command {
   return commands.some((command) => command === key);
@@ -113,6 +128,7 @@ export function Navigator() {
   const [naming, setNaming] = useState<Naming | null>(null);
   const namingRef = useRef<Naming | null>(null);
   const [deleting, setDeleting] = useState<TreeNode | null>(null);
+  const [moving, setMoving] = useState<TreeNode | null>(null);
   const [contextMenu, setContextMenu] = useState<ContextMenu | null>(null);
   const frameRef = useRef<HTMLDivElement>(null);
   const anchorRef = useRef<HTMLSpanElement>(null);
@@ -248,6 +264,42 @@ export function Navigator() {
     );
   }
 
+  // Moves an item to ADR 0005's placement, refusing a folder moved into its
+  // own subtree, and expands the folders around its new place so it stays
+  // in view.
+  function move(node: TreeNode, placement: Placement) {
+    const { parentId } = placement;
+    if (parentId !== null) {
+      if (subtreeIds(items ?? [], node.id).includes(parentId)) return;
+      expand([parentId, ...(ancestorIds(items ?? [], parentId) ?? [])]);
+    }
+    void change({ type: "move", kind: node.kind, id: node.id, ...placement });
+  }
+
+  const { dragAndDropHooks } = useDragAndDrop({
+    // A draggable row would take pointer presses from the rename field.
+    isDisabled: naming !== null,
+    getItems: (keys) => [...keys].map((key) => ({ [itemDragType]: `${key}` })),
+    getAllowedDropOperations: () => ["move"],
+    acceptedDragTypes: [itemDragType],
+    shouldAcceptItemDrop: (target) =>
+      nodes.get(`${target.key}`)?.kind === "folder",
+    onMove({ keys, target }) {
+      const moved = [...keys].flatMap((key: Key) => nodes.get(`${key}`) ?? []);
+      const placement = dropPlacement(
+        items ?? [],
+        `${target.key}`,
+        target.dropPosition,
+        new Set(moved.map((node) => node.id)),
+      );
+      if (!placement) return;
+      for (const node of moved) move(node, placement);
+    },
+    renderDropIndicator: (target) => (
+      <DropIndicator target={target} className={styles.dropIndicator} />
+    ),
+  });
+
   function run(command: Command, node: TreeNode | null) {
     switch (command) {
       case "newDocument":
@@ -271,6 +323,17 @@ export function Navigator() {
         break;
       case "collapseAll":
         collapse(node ? folderIdsIn(node) : "all");
+        break;
+      case "moveUp":
+      case "moveDown": {
+        const direction = command === "moveUp" ? "up" : "down";
+        const placement =
+          node && siblingPlacement(items ?? [], node.id, direction);
+        if (node && placement) move(node, placement);
+        break;
+      }
+      case "moveTo":
+        if (node) setMoving(node);
         break;
       case "delete":
         if (node) setDeleting(node);
@@ -385,6 +448,9 @@ export function Navigator() {
                 <span className={styles.title}>{node.title}</span>
               )}
               <span className={styles.actions}>
+                <Button slot="drag" className={styles.rowButton}>
+                  <GripVertical aria-hidden size={14} />
+                </Button>
                 {isFolder ? (
                   <>
                     <RowButton
@@ -406,6 +472,7 @@ export function Navigator() {
                   <Popover className={styles.popover} placement="bottom end">
                     <ItemMenu
                       node={node}
+                      items={items ?? []}
                       onCommand={(command) => run(command, node)}
                     />
                   </Popover>
@@ -479,6 +546,7 @@ export function Navigator() {
           }}
           disabledKeys={folderIds}
           disabledBehavior="selection"
+          dragAndDropHooks={dragAndDropHooks}
           expandedKeys={expanded}
           onExpandedChange={(keys) =>
             updateExpanded(() => new Set([...keys].map(String)))
@@ -515,6 +583,7 @@ export function Navigator() {
           >
             <ItemMenu
               node={contextMenu.node}
+              items={items}
               onCommand={(command) => {
                 setContextMenu(null);
                 run(command, contextMenu.node);
@@ -530,6 +599,14 @@ export function Navigator() {
           descendants={subtreeIds(items, deleting.id).length - 1}
           onConfirm={() => remove(deleting)}
           onClose={() => setDeleting(null)}
+        />
+      ) : null}
+      {moving ? (
+        <MoveDialog
+          node={moving}
+          roots={roots}
+          onMove={(parentId) => move(moving, { parentId, beforeId: null })}
+          onClose={() => setMoving(null)}
         />
       ) : null}
     </div>
@@ -572,16 +649,24 @@ function RenameField({ title }: { title: string }) {
 // The commands for a row, or for the top level when node is null.
 function ItemMenu({
   node,
+  items,
   onCommand,
 }: {
   node: TreeNode | null;
+  items: WorkspaceItem[];
   onCommand: (command: Command) => void;
 }) {
   const isFolder = node?.kind === "folder";
+  const disabled: Command[] = [];
+  if (node && !siblingPlacement(items, node.id, "up")) disabled.push("moveUp");
+  if (node && !siblingPlacement(items, node.id, "down")) {
+    disabled.push("moveDown");
+  }
   return (
     <Menu
       className={styles.menu}
       aria-label={node ? `Actions for ${node.title}` : "Workspace actions"}
+      disabledKeys={disabled}
       onAction={(key) => {
         if (isCommand(key)) onCommand(key);
       }}
@@ -611,6 +696,23 @@ function ItemMenu({
           Rename
         </MenuItem>
       ) : null}
+      {node ? <Separator className={styles.separator} /> : null}
+      {node ? (
+        <MenuItem id="moveUp" className={styles.menuItem}>
+          Move up
+        </MenuItem>
+      ) : null}
+      {node ? (
+        <MenuItem id="moveDown" className={styles.menuItem}>
+          Move down
+        </MenuItem>
+      ) : null}
+      {node ? (
+        <MenuItem id="moveTo" className={styles.menuItem}>
+          Move to…
+        </MenuItem>
+      ) : null}
+      {node ? <Separator className={styles.separator} /> : null}
       {node ? (
         <MenuItem id="delete" className={styles.menuItem}>
           Delete…

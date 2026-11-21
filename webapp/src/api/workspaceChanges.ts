@@ -68,6 +68,23 @@ async function perform(change: TreeChange): Promise<Folder | Document | null> {
       }),
     );
   }
+  if (change.type === "move") {
+    const body = { parentId: change.parentId, beforeId: change.beforeId };
+    if (change.kind === "folder") {
+      return read(
+        client.PUT("/api/v1/folders/{folderId}/position", {
+          params: { path: { folderId: id } },
+          body,
+        }),
+      );
+    }
+    return read(
+      client.PUT("/api/v1/documents/{documentId}/position", {
+        params: { path: { documentId: id } },
+        body,
+      }),
+    );
+  }
   try {
     await send(
       change.kind === "folder"

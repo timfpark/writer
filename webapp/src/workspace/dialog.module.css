@@ -1,0 +1,147 @@
+/* The navigator's dialogs: confirming a deletion and choosing where to move. */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.modal {
+  inline-size: min(26rem, 100%);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-chrome-raised);
+  color: var(--color-text);
+}
+
+.dialog {
+  padding: var(--space-6);
+  outline: none;
+}
+
+.title {
+  margin: 0 0 var(--space-2);
+  font-size: var(--text-lg);
+  font-weight: var(--weight-semibold);
+  overflow-wrap: anywhere;
+}
+
+.body {
+  margin: 0 0 var(--space-6);
+}
+
+.buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.button {
+  min-block-size: 2rem;
+  padding: var(--space-1) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-chrome-raised);
+  color: var(--color-text);
+  font-size: var(--text-md);
+}
+
+.button[data-hovered],
+.button[data-pressed] {
+  background: var(--color-current);
+}
+
+.button[data-focus-visible] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.confirm {
+  font-weight: var(--weight-semibold);
+}
+
+@media (pointer: coarse) {
+  .button {
+    min-block-size: 2.75rem;
+  }
+}
+
+/* The move dialog's list of destinations. */
+
+.description {
+  margin: 0 0 var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-md);
+}
+
+.destinations {
+  max-block-size: min(20rem, 50dvh);
+  margin: 0 0 var(--space-6);
+  padding: var(--space-1);
+  overflow: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-chrome);
+  outline: none;
+}
+
+.destinations[data-focus-visible] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.destination {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-block-size: 1.75rem;
+  padding-inline: var(--space-2);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  font-size: var(--text-md);
+  outline: none;
+  cursor: default;
+}
+
+.destination[data-hovered] {
+  background: var(--color-chrome-raised);
+}
+
+.destination[data-selected] {
+  background: var(--color-current);
+}
+
+.destination[data-focus-visible] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.destination[data-disabled] {
+  color: var(--color-text-muted);
+}
+
+.destinationIcon {
+  flex: none;
+  color: var(--color-text-muted);
+}
+
+.destinationTitle {
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.button[data-disabled] {
+  color: var(--color-text-muted);
+}
+
+@media (pointer: coarse) {
+  .destination {
+    min-block-size: 2.75rem;
+  }
+}

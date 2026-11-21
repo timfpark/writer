@@ -19,7 +19,7 @@ without a pointer so that organizing and writing never slow me down.
 
 Backlog 22 built the navigator on the
 WAI-ARIA treegrid pattern, with arrow keys, `Home`, `End`, and `Enter`, and
-[backlog 24](./0024-tree-drag-and-drop.md) adds a non-dragging move. The
+backlog 24 added drag and drop with move commands in each row's menu. The
 remaining shortcuts were left out of those stories so the navigator could
 ship sooner. [ADR 0009](../adrs/0009-browser-tests.md) supplies automated
 accessibility checks.
@@ -46,4 +46,4 @@ accessibility checks.
 
 ## Prerequisites
 
-* [Move and reorder items with drag and drop](./0024-tree-drag-and-drop.md)
+None.

@@ -80,6 +80,26 @@
   outline-offset: -2px;
 }
 
+/* Drag and drop: the dragged row at half opacity, a folder that will take
+   the drop outlined, and a line between rows where the item will go,
+   indented to the level it will take. */
+
+.row[data-dragging] {
+  opacity: 0.5;
+}
+
+.row[data-drop-target] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+  background: var(--color-current);
+}
+
+.dropIndicator[data-drop-target] {
+  block-size: 0;
+  margin-inline-start: calc((var(--tree-item-level) - 1) * 1rem + 28px);
+  outline: 1px solid var(--color-accent);
+}
+
 .cell {
   display: flex;
   align-items: center;
@@ -162,6 +182,7 @@
 .actions {
   display: flex;
   flex: none;
+  align-items: center;
   opacity: 0;
 }
 
@@ -170,6 +191,34 @@
 .actions:focus-within,
 .actions:has([aria-expanded="true"]) {
   opacity: 1;
+}
+
+.cell:has([data-rename]) .actions {
+  display: none;
+}
+
+/* With a pointer that hovers, row controls lie over the end of the row on
+   the row's own color, so titles use the row's whole width. */
+@media (hover: hover) {
+  .cell {
+    position: relative;
+  }
+
+  .actions {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-end: var(--space-1);
+    background: var(--color-chrome);
+  }
+
+  .row[data-hovered] .actions {
+    background: var(--color-chrome-raised);
+  }
+
+  .row[data-selected] .actions,
+  .row[data-drop-target] .actions {
+    background: var(--color-current);
+  }
 }
 
 .rowButton {
@@ -222,8 +271,13 @@
   color: var(--color-text);
 }
 
+/* A menu with too little room above or below its button scrolls within the
+   height the popover allows, rather than spilling over the button, where
+   the release of the press that opened it would choose an item. */
 .menu {
+  max-block-size: inherit;
   padding: var(--space-1);
+  overflow: auto;
   outline: none;
 }
 

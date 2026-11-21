@@ -117,7 +117,7 @@ against a running service. People start with
   not apply to with a reason, using ADR 0007's breakpoints.
 * Browser tests share one service and data folder per run. Create the
   synthetic items a test needs, with titles unique to it, and never assume an
-  empty workspace or another test's data. Edit a document's file outside
+  empty workspace or another test's data. Find or edit an item's file outside
   Writer only through [e2e/outside.js](./e2e/outside.js).
 
 ### Toolchain and dependencies

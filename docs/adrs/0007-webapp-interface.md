@@ -102,7 +102,7 @@ more than anything else on the page. Backlog 20, the workspace shell story,
 installed them, and backlogs
 22,
 23,
-[24](../backlog/0024-tree-drag-and-drop.md), and
+24, and
 [26](../backlog/0026-keyboard-accessibility.md) build on these choices.
 
 The first release has one local user on a desktop browser, the service on
@@ -584,8 +584,7 @@ nothing outside the tree can be dropped in:
   drops into the dragged item's subtree, and `onDropActivate` expands a folder
   held under a drag.
 * The move commands in each row's menu provide WCAG 2.5.7's single-pointer
-  alternative, and [backlog 24](../backlog/0024-tree-drag-and-drop.md) builds
-  them.
+  alternative, as backlog 24 built them.
 
 ### Routing and URLs
 

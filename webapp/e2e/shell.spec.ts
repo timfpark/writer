@@ -102,10 +102,15 @@ test("opens overlaid panes over the writing region and closes them", async ({
     await expect(dialog.getByRole(landmarks[name], { name })).toBeVisible();
     await expectAccessible(page);
 
-    await press(
-      dialog.getByRole("button", { name: `Close ${name.toLowerCase()}` }),
-      hasTouch,
-    );
+    // The pane has no close button; a tap outside it, on the far side of
+    // the writing region, closes it.
+    const width = viewport?.width ?? 0;
+    const outside = {
+      x: name === "Navigator" ? width - 16 : 16,
+      y: (viewport?.height ?? 0) / 2,
+    };
+    if (hasTouch) await page.touchscreen.tap(outside.x, outside.y);
+    else await page.mouse.click(outside.x, outside.y);
     await expect(dialog).toBeHidden();
 
     await press(toggle(page, name), hasTouch);
