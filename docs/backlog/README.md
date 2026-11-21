@@ -37,6 +37,7 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | #  | Work item                                                                             | Subsystems             | Outcome                                                                                | Prerequisite   |
 |----|---------------------------------------------------------------------------------------|------------------------|----------------------------------------------------------------------------------------|----------------|
 | 32 | [Resolve the KaTeX advisory in the tools lockfile](./0032-katex-advisory.md)          | `repository`           | No open security alert remains for the tools lockfile.                                 | None           |
+| 33 | [Control line breaks and formatting edges](./0033-line-breaks-and-formatting.md)      | `webapp`               | Enter breaks lines without a gap, and formatting shows and keeps its edges.            | None           |
 | 26 | [Make the workspace fully keyboard operable](./0026-keyboard-accessibility.md)        | `webapp`               | Every workspace operation works from the keyboard and passes checks.                   | None           |
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)    | `service`              | An accepted ADR fixes the agent framework, provider, prompts, and evals.               | None           |
 | 12 | [Deliver the first pair-writing agent capability](./0012-first-pair-writing-agent.md) | `service`              | The service returns pair-writer questions backed by prompts and evals.                 | 10             |
@@ -73,7 +74,9 @@ keyboard-navigable navigator, and item 23 built the writing surface with
 autosave, which together make the first usable release. Item 24 added drag
 and drop with move commands in each row's menu, and item 25 filled the
 assistant pane with a conversation answered by a stub. The remaining keyboard
-shortcuts (26) complete it.
+shortcuts (26) complete it. Item 33 fixes what first use of the writing
+surface exposed: line breaks need a gap-free default, and hidden emphasis
+markers leave writers unable to see or end formatting.
 
 The pair-writing agent follows the workspace. Item 10 records the agent
 decision before item 12 creates `service/prompts/` and `service/evals/`.
