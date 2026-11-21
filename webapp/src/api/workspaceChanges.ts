@@ -1,4 +1,5 @@
 import {
+  MutationObserver,
   useMutation,
   useMutationState,
   useQuery,
@@ -38,11 +39,17 @@ async function perform(change: TreeChange): Promise<Folder | Document | null> {
         }),
       );
     }
-    return read(
-      client.POST("/api/v1/documents", {
-        body: { documentId: id, parentId, beforeId, title },
-      }),
-    );
+    const body =
+      change.markdown === undefined
+        ? { documentId: id, parentId, beforeId, title }
+        : {
+            documentId: id,
+            parentId,
+            beforeId,
+            title,
+            markdown: change.markdown,
+          };
+    return read(client.POST("/api/v1/documents", { body }));
   }
   if (change.type === "rename") {
     const body = { title: change.title };
@@ -101,18 +108,15 @@ function settle(
   }
 }
 
-// Returns a function that makes a tree change and resolves to whether the
-// service accepted it. A failure is reported through useChangeFailures.
-export function useWorkspaceChange(): (change: TreeChange) => Promise<boolean> {
-  const queryClient = useQueryClient();
-  const { mutateAsync } = useMutation({
+function changeOptions(queryClient: QueryClient) {
+  return {
     mutationKey,
     scope,
     mutationFn: perform,
-    onSuccess: (result, change) => {
+    onSuccess: (result: Folder | Document | null, change: TreeChange) => {
       settle(queryClient, change, result);
     },
-    onSettled: (_result, error) => {
+    onSettled: (_result: unknown, error: unknown) => {
       // A failure refetches the tree, the service's truth, and so does the
       // last pending change. This mutation still counts as pending here.
       if (error || queryClient.isMutating({ mutationKey }) === 1) {
@@ -121,7 +125,14 @@ export function useWorkspaceChange(): (change: TreeChange) => Promise<boolean> {
         });
       }
     },
-  });
+  };
+}
+
+// Returns a function that makes a tree change and resolves to whether the
+// service accepted it. A failure is reported through useChangeFailures.
+export function useWorkspaceChange(): (change: TreeChange) => Promise<boolean> {
+  const queryClient = useQueryClient();
+  const { mutateAsync } = useMutation(changeOptions(queryClient));
   return useCallback(
     (change: TreeChange) =>
       mutateAsync(change).then(
@@ -129,6 +140,18 @@ export function useWorkspaceChange(): (change: TreeChange) => Promise<boolean> {
         () => false,
       ),
     [mutateAsync],
+  );
+}
+
+// Makes a tree change from outside a component, such as the save controller
+// creating a conflict copy, in the same queue and with the same reporting
+// as useWorkspaceChange. Resolves to the service's item, or rejects.
+export function makeWorkspaceChange(
+  queryClient: QueryClient,
+  change: TreeChange,
+): Promise<Folder | Document | null> {
+  return new MutationObserver(queryClient, changeOptions(queryClient)).mutate(
+    change,
   );
 }
 

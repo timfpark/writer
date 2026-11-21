@@ -34,6 +34,10 @@ jobs:
         uses: devcontainers/ci@513af61f4de4f75d37e4438f184ba4358f0fc1ca # v0.3.1900000450
         with:
           push: never
+          # Forwards the runner's CI variable, which browser tests read to
+          # run ADR 0008's responsiveness test unthrottled on CI hardware.
+          env: |
+            CI
           runCmd: tools/check
 
   # Compares the pull request's dependency graph with its base through the

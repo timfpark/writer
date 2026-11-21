@@ -52,5 +52,4 @@ the view builds on.
 
 ## Prerequisites
 
-* [Write in the editing surface with autosave](./0023-writing-surface.md)
 * [Record and restore commits in the service](./0029-service-history.md)

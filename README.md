@@ -24,7 +24,8 @@ prose for quality and consistency.
 The service stores the workspace of folders and documents in a data folder
 and serves it, with a health endpoint, behind a verified API contract. The
 webapp shows the workspace shell, a header above collapsible side panes and
-a writing region, and reaches the service through a client generated from the
+a writing region where documents are edited and save themselves, and
+reaches the service through a client generated from the
 contract. Each guide, for the [service](./service/README.md) and the
 [webapp](./webapp/README.md), covers its setup and commands. The repository
 also holds its architecture decisions, backlog, validation gate, and

@@ -5,6 +5,7 @@ import { healthQueryOptions } from "../api/queries";
 import { useQueryFailure } from "../api/useQueryFailure";
 import { Navigator } from "../workspace/Navigator";
 import { AssistantPlaceholder } from "../workspace/placeholders";
+import { SaveNotices } from "../workspace/SaveNotices";
 import { ServiceUnavailable } from "../workspace/ServiceUnavailable";
 import { Header } from "./Header";
 import { Pane } from "./Pane";
@@ -50,6 +51,7 @@ export function WorkspaceShell() {
           <Navigator />
         </Pane>
         <main className={styles.writing}>
+          <SaveNotices />
           {failure ? (
             <ServiceUnavailable
               error={failure}

@@ -101,7 +101,7 @@ writing surface is the product's focus, so its typeface and contrast matter
 more than anything else on the page. Backlog 20, the workspace shell story,
 installed them, and backlogs
 22,
-[23](../backlog/0023-writing-surface.md),
+23,
 [24](../backlog/0024-tree-drag-and-drop.md), and
 [26](../backlog/0026-keyboard-accessibility.md) build on these choices.
 
@@ -543,8 +543,8 @@ behaves like a desktop and a touch-screen laptop does not:
   commands are the touch path to every row command.
 * The shell's height is `100dvh`, so Safari's toolbars never hide it, and the
   header and panes pad by `env(safe-area-inset-*)`.
-* The editor keeps the caret visible above iPadOS's on-screen keyboard, which
-  [backlog 23](../backlog/0023-writing-surface.md) verifies. A hardware
+* The editor keeps the caret visible above iPadOS's on-screen keyboard
+  through scroll margins, as backlog 23 built it. A hardware
   keyboard on iPad gets the same shortcuts as desktop.
 
 ### Components
@@ -658,7 +658,7 @@ the pending list avoids.
 Document saves do not use queued mutations. A queued mutation's variables are
 fixed when it is queued, but each save needs the revision the previous save
 returns. A per-document save controller, which
-[backlog 23](../backlog/0023-writing-surface.md) builds, keeps one save in
+backlog 23 built, keeps one save in
 flight, reads the latest base revision when it sends, retries as ADR 0005
 describes, and writes each acknowledged revision into the cache.
 

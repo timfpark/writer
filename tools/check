@@ -14,7 +14,7 @@ Runs every validation phase from the repository root:
   service  formatting, lint, build, and tests of every service/ workspace member,
            including the service/openapi.json freshness test (cargo via rustup)
   webapp   install, generated client freshness, formatting, lint, types, tests,
-           and build of webapp/
+           build, and bundle budget of webapp/
   browser  Playwright browser and accessibility tests of webapp/e2e/, driving
            the development server against a real service
 
@@ -118,7 +118,7 @@ run_webapp_phase() {
     cd "$root/webapp" || exit 1
     npm ci --include=dev --no-audit --no-fund || exit 1
     rc=0
-    for script in api:check format:check lint typecheck test build; do
+    for script in api:check format:check lint typecheck test build budget; do
       npm run "$script" || rc=1
     done
     exit "$rc"

@@ -51,6 +51,18 @@ export default defineConfig(({ mode }) => ({
     react(),
     emitFontLicenses(),
   ],
+  // scripts/bundle-budget.js reads the manifest to find each chunk's imports.
+  build: { manifest: true },
+  // Browser test runs serve packages' production exports, as the build does,
+  // so the responsiveness test measures what ships rather than development
+  // builds with assertions, such as micromark's. Their pre-bundled
+  // dependencies are cached apart from the development server's.
+  ...(mode === "e2e"
+    ? {
+        resolve: { conditions: ["module", "browser", "production"] },
+        cacheDir: "node_modules/.vite-e2e",
+      }
+    : {}),
   server: {
     host: "127.0.0.1",
     port: 5180,

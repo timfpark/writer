@@ -123,3 +123,24 @@ export function documentQueryOptions(documentId: string) {
       ),
   });
 }
+
+// A document's content, read from the service every time the document
+// opens. After that read the editor owns the text, so the query never
+// refetches, and nothing is kept once the document closes.
+export function documentContentQueryOptions(documentId: string) {
+  return queryOptions({
+    queryKey: ["documents", documentId, "content"],
+    enabled: isDocumentId(documentId),
+    staleTime: Infinity,
+    gcTime: 0,
+    refetchOnWindowFocus: false,
+    refetchOnReconnect: false,
+    queryFn: ({ signal }) =>
+      read(
+        client.GET("/api/v1/documents/{documentId}/content", {
+          params: { path: { documentId } },
+          signal,
+        }),
+      ),
+  });
+}

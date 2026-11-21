@@ -1,15 +1,19 @@
 // Runs the service for one browser test run, which playwright.config.ts starts
 // with WRITER_PORT set. Each run gets a new, empty data folder, removed when
-// the service stops, so runs never share or keep a workspace.
+// the service stops, so runs never share or keep a workspace. The folder is
+// named after the port, so e2e/outside.js can edit a document's file the way
+// another program would.
 import { spawn } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 
 const serviceDir = fileURLToPath(new URL("../../service/", import.meta.url));
-const dataDir = mkdtempSync(join(tmpdir(), "writer-e2e-"));
+const dataDir = join(tmpdir(), `writer-e2e-${process.env.WRITER_PORT}`);
+rmSync(dataDir, { recursive: true, force: true });
+mkdirSync(dataDir, { recursive: true });
 
 function removeDataDir() {
   rmSync(dataDir, { recursive: true, force: true });

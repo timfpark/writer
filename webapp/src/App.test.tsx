@@ -67,6 +67,14 @@ function healthyService(request: Request): Promise<Response> {
       }),
     );
   }
+  if (path === `/api/v1/documents/${documentId}/content`) {
+    return Promise.resolve(
+      Response.json({
+        markdown: "The lamp burned *low* through the night.\n",
+        revision: "r1",
+      }),
+    );
+  }
   return Promise.resolve(problem(404, "notFound", "No such item."));
 }
 
@@ -276,6 +284,96 @@ describe("routes", () => {
   });
 });
 
+describe("writing", () => {
+  it("opens the document's text in the writing surface", async () => {
+    stubFetch(healthyService);
+    renderApp(`/documents/${documentId}`);
+
+    const surface = await screen.findByRole("textbox", {
+      name: "Synthetic Chapter One",
+    });
+    await waitFor(() => {
+      expect(surface.textContent).toBe(
+        "The lamp burned low through the night.",
+      );
+    });
+    expect(within(surface).getByText("low").tagName).toBe("EM");
+    expect(screen.getByText("Saved")).toBeTruthy();
+  });
+
+  it("renames the open document from the header", async () => {
+    let title = "Synthetic Chapter One";
+    const fetch = stubFetch(async (request) => {
+      const path = new URL(request.url).pathname;
+      if (
+        request.method === "PUT" &&
+        path === `/api/v1/documents/${documentId}/title`
+      ) {
+        const body: unknown = await request.clone().json();
+        if (typeof body === "object" && body && "title" in body) {
+          title = String(body.title);
+        }
+        return Response.json({
+          id: documentId,
+          parentId: null,
+          title,
+          revision: "r1",
+        });
+      }
+      if (path === "/api/v1/workspace") {
+        return Response.json({
+          items: [{ id: documentId, kind: "document", parentId: null, title }],
+        });
+      }
+      return healthyService(request);
+    });
+    renderApp(`/documents/${documentId}`);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Synthetic Chapter One" }),
+    );
+    const field = screen.getByRole("textbox", { name: "Document title" });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(field);
+    });
+    fireEvent.change(field, { target: { value: "  Synthetic Chapter Two " } });
+    fireEvent.keyDown(field, { key: "Enter" });
+
+    await waitFor(() => {
+      expect(screen.getByRole("heading", { level: 1 }).textContent).toBe(
+        "Synthetic Chapter Two",
+      );
+    });
+    const renames = fetch.mock.calls.filter(
+      ([request]) => request.method === "PUT",
+    );
+    expect(renames).toHaveLength(1);
+    expect(await renames[0]?.[0].json()).toEqual({
+      title: "Synthetic Chapter Two",
+    });
+  });
+
+  it("leaves the title as it was on Escape", async () => {
+    const fetch = stubFetch(healthyService);
+    renderApp(`/documents/${documentId}`);
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Synthetic Chapter One" }),
+    );
+    const field = screen.getByRole("textbox", { name: "Document title" });
+    fireEvent.change(field, { target: { value: "Discarded" } });
+    fireEvent.keyDown(field, { key: "Escape" });
+    fireEvent.blur(field);
+
+    expect(
+      screen.getByRole("button", { name: "Synthetic Chapter One" }),
+    ).toBeTruthy();
+    expect(fetch.mock.calls.some(([request]) => request.method === "PUT")).toBe(
+      false,
+    );
+  });
+});
+
 describe("service availability", () => {
   it("says so when the service is unreachable", async () => {
     stubFetch(() => Promise.reject(new TypeError("Failed to fetch")));
@@ -357,7 +455,8 @@ describe("service availability", () => {
         ? healthyService(request)
         : Promise.reject(new TypeError("Failed to fetch")),
     );
-    renderApp();
+    // Retries fail at once, so trying again never waits out a retry delay.
+    renderApp("/", { retryDelay: 0 });
     await screen.findByRole("alert");
 
     reachable = true;

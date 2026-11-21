@@ -7,8 +7,10 @@ description: Purpose, boundaries, operational rules, governing decisions, and ex
 
 `webapp/` is a client-rendered React 19 single-page application built with
 Vite 8: Writer's editing workspace. Today it shows the workspace shell, a
-header above a collapsible navigator holding the workspace tree, the writing
-region, and a collapsible assistant holding a placeholder. Browser tests in `e2e/` drive it
+header with the open document's editable title and save status above a
+collapsible navigator holding the workspace tree, the writing region editing
+the open document with autosave, and a collapsible assistant holding a
+placeholder. Browser tests in `e2e/` drive it
 against a running service. People start with
 [README.md](./README.md), which maps the source folders.
 
@@ -23,7 +25,7 @@ against a running service. People start with
   Routing, styling, components, server-state caching, and browser storage
   follow [ADR 0007](../docs/adrs/0007-webapp-interface.md), and the editor,
   its Markdown bridge, and autosave follow
-  [ADR 0008](../docs/adrs/0008-editor.md), which backlog 23 installs;
+  [ADR 0008](../docs/adrs/0008-editor.md);
   authentication waits for the story and ADR that choose it.
 
 ## Operational rules
@@ -76,6 +78,26 @@ against a running service. People start with
 * Request nothing from another origin: fonts come from the Fontsource
   packages, and the build emits their licenses beside them.
 
+### Editor and saving
+
+* Keep the editor, its extensions, and the Markdown bridge in
+  [src/editor/](./src/editor/), reached only through the lazy import in
+  [views.tsx](./src/workspace/views.tsx), so they stay in their own chunk.
+  Modules outside `src/editor/` import nothing from it but types.
+* Parse with the editor's own schema (`editor.schema`); nodes from another
+  schema instance never compare equal, which silently turns off byte
+  preservation.
+* Keep the corpus, repair, and seeded random tests in
+  [src/editor/markdown/](./src/editor/markdown/) passing with every bridge
+  change, and add a synthetic corpus document for any newly handled
+  construct. Corpus files are test data and are not formatted or linted.
+* Save content only through the document's `DocumentSaver`, obtained from
+  the `SaveManager` in [src/saving/](./src/saving/); never call the content
+  `PUT` elsewhere. The saver makes its tree changes, such as a conflict copy,
+  through `makeWorkspaceChange`, in the same queue as the navigator's.
+* Keep `npm run budget` passing: the editor chunk within 160 KB and an open
+  document's JavaScript within 400 KB, gzipped.
+
 ### Code and tests
 
 * Keep `tsc`, Oxlint, and Prettier clean; fix findings rather than disabling
@@ -95,7 +117,8 @@ against a running service. People start with
   not apply to with a reason, using ADR 0007's breakpoints.
 * Browser tests share one service and data folder per run. Create the
   synthetic items a test needs, with titles unique to it, and never assume an
-  empty workspace or another test's data.
+  empty workspace or another test's data. Edit a document's file outside
+  Writer only through [e2e/outside.js](./e2e/outside.js).
 
 ### Toolchain and dependencies
 
@@ -145,7 +168,7 @@ Consult these when changing architecture, dependencies, or conventions:
   flush events, document styles, the bundle budget, and responsiveness
   targets
 * [ADR 0009](../docs/adrs/0009-browser-tests.md): Playwright and axe-core
-  browser tests in `e2e/`, the four projects, the servers and data folder
+  browser tests in `e2e/`, the projects, the servers and data folder
   each run starts, the same-origin guard, and the `browser` gate phase
 
 ## Commands
@@ -163,14 +186,17 @@ npm run lint                             # Oxlint, type-aware, warnings denied
 npm run typecheck                        # CSS Module declarations, then tsc without emitting
 npm run test                             # Vitest once
 npm run build                            # production build in dist/
+npm run budget                           # fail if dist/ exceeds ADR 0008's bundle budget
 npm run e2e:browsers                     # exit 2 unless every Playwright browser launches
 npm run e2e                              # browser tests against a service on 8898, served on 5198
 npm run e2e -- --project=webkit          # one project: chromium, webkit, ipad-portrait, ipad-landscape
+npm run e2e -- --project=responsiveness --no-deps  # ADR 0008's timing test alone
 npx playwright install chromium webkit  # on a host, install the locked release's browsers
 npm config get registry                  # expect the packagefeedproxy.microsoft.io proxy
 ```
 
 Before reporting work complete, run `tools/check` from the repository root.
 Its `webapp` phase runs `npm ci --include=dev --no-audit --no-fund`, then
-`npm run api:check`, `format:check`, `lint`, `typecheck`, `test`, and `build`.
+`npm run api:check`, `format:check`, `lint`, `typecheck`, `test`, `build`,
+and `budget`.
 Its `browser` phase then runs `npm run e2e:browsers` and `npm run e2e`.

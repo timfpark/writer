@@ -4,9 +4,10 @@ import tokensCss from "./tokens.css?raw";
 type Theme = "light" | "dark";
 type Declarations = Map<string, string>;
 
-// ADR 0007's contrast targets, each a foreground on a background.
+// ADR 0007 and ADR 0008's contrast targets, each a foreground on a background.
 const pairs: [foreground: string, background: string, target: number][] = [
   ["--color-ink", "--color-page", 10],
+  ["--color-ink", "--color-chrome", 10],
   ["--color-ink-muted", "--color-page", 7],
   ["--color-text", "--color-chrome", 4.5],
   ["--color-text-muted", "--color-chrome", 4.5],

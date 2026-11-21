@@ -1,6 +1,6 @@
 ---
 title: Writer webapp
-description: How to set up, run, configure, and check the Writer webapp, a React single-page workspace shell that calls the service through a generated API client
+description: How to set up, run, configure, and check the Writer webapp, a React single-page writing workspace that calls the service through a generated API client
 author: Tim Park
 ms.date: 2026-11-20
 ms.topic: overview
@@ -19,13 +19,15 @@ The webapp is Writer's client, a React single-page application built with
 Vite. It shows the writing workspace: a header bar above a navigator on the
 left, the writing region in the center, and an assistant on the right. Both
 side panes collapse, so the writing region can take the whole width. The
-navigator shows the workspace's folders and documents as a tree; the
+navigator shows the workspace's folders and documents as a tree, the writing
+region edits the open document as formatted text that saves itself, and the
 assistant holds a placeholder until a later story fills it.
 Coding agents start with [AGENTS.md](./AGENTS.md); the architecture is
 recorded in [ADR 0003](../docs/adrs/0003-webapp-architecture.md), the API
-conventions in [ADR 0004](../docs/adrs/0004-api-conventions.md), and the
-interface foundation in [ADR 0007](../docs/adrs/0007-webapp-interface.md), and
-the browser tests in [ADR 0009](../docs/adrs/0009-browser-tests.md).
+conventions in [ADR 0004](../docs/adrs/0004-api-conventions.md), the
+interface foundation in [ADR 0007](../docs/adrs/0007-webapp-interface.md), the
+editor and its Markdown in [ADR 0008](../docs/adrs/0008-editor.md), and the
+browser tests in [ADR 0009](../docs/adrs/0009-browser-tests.md).
 
 | Path                                                         | Responsibility                                                              |
 |--------------------------------------------------------------|-----------------------------------------------------------------------------|
@@ -33,6 +35,9 @@ the browser tests in [ADR 0009](../docs/adrs/0009-browser-tests.md).
 | [src/router.tsx](./src/router.tsx)                           | The typed route tree for `/`, `/documents/$documentId`, and not-found paths |
 | [src/shell/](./src/shell/)                                   | The header, the side panes, their shortcuts, and stored pane preferences    |
 | [src/workspace/](./src/workspace/)                           | What the writing region and the side panes show                             |
+| [src/editor/](./src/editor/)                                 | The editor, its schema, and the link dialog, loaded as their own chunk      |
+| [src/editor/markdown/](./src/editor/markdown/)               | The Markdown bridge, its round-trip corpus, and its tests                   |
+| [src/saving/](./src/saving/)                                 | Autosave, retries, conflict recovery, and unsaved text in IndexedDB         |
 | [src/styles/](./src/styles/)                                 | Design tokens for both themes, global styles, and the token contrast test   |
 | [src/api/client.ts](./src/api/client.ts)                     | The only module that calls the service, through openapi-fetch               |
 | [src/api/queries.ts](./src/api/queries.ts)                   | The query client, retry policy, and query options components read through   |
@@ -40,10 +45,13 @@ the browser tests in [ADR 0009](../docs/adrs/0009-browser-tests.md).
 | [src/api/workspaceTree.ts](./src/api/workspaceTree.ts)       | Pure functions that apply tree changes and nest the pre-order item list     |
 | [src/api/generated/](./src/api/generated/)                   | Types generated from [service/openapi.json](../service/openapi.json)        |
 | [scripts/api-check.js](./scripts/api-check.js)               | Fails when the generated types differ from the contract                     |
+| [scripts/bundle-budget.js](./scripts/bundle-budget.js)       | Fails when the built JavaScript exceeds ADR 0008's bundle budget            |
 | [vite.config.ts](./vite.config.ts)                           | Development server, `/api/` proxy, CSS Modules, font licenses, and Vitest   |
 | [e2e/](./e2e/)                                               | Playwright browser and accessibility tests against a running service        |
 | [playwright.config.ts](./playwright.config.ts)               | Browser test projects, ports, and the servers each run starts               |
 | [scripts/e2e-service.js](./scripts/e2e-service.js)           | Runs the service on a new data folder for a browser test run                |
+| [e2e/outside.js](./e2e/outside.js)                           | Edits a document's file in that data folder, as another program would       |
+| [e2e/environment.js](./e2e/environment.js)                   | Whether a browser test run is in CI                                         |
 | [scripts/e2e-browsers.js](./scripts/e2e-browsers.js)         | Exits 2 unless every browser the tests use launches                         |
 
 The generated types are committed. Never edit them by hand; regenerate them
@@ -93,18 +101,52 @@ The header's title slot shows the open document's title, or Writer's name at
 `/`. When the service cannot be reached, the writing region says so and
 offers to try again.
 
+### Writing
+
+The writing region edits the open document in Newsreader on a centered page,
+hiding the Markdown it is stored as. Typing Markdown, such as `##` and a space or
+`**bold**`, formats as it goes, and `Backspace` straight after undoes the
+formatting. Markdown outside the
+[supported subset](../docs/adrs/0008-editor.md#supported-markdown), such as a
+table or front matter, shows as source in a dashed frame and is saved exactly
+as it was.
+
+| Control                         | Effect                                                       |
+|---------------------------------|--------------------------------------------------------------|
+| The title in the header         | Edits it in place; `Enter` or leaving the field renames      |
+| `Mod+S`                         | Saves at once instead of opening the browser's save dialog   |
+| `Mod+K`                         | Adds, changes, or removes the link at the caret or selection |
+| `Mod+B`, `Mod+I`, and `Mod+E`   | Strong emphasis, emphasis, and code                          |
+| `Mod+Z`, `Mod+Shift+Z`, `Mod+Y` | Undo and redo, kept per open document until it closes        |
+| `Tab` and `Shift+Tab`           | Nest and unnest a list item; elsewhere, move focus out       |
+
+Every change saves itself a second after typing pauses, and at least every
+five seconds while it continues, and again on leaving the document, leaving
+the writing surface, hiding the tab, or closing it. Beside the title, the
+header says Saved, Saving, Retrying while the service is unreachable,
+Conflict, or Not saved when the service refuses the text, such as a document
+over 1 MiB. Until the service acknowledges text, it is also kept in the
+browser's IndexedDB database `writer`, so a reload or a closed tab loses
+nothing; the next page saves it. When a document changed elsewhere, such as
+its file in another editor, Writer keeps that version as a copy titled with
+`(saved elsewhere)` beside it, saves the writer's text to the original, and
+says so in a notice above the page.
+
 ### Dependencies and typefaces
 
-| Package                                                                | Purpose                                                 |
-|------------------------------------------------------------------------|---------------------------------------------------------|
-| `react-aria-components`                                                | Buttons, menus, popovers, overlays, and tooltips        |
-| `@tanstack/react-router`                                               | Routes and typed links                                  |
-| `@tanstack/react-query`                                                | Server-state cache and retries                          |
-| `idb`                                                                  | IndexedDB access for unsaved text, used by backlog 23   |
-| `lucide-react`                                                         | Icons                                                   |
-| `@fontsource-variable/newsreader` and `@fontsource-variable/inter`     | The self-hosted writing and interface typefaces         |
-| `vite-css-modules` (development)                                       | Typed CSS Module declarations                           |
-| `@playwright/test` and `@axe-core/playwright` (development)            | Browser tests and their accessibility checks            |
+| Package                                                                                                                         | Purpose                                               |
+|---------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| `react-aria-components`                                                                                                         | Buttons, menus, popovers, overlays, and tooltips      |
+| `@tanstack/react-router`                                                                                                        | Routes and typed links                                |
+| `@tanstack/react-query`                                                                                                         | Server-state cache and retries                        |
+| `idb`                                                                                                                           | IndexedDB access for unsaved text                     |
+| `@tiptap/core`, `@tiptap/pm`, `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-code`, and `@tiptap/extension-heading` | The editor, on ProseMirror                            |
+| `mdast-util-from-markdown` and the `micromark-extension-*` and `mdast-util-*` GFM and front matter extensions                   | Reading Markdown with source positions for the bridge |
+| `@types/mdast` (development)                                                                                                    | Syntax tree types                                     |
+| `lucide-react`                                                                                                                  | Icons                                                 |
+| `@fontsource-variable/newsreader` and `@fontsource-variable/inter`                                                              | The self-hosted writing and interface typefaces       |
+| `vite-css-modules` (development)                                                                                                | Typed CSS Module declarations                         |
+| `@playwright/test` and `@axe-core/playwright` (development)                                                                     | Browser tests and their accessibility checks          |
 
 Writing is set in Newsreader, by Production Type, and the interface in Inter,
 by Rasmus Andersson, both under the SIL Open Font License 1.1. The build
@@ -169,9 +211,9 @@ The development server reads settings from its environment or from a
 `webapp/.env` file, which Git ignores. [.env.example](./.env.example) lists
 every setting. None of them reaches the browser bundle.
 
-| Variable              | Default | Effect                                                       |
-|-----------------------|---------|--------------------------------------------------------------|
-| `WRITER_SERVICE_PORT` | `8888`  | Loopback port, from 1 to 65535, that `/api/` is proxied to   |
+| Variable              | Default | Effect                                                     |
+|-----------------------|---------|------------------------------------------------------------|
+| `WRITER_SERVICE_PORT` | `8888`  | Loopback port, from 1 to 65535, that `/api/` is proxied to |
 
 When the service runs on another port, point the proxy at it:
 
@@ -184,15 +226,16 @@ WRITER_SERVICE_PORT=8889 npm run dev
 The `webapp` phase of [tools/check](../tools/check), run from the repository
 root after the `service` phase, runs these commands in this folder:
 
-| Command                | Checks                                                                        |
-|------------------------|-------------------------------------------------------------------------------|
-| `npm ci`               | Installs exactly the locked dependencies                                      |
-| `npm run api:check`    | The generated client matches `service/openapi.json`                           |
-| `npm run format:check` | Prettier formatting, except Markdown and generated files                      |
-| `npm run lint`         | Oxlint with type-aware rules and warnings denied                              |
-| `npm run typecheck`    | Regenerates CSS Module declarations, then runs `tsc` over everything          |
-| `npm run test`         | Vitest component and token contrast tests in jsdom, with no network access    |
-| `npm run build`        | A production build in `dist/`, with the fonts and their licenses              |
+| Command                | Checks                                                                            |
+|------------------------|-----------------------------------------------------------------------------------|
+| `npm ci`               | Installs exactly the locked dependencies                                          |
+| `npm run api:check`    | The generated client matches `service/openapi.json`                               |
+| `npm run format:check` | Prettier formatting, except Markdown and generated files                          |
+| `npm run lint`         | Oxlint with type-aware rules and warnings denied                                  |
+| `npm run typecheck`    | Regenerates CSS Module declarations, then runs `tsc` over everything              |
+| `npm run test`         | Vitest component and token contrast tests in jsdom, with no network access        |
+| `npm run build`        | A production build in `dist/`, with the fonts and their licenses                  |
+| `npm run budget`       | The built editor chunk and an open document's JavaScript within ADR 0008's budget |
 
 After the service's contract changes, regenerate the client from this folder
 and commit it with the contract:
@@ -210,21 +253,29 @@ The `browser` phase of `tools/check`, after the `webapp` phase, runs
 Playwright tests from [e2e/](./e2e/) in real browsers, as
 [ADR 0009](../docs/adrs/0009-browser-tests.md) decides:
 
-| Command                | Checks                                                                        |
-|------------------------|-------------------------------------------------------------------------------|
-| `npm run e2e:browsers` | Chromium and WebKit launch; exits 2, naming the fix, if one cannot            |
-| `npm run e2e`          | Every browser test, with WCAG 2.2 AA checks by axe-core in both themes        |
+| Command                | Checks                                                                 |
+|------------------------|------------------------------------------------------------------------|
+| `npm run e2e:browsers` | Chromium and WebKit launch; exits 2, naming the fix, if one cannot     |
+| `npm run e2e`          | Every browser test, with WCAG 2.2 AA checks by axe-core in both themes |
 
 Each run starts the service with `cargo run` on loopback port 8898, with a
-new, empty data folder in the system's temporary directory that it removes
-afterward, and this folder's development server on port 5198, proxying to
+new, empty data folder, `writer-e2e-8898` in the system's temporary
+directory, that it removes afterward, and this folder's development server
+on port 5198 in Vite's `e2e` mode, which serves packages' production
+exports as the build does, proxying to
 it. It needs neither `npm run dev` nor a running service, and leaves those on
 8888 and 5180 alone; it fails if 8898 or 5198 is taken. A test fails if the
 page requests any other origin, so runs need no network.
 
 Every test runs in four projects: Chromium and WebKit at a desktop size, and
 WebKit with touch on an iPad in portrait and landscape. Firefox is not a
-supported browser, so no project runs it. To run one
+supported browser, so no project runs it. The responsiveness test, which
+types into a synthetic 1 MiB document with the CPU throttled 4×, runs alone
+in a fifth project, `responsiveness`, in desktop Chromium after the others
+finish, because its timings need an otherwise idle machine and throttling
+needs the Chrome DevTools Protocol. In CI, where `CI` is set and runners are
+no particular hardware, it runs unthrottled against the same targets and
+ADR 0008's unthrottled 33 ms for keystrokes. To run one
 project, one file, or tests by title, pass Playwright's options after `--`:
 
 ```bash

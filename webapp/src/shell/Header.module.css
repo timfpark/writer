@@ -30,3 +30,69 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.titleButton {
+  max-inline-size: 100%;
+  padding: var(--space-1) var(--space-2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: text;
+}
+
+.titleButton[data-hovered] {
+  background: var(--color-current);
+}
+
+.titleButton[data-focus-visible] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 0;
+}
+
+/* At least 16 px, so Safari on iPadOS does not zoom to the field. */
+.titleInput {
+  inline-size: min(32rem, 100%);
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-chrome-raised);
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  font-weight: inherit;
+}
+
+.titleInput:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 0;
+}
+
+.status {
+  flex: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
+.status:is(
+  [data-state="retrying"],
+  [data-state="conflict"],
+  [data-state="failed"]
+) {
+  color: var(--color-text);
+  font-weight: var(--weight-medium);
+}
+
+.visuallyHidden {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

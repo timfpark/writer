@@ -90,8 +90,8 @@ tool adds is content the editor must preserve.
 contrast targets, and the tokens document styles build on. It holds unsaved
 text in IndexedDB, written on the flush events this record names, and
 measured 199 KB of gzipped JavaScript for the shell and navigator before the
-editor, leaving the budget here. [Backlog 23](../backlog/0023-writing-surface.md)
-builds the writing surface on these choices. A later release adds pair-writer
+editor, leaving the budget here. Backlog 23
+built the writing surface on these choices. A later release adds pair-writer
 suggestions anchored to passages of text, which the editor must not rule out.
 
 A prototype built outside the repository, on Node.js 26.13.1 and macOS 26.7.2
