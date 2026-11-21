@@ -23,7 +23,8 @@ navigator and assistant hold placeholders until later stories fill them.
 Coding agents start with [AGENTS.md](./AGENTS.md); the architecture is
 recorded in [ADR 0003](../docs/adrs/0003-webapp-architecture.md), the API
 conventions in [ADR 0004](../docs/adrs/0004-api-conventions.md), and the
-interface foundation in [ADR 0007](../docs/adrs/0007-webapp-interface.md).
+interface foundation in [ADR 0007](../docs/adrs/0007-webapp-interface.md), and
+the browser tests in [ADR 0009](../docs/adrs/0009-browser-tests.md).
 
 | Path                                                   | Responsibility                                                               |
 |--------------------------------------------------------|------------------------------------------------------------------------------|
@@ -37,6 +38,10 @@ interface foundation in [ADR 0007](../docs/adrs/0007-webapp-interface.md).
 | [src/api/generated/](./src/api/generated/)             | Types generated from [service/openapi.json](../service/openapi.json)         |
 | [scripts/api-check.js](./scripts/api-check.js)         | Fails when the generated types differ from the contract                      |
 | [vite.config.ts](./vite.config.ts)                     | Development server, `/api/` proxy, CSS Modules, font licenses, and Vitest    |
+| [e2e/](./e2e/)                                         | Playwright browser and accessibility tests against a running service         |
+| [playwright.config.ts](./playwright.config.ts)         | Browser test projects, ports, and the servers each run starts                |
+| [scripts/e2e-service.js](./scripts/e2e-service.js)     | Runs the service on a new data folder for a browser test run                 |
+| [scripts/e2e-browsers.js](./scripts/e2e-browsers.js)   | Exits 2 unless every browser the tests use launches                          |
 
 The generated types are committed. Never edit them by hand; regenerate them
 as [Checks](#checks) describes. Each `Component.module.css` gets a
@@ -75,6 +80,7 @@ offers to try again.
 | `lucide-react`                                                         | Icons                                                   |
 | `@fontsource-variable/newsreader` and `@fontsource-variable/inter`     | The self-hosted writing and interface typefaces         |
 | `vite-css-modules` (development)                                       | Typed CSS Module declarations                           |
+| `@playwright/test` and `@axe-core/playwright` (development)            | Browser tests and their accessibility checks            |
 
 Writing is set in Newsreader, by Production Type, and the interface in Inter,
 by Rasmus Andersson, both under the SIL Open Font License 1.1. The build
@@ -173,6 +179,46 @@ npm run api:generate
 
 Until you do, `npm run api:check` and `tools/check` fail with a message naming
 `webapp/src/api/generated/schema.d.ts`. Fix formatting with `npm run format`.
+
+### Browser tests
+
+The `browser` phase of `tools/check`, after the `webapp` phase, runs
+Playwright tests from [e2e/](./e2e/) in real browsers, as
+[ADR 0009](../docs/adrs/0009-browser-tests.md) decides:
+
+| Command                | Checks                                                                        |
+|------------------------|-------------------------------------------------------------------------------|
+| `npm run e2e:browsers` | Chromium, Firefox, and WebKit launch; exits 2, naming the fix, if one cannot  |
+| `npm run e2e`          | Every browser test, with WCAG 2.2 AA checks by axe-core in both themes        |
+
+Each run starts the service with `cargo run` on loopback port 8898, with a
+new, empty data folder in the system's temporary directory that it removes
+afterward, and this folder's development server on port 5198, proxying to
+it. It needs neither `npm run dev` nor a running service, and leaves those on
+8888 and 5180 alone; it fails if 8898 or 5198 is taken. A test fails if the
+page requests any other origin, so runs need no network.
+
+Every test runs in five projects: Chromium, Firefox, and WebKit at a desktop
+size, and WebKit with touch on an iPad in portrait and landscape. To run one
+project, one file, or tests by title, pass Playwright's options after `--`:
+
+```bash
+npm run e2e -- --project=ipad-portrait
+npm run e2e -- e2e/shell.spec.ts -g "collapses"
+```
+
+A failed test keeps a trace in `test-results/`, which Git ignores; open it
+with `npx playwright show-trace <path to trace.zip>`.
+
+The development container carries the browsers. On a host, install the
+browsers for the locked Playwright release once, and again after it changes:
+
+```bash
+npx playwright install chromium firefox webkit
+```
+
+On Linux, add `--with-deps` to install the system libraries they need, which
+uses `sudo`.
 
 The build prints Vite's advisory warning that the JavaScript chunk exceeds
 500 KB minified; it fails nothing, and

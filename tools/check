@@ -15,8 +15,12 @@ Runs every validation phase from the repository root:
            including the service/openapi.json freshness test (cargo via rustup)
   webapp   install, generated client freshness, formatting, lint, types, tests,
            and build of webapp/
+  browser  Playwright browser and accessibility tests of webapp/e2e/, driving
+           the development server against a real service
 
 Node.js must be exactly the version webapp/package.json pins in engines.node.
+The browser phase needs the Playwright browsers that webapp/package.json pins;
+the development container carries them.
 
 Exit codes: 0 all phases passed, 1 a phase failed, 2 usage or prerequisite error.
 USAGE
@@ -121,13 +125,31 @@ run_webapp_phase() {
   )
 }
 
+# Uses the webapp phase's install. The browsers step exits 2 when a browser
+# cannot launch, which the gate reports as a missing prerequisite, and the
+# tests do not run.
+run_browser_phase() {
+  (
+    cd "$root/webapp" || exit 1
+    npm run e2e:browsers || exit
+    npm run e2e
+  )
+}
+
+# A phase exiting 2 lacks a prerequisite; any other nonzero status failed.
 failed=()
+missing=()
 run_phase() {
   local name="$1"
   shift
   echo "==> $name"
-  if "$@"; then
+  local status=0
+  "$@" || status=$?
+  if ((status == 0)); then
     echo "<== $name: passed"
+  elif ((status == 2)); then
+    echo "<== $name: PREREQUISITE MISSING" >&2
+    missing+=("$name")
   else
     echo "<== $name: FAILED" >&2
     failed+=("$name")
@@ -138,9 +160,16 @@ run_phase tools env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover --sta
 run_phase docs run_docs_phase
 run_phase service run_service_phase
 run_phase webapp run_webapp_phase
+run_phase browser run_browser_phase
 
+if ((${#missing[@]})); then
+  echo "check: prerequisite missing in phases: ${missing[*]}" >&2
+fi
 if ((${#failed[@]})); then
   echo "check: FAILED phases: ${failed[*]}" >&2
   exit 1
+fi
+if ((${#missing[@]})); then
+  exit 2
 fi
 echo "check: all phases passed"

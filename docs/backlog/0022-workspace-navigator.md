@@ -51,8 +51,8 @@ shortcuts beyond moving through the tree arrive in
   `Enter` to open a document.
 * Apply changes optimistically, roll back on failure, and show failures by
   their problem `code` without blocking the page.
-* Give each browser test run a temporary data folder, and add browser tests
-  for each behavior above.
+* Add browser tests for each behavior above in `webapp/e2e/`, as
+  [ADR 0009](../adrs/0009-browser-tests.md) decides.
 
 ## Acceptance criteria
 
@@ -67,4 +67,4 @@ shortcuts beyond moving through the tree arrive in
 
 ## Prerequisites
 
-* [Add browser end-to-end tests to the gate](./0021-browser-tests.md)
+None.

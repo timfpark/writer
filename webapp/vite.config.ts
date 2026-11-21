@@ -62,6 +62,8 @@ export default defineConfig(({ mode }) => ({
     },
   },
   test: {
+    // Playwright runs the browser tests in e2e/.
+    include: ["src/**/*.test.{ts,tsx}"],
     environment: "jsdom",
     unstubGlobals: true,
     // Vitest loads CSS as empty unless listed here; the contrast test reads

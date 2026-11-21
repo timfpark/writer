@@ -25,6 +25,11 @@ Accepted on 2026-11-19.
 record defers: the HTTP framework, internal crate responsibilities, and how the
 OpenAPI contract is produced and verified.
 
+Amended on 2026-11-20 by [ADR 0009](./0009-browser-tests.md), which places
+the browser tests in `webapp/e2e/`, adds the `browser` phase to the
+validation gate, and adds the Playwright browsers to the development
+container.
+
 ## Decision summary
 
 * Organize the monorepo around self-contained top-level subsystem folders,
@@ -181,6 +186,8 @@ for freshness. Generated files are never edited by hand.
 
 Cross-subsystem end-to-end tests are deferred until both subsystems exist and
 a story needs them; that story chooses their location.
+[ADR 0009](./0009-browser-tests.md) places the browser tests, which drive the
+webapp against a running service, in `webapp/e2e/`.
 
 ### Agent discoverability
 
@@ -301,7 +308,11 @@ with warnings denied, builds, and tests every Cargo workspace member, including
 the contract freshness test. The `webapp` phase, added by the webapp
 foundation (backlog 7), installs the locked dependencies, checks the generated
 client's freshness, formatting, lint, and types, runs the tests, and builds,
-as [ADR 0003](./0003-webapp-architecture.md#quality-checks) lists.
+as [ADR 0003](./0003-webapp-architecture.md#quality-checks) lists. The
+`browser` phase, added by backlog 21, runs the browser and accessibility tests
+after it, and exits 2 when a browser cannot launch, as
+[ADR 0009](./0009-browser-tests.md#gate) decides. The gate exits 1 when any
+phase fails, and otherwise 2 when any phase lacks a prerequisite.
 
 Markdown style lint landed in backlog 5 after the development container
 provided Node.js.
@@ -320,7 +331,7 @@ ten minutes or a third subsystem stack is added.
 #### Development container
 
 One shared `.devcontainer/` carries every toolchain the gate needs: Bash,
-Python 3.9 or newer, rustup, and Node.js with npm. It runs as a non-root user,
+Python 3.9 or newer, rustup, Node.js with npm, and the Playwright browsers. It runs as a non-root user,
 pins its base image and feature versions, and documents forwarded ports: the
 service uses loopback port 8888, and each later server records a distinct
 port in its subsystem README. Credentials stay out of the image and the

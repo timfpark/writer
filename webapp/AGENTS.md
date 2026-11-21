@@ -8,7 +8,8 @@ description: Purpose, boundaries, operational rules, governing decisions, and ex
 `webapp/` is a client-rendered React 19 single-page application built with
 Vite 8: Writer's editing workspace. Today it shows the workspace shell, a
 header above a collapsible navigator, the writing region, and a collapsible
-assistant, with placeholders in the panes. People start with
+assistant, with placeholders in the panes. Browser tests in `e2e/` drive it
+against a running service. People start with
 [README.md](./README.md), which maps the source folders.
 
 * Reach the service only through its HTTP API, using the client in
@@ -73,11 +74,22 @@ assistant, with placeholders in the panes. People start with
 
 * Keep `tsc`, Oxlint, and Prettier clean; fix findings rather than disabling
   rules. Lint and formatting skip the generated client, but `tsc` checks it.
-* Place tests next to the code as `*.test.ts` or `*.test.tsx`. Replace `fetch`
-  with `vi.stubGlobal`; tests never reach a real service or the network.
+* Place Vitest tests next to the code as `*.test.ts` or `*.test.tsx`. Replace
+  `fetch` with `vi.stubGlobal`; they never reach a real service or the network.
   jsdom has no `matchMedia`, so panes dock unless a test stubs it, as
   [App.test.tsx](./src/App.test.tsx) does for narrow viewports.
 * Use synthetic prose in tests and fixtures, never a real manuscript.
+* Vitest runs only `src/**/*.test.{ts,tsx}`. Browser tests live in `e2e/` as
+  `*.spec.ts`, import `test` and `expect` from
+  [e2e/fixtures.ts](./e2e/fixtures.ts), never from `@playwright/test`
+  directly, so the same-origin guard applies, and call `expectAccessible` in
+  each distinct state they reach.
+* Write browser tests to pass in every project: find elements by role and
+  name, tap where `hasTouch` is set, and skip a layout or input a test does
+  not apply to with a reason, using ADR 0007's breakpoints.
+* Browser tests share one service and data folder per run. Create the
+  synthetic items a test needs, with titles unique to it, and never assume an
+  empty workspace or another test's data.
 
 ### Toolchain and dependencies
 
@@ -92,6 +104,11 @@ assistant, with placeholders in the panes. People start with
   scripts. No current dependency needs one.
 * Dependabot proposes webapp updates only after a 7-day cooldown, as ADR 0007
   decides; keep it in [dependabot.yml](../.github/dependabot.yml).
+* Change `@playwright/test` in [package.json](./package.json) and the
+  `playwright` feature's `version` in
+  [devcontainer.json](../.devcontainer/devcontainer.json) together; the
+  browsers belong to one release, and `npm run e2e:browsers` exits 2 when
+  they differ.
 * Stay on TypeScript 6.0 and keep the `overrides` entry for
   `openapi-typescript` until it supports TypeScript 7, as
   [ADR 0003](../docs/adrs/0003-webapp-architecture.md#typescript) decides.
@@ -121,6 +138,9 @@ Consult these when changing architecture, dependencies, or conventions:
   the round-trip guarantee, input rules, undo history, autosave timing and
   flush events, document styles, the bundle budget, and responsiveness
   targets
+* [ADR 0009](../docs/adrs/0009-browser-tests.md): Playwright and axe-core
+  browser tests in `e2e/`, the five projects, the servers and data folder
+  each run starts, the same-origin guard, and the `browser` gate phase
 
 ## Commands
 
@@ -137,9 +157,14 @@ npm run lint                             # Oxlint, type-aware, warnings denied
 npm run typecheck                        # CSS Module declarations, then tsc without emitting
 npm run test                             # Vitest once
 npm run build                            # production build in dist/
+npm run e2e:browsers                     # exit 2 unless every Playwright browser launches
+npm run e2e                              # browser tests against a service on 8898, served on 5198
+npm run e2e -- --project=webkit          # one project: chromium, firefox, webkit, ipad-portrait, ipad-landscape
+npx playwright install chromium firefox webkit  # on a host, install the locked release's browsers
 npm config get registry                  # expect the packagefeedproxy.microsoft.io proxy
 ```
 
 Before reporting work complete, run `tools/check` from the repository root.
 Its `webapp` phase runs `npm ci --include=dev --no-audit --no-fund`, then
 `npm run api:check`, `format:check`, `lint`, `typecheck`, `test`, and `build`.
+Its `browser` phase then runs `npm run e2e:browsers` and `npm run e2e`.

@@ -46,6 +46,10 @@ under [Application shape](#application-shape) and in the follow-up
 decisions. It adds `vite-css-modules` to the build and type check, and
 allows unassigned CSS imports in the Oxlint configuration.
 
+Amended on 2026-11-20 by [ADR 0009](./0009-browser-tests.md), which settles
+browser end-to-end and automated accessibility testing with Playwright and
+axe-core, and limits Vitest to `src/`.
+
 ## Decision summary
 
 * Build `webapp/` as a client-rendered React 19 single-page application
@@ -418,6 +422,7 @@ Trade-offs and risks:
 * Oxlint has fewer third-party rules than ESLint. A needed rule it lacks
   means revisiting the linter choice.
 * No browser end-to-end tests run until a story adds them.
+  [ADR 0009](./0009-browser-tests.md) adds them with Playwright.
 
 ## Revisit triggers
 
@@ -437,7 +442,8 @@ Trade-offs and risks:
 
 * Routing, styling and components, and server-state caching: settled by
   [ADR 0007](./0007-webapp-interface.md)
-* Browser end-to-end and automated accessibility testing
+* Browser end-to-end and automated accessibility testing: settled by
+  [ADR 0009](./0009-browser-tests.md)
 * Serving the built application, content security policy, and hosting beyond
   loopback, alongside the service's hosting decision
 * Authentication and session handling, alongside the service's authentication

@@ -13,6 +13,9 @@ dist/
 coverage/
 __pycache__/
 
+# Browser test traces and failure output that Playwright writes in webapp/
+test-results/
+
 # CSS Module declarations that vite-css-modules writes beside each module
 *.module.css.d.ts
 

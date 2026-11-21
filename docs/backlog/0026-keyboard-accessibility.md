@@ -21,7 +21,7 @@ without a pointer so that organizing and writing never slow me down.
 WAI-ARIA treegrid pattern, with arrow keys, `Home`, `End`, and `Enter`, and
 [backlog 24](./0024-tree-drag-and-drop.md) adds a non-dragging move. The
 remaining shortcuts were left out of those stories so the navigator could
-ship sooner. [Backlog 21](./0021-browser-tests.md) supplies automated
+ship sooner. [ADR 0009](../adrs/0009-browser-tests.md) supplies automated
 accessibility checks.
 
 ## Scope
