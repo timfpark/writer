@@ -11,6 +11,8 @@ export type TreeChange =
       parentId: string | null;
       beforeId: string | null;
       title: string;
+      // A new document's content, which is empty when omitted.
+      markdown?: string;
     }
   | { type: "rename"; kind: ItemKind; id: string; title: string }
   | { type: "delete"; kind: ItemKind; id: string };

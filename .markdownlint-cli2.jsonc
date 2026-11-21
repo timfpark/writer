@@ -10,7 +10,8 @@
     "**/dist/**",
     "**/node_modules/**",
     "**/target/**",
-    "**/test-results/**"
+    "**/test-results/**",
+    "webapp/src/editor/markdown/corpus/**"
   ],
   "config": {
     "default": true,

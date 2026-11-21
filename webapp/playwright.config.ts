@@ -1,10 +1,10 @@
 import { defineConfig, devices } from "@playwright/test";
+import { servicePort, webappPort } from "./e2e/ports";
 
-// Ports used only by browser test runs, so a run never collides with the
-// development servers on 8888 and 5180. Both bind to loopback.
-const servicePort = 8898;
-const webappPort = 5198;
 const baseURL = `http://127.0.0.1:${webappPort}`;
+
+// Tests that measure ADR 0008's responsiveness targets.
+const timed = /responsiveness\.spec\.ts$/;
 
 // ADR 0007's iPad range runs from 744 px wide in portrait, where both panes
 // open over the writing region, to landscape, where the navigator docks.
@@ -28,10 +28,20 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
-    { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "webkit", use: { ...devices["Desktop Safari"] } },
-    { name: "ipad-portrait", use: iPadPortrait },
-    { name: "ipad-landscape", use: { ...devices["iPad Pro 11 landscape"] } },
+    ...[
+      { name: "chromium", use: { ...devices["Desktop Chrome"] } },
+      { name: "webkit", use: { ...devices["Desktop Safari"] } },
+      { name: "ipad-portrait", use: iPadPortrait },
+      { name: "ipad-landscape", use: { ...devices["iPad Pro 11 landscape"] } },
+    ].map((project) => ({ ...project, testIgnore: timed })),
+    // Timing targets hold only on an otherwise idle machine, so these tests
+    // run alone, after every other project has finished.
+    {
+      name: "responsiveness",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: timed,
+      dependencies: ["chromium", "webkit", "ipad-portrait", "ipad-landscape"],
+    },
   ],
   webServer: [
     {
@@ -44,7 +54,7 @@ export default defineConfig({
       gracefulShutdown: { signal: "SIGTERM", timeout: 15_000 },
     },
     {
-      command: `npm run dev -- --port ${webappPort}`,
+      command: `npm run dev -- --port ${webappPort} --mode e2e`,
       url: baseURL,
       env: { WRITER_SERVICE_PORT: String(servicePort) },
       reuseExistingServer: false,

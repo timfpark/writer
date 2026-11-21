@@ -246,6 +246,7 @@ if sys.argv[1:2] == [{fail_subcommand!r}]:
                 "run typecheck",
                 "run test",
                 "run build",
+                "run budget",
                 "run e2e:browsers",
                 "run e2e",
             ],
@@ -259,7 +260,7 @@ if sys.argv[1:2] == [{fail_subcommand!r}]:
         self.assertEqual(res.returncode, 1)
         self.assertIn("npm run api:check simulated failure", res.stderr)
         self.assertIn("FAILED phases: webapp", res.stderr)
-        self.assertEqual(len(self.npm_calls(log, "webapp")), 9)
+        self.assertEqual(len(self.npm_calls(log, "webapp")), 10)
 
     def test_browsers_that_cannot_launch_exit_2_without_running_browser_tests(self):
         self.add_node_stub()

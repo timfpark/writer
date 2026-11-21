@@ -79,6 +79,13 @@ class CheckDocsTest(unittest.TestCase):
             "docs/pull_request_template.md:1: missing YAML frontmatter delimited by '---' lines",
         ])
 
+    def test_editor_corpus_is_test_data_not_documentation(self):
+        self.write("webapp/src/editor/markdown/corpus/foreign/a.md", "# Title\n\n[x](./missing.md)\n")
+        self.write("webapp/src/editor/b.md", "## Heading\n")
+        self.assertEqual(self.problems(), [
+            "webapp/src/editor/b.md:1: missing YAML frontmatter delimited by '---' lines",
+        ])
+
     def test_numbered_doc_needs_subsystems_and_index_row(self):
         self.write("docs/backlog/README.md", FRONTMATTER + "## Backlog\n")
         self.write("docs/backlog/0002-thing.md", FRONTMATTER + "## Story\n")

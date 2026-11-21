@@ -37,7 +37,6 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | #  | Work item                                                                             | Subsystems             | Outcome                                                                                | Prerequisite   |
 |----|---------------------------------------------------------------------------------------|------------------------|----------------------------------------------------------------------------------------|----------------|
 | 32 | [Resolve the KaTeX advisory in the tools lockfile](./0032-katex-advisory.md)          | `repository`           | No open security alert remains for the tools lockfile.                                 | None           |
-| 23 | [Write in the editing surface with autosave](./0023-writing-surface.md)               | `webapp`               | Writers edit documents and titles, and every change saves itself.                      | None           |
 | 24 | [Move and reorder items with drag and drop](./0024-tree-drag-and-drop.md)             | `webapp`               | Writers move and reorder items by dragging or with a menu.                             | None           |
 | 25 | [Prototype the assistant pane](./0025-assistant-pane.md)                              | `webapp`               | The right pane holds a stubbed conversation ready for the agent.                       | None           |
 | 26 | [Make the workspace fully keyboard operable](./0026-keyboard-accessibility.md)        | `webapp`               | Every workspace operation works from the keyboard and passes checks.                   | 24             |
@@ -46,7 +45,7 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | 27 | [Record the change control ADR](./0027-change-control-adr.md)                         | `service`, `webapp`    | An accepted ADR fixes the commit model, commit timing, restore, and progress measures. | None           |
 | 28 | [Build the SQLite backend and copy command](./0028-sqlite-backend.md)                 | `service`              | The workspace persists in SQLite and copies between backends intact.                   | None           |
 | 29 | [Record and restore commits in the service](./0029-service-history.md)                | `service`              | The contract records commits, reads earlier versions, and restores them.               | 27             |
-| 30 | [Browse, compare, and restore history in the webapp](./0030-history-view.md)          | `webapp`               | Writers commit, browse history, compare versions, and roll back.                       | 23, 29         |
+| 30 | [Browse, compare, and restore history in the webapp](./0030-history-view.md)          | `webapp`               | Writers commit, browse history, compare versions, and roll back.                       | 29             |
 | 31 | [Show writing progress over time](./0031-writing-progress.md)                         | `service`, `webapp`    | Writers see words added and removed per document and folder over time.                 | 29, 30         |
 
 [ADR 0002](../adrs/0002-service-architecture.md),
@@ -72,10 +71,10 @@ through the workspace API in [openapi.json](../../service/openapi.json).
 Item 20 built the webapp's workspace shell on ADR 0007's foundation, and
 item 21 added the browser tests that drive it, as
 [ADR 0009](../adrs/0009-browser-tests.md) decides. Item 22 built the
-keyboard-navigable navigator, and the writing surface (23) completes the
-first usable release with it. Drag and
-drop (24), the assistant pane prototype (25), and the remaining keyboard
-shortcuts (26) complete it.
+keyboard-navigable navigator, and item 23 built the writing surface with
+autosave, which together make the first usable release. Drag and drop (24),
+the assistant pane prototype (25), and the remaining keyboard shortcuts (26)
+complete it.
 
 The pair-writing agent follows the workspace. Item 10 records the agent
 decision before item 12 creates `service/prompts/` and `service/evals/`.

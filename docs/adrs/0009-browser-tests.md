@@ -36,6 +36,16 @@ Amended on 2026-11-21 to drop the `firefox` project, when
 [ADR 0007](./0007-webapp-interface.md#supported-browsers) dropped Firefox from
 the supported browsers. The development container no longer installs it.
 
+Amended on 2026-11-21 for the writing surface, which backlog 23 built. A
+fifth project, `responsiveness`, runs
+[ADR 0008's responsiveness test](./0008-editor.md#responsiveness) alone in
+desktop Chromium after the other four finish, because timing targets hold
+only on an otherwise idle machine. The development server runs in Vite's
+`e2e` mode, which serves packages' production exports as the build does, so
+the test measures what ships rather than development builds with assertions.
+The data folder is named after the service's port, so a test can edit a
+document's file outside Writer.
+
 ## Decision summary
 
 * Write browser tests with Playwright Test, `@playwright/test` 1.65.1, in
@@ -45,7 +55,8 @@ the supported browsers. The development container no longer installs it.
   against WCAG 2.2 AA in the light and dark themes, on the page as rendered.
 * Run every test on four projects: Chromium and WebKit at a 1280 by 720
   desktop size, and WebKit with touch at iPad sizes in portrait
-  (744 px wide) and landscape (1194 px wide).
+  (744 px wide) and landscape (1194 px wide). Run the responsiveness test
+  alone in a fifth, after them.
 * Start a real service on a new, empty data folder in the system's temporary
   directory, and the webapp's development server proxying to it, for each
   run, on loopback ports 8898 and 5198. Remove the folder when the service
@@ -204,6 +215,7 @@ webapp source.
 | `webkit`         | WebKit   | 1280 by 720 | Mouse           | Both docked                                       |
 | `ipad-portrait`  | WebKit   | 744 by 1133 | Touch, mobile   | Both open over the writing region                 |
 | `ipad-landscape` | WebKit   | 1194 by 834 | Touch, mobile   | Navigator docked, assistant over the writing area |
+| `responsiveness` | Chromium | 1280 by 720 | Mouse           | Both docked                                       |
 
 The iPad projects use Playwright's iPad Pro 11 descriptors, with the portrait
 width narrowed to 744 px, the narrowest iPad ADR 0007 names. Together the
@@ -216,21 +228,27 @@ rules are testable.
 Every run emulates `prefers-reduced-motion: reduce`, which sets
 `--duration-fast` to 0, so the accessibility check never measures a color
 partway through a transition. Tests run fully parallel, with no retries, and
-`test.only` fails the run.
+`test.only` fails the run. The `responsiveness` project runs only
+`responsiveness.spec.ts`, which the other projects skip, and depends on all
+four, so it starts once they finish and its CPU-throttled timings share the
+machine with nothing else.
 
 ### Servers and data
 
 Each run starts two servers, and stops both when it ends:
 
 1. The service, through `scripts/e2e-service.js`, which creates an empty data
-   folder named `writer-e2e-*` in the system's temporary directory, runs
+   folder named after its port, `writer-e2e-8898`, in the system's temporary
+   directory, replacing any left by an interrupted run, runs
    `cargo run --locked -p writer-server` in `service/` with `WRITER_PORT=8898`
    and `WRITER_DATA_DIR` set to it, forwards `SIGINT` and `SIGTERM`, and
    removes the folder when the service exits. Playwright waits for
    `/api/v1/health`, allowing 5 minutes for a first build.
-2. The development server, through `npm run dev -- --port 5198`, with
-   `WRITER_SERVICE_PORT=8898`, so the browser reaches the service only through
-   the `/api/` proxy as it does in development.
+2. The development server, through `npm run dev -- --port 5198 --mode e2e`,
+   with `WRITER_SERVICE_PORT=8898`, so the browser reaches the service only
+   through the `/api/` proxy as it does in development. The `e2e` mode
+   resolves packages' `production` exports, as the build does, and keeps its
+   pre-bundled dependencies apart from the development server's.
 
 The ports differ from 8888 and 5180, so a run never collides with
 development servers, and neither is forwarded from the container. A port

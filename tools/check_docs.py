@@ -23,6 +23,9 @@ SKIP_DIRS = {".git", "node_modules", "target", "dist", ".local", "test-results"}
 # GitHub copies these files verbatim into new pull request bodies, so they
 # carry no frontmatter. Their links are still checked.
 NO_FRONTMATTER = {".github/pull_request_template.md"}
+# Markdown test data for the editor's round trip, kept byte for byte as other
+# tools write it, so it is neither documentation nor checked as such.
+FIXTURE_DIRS = ("webapp/src/editor/markdown/corpus/",)
 
 FENCE = re.compile(r"^\s{0,3}(```|~~~)")
 INLINE_CODE = re.compile(r"(`+).*?\1")
@@ -39,13 +42,21 @@ def markdown_files(root):
                 ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard", "--", "*.md"],
                 cwd=root, check=True, capture_output=True,
             ).stdout.decode()
-            return sorted(root / p for p in out.split("\0") if p and (root / p).is_file())
+            return sorted(
+                root / p
+                for p in out.split("\0")
+                if p and not p.startswith(FIXTURE_DIRS) and (root / p).is_file()
+            )
         except (OSError, subprocess.CalledProcessError):
             pass
     found = []
     for dirpath, dirnames, filenames in os.walk(root):
         dirnames[:] = [d for d in dirnames if d not in SKIP_DIRS]
-        found.extend(Path(dirpath) / f for f in filenames if f.endswith(".md"))
+        found.extend(
+            path
+            for path in (Path(dirpath) / f for f in filenames if f.endswith(".md"))
+            if not path.relative_to(root).as_posix().startswith(FIXTURE_DIRS)
+        )
     return sorted(found)
 
 

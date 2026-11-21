@@ -494,7 +494,7 @@ immediately before replacing it.
 
 The header shows one save status for the open document: saved, saving,
 retrying while the service is unreachable or returns a 5xx status, or in
-conflict, as [backlog 23](../backlog/0023-writing-surface.md) builds. Until
+conflict, as backlog 23 built it. Until
 the service acknowledges a save that contains it, the client never discards
 the writer's text. A network failure or 5xx response is retried with the
 same `baseRevision`, which the stale-write rule makes safe.
@@ -520,7 +520,7 @@ either version:
 4. Otherwise it creates a document with a new identifier directly after the
    original in the same folder, holding the stored content, with a title
    derived from the original's that marks it as the other version and stays
-   within 200 characters. Backlog 23 chooses the wording. If the copy cannot
+   within 200 characters; backlog 23 chose the suffix `(saved elsewhere)`. If the copy cannot
    be created, for example because the workspace is at its item limit, the
    client stops here: it leaves the original unchanged, keeps the local text
    in browser storage, and shows the problem and the conflict status until

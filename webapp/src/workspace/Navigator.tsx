@@ -50,6 +50,7 @@ import {
   type TreeNode,
 } from "../api/workspaceTree";
 import controls from "../shell/controls.module.css";
+import { useSaveManager } from "../saving/saveManager";
 import { useStoredSet } from "../shell/preferences";
 import { failureMessage } from "./changeFailure";
 import { DeleteDialog } from "./DeleteDialog";
@@ -106,6 +107,7 @@ export function Navigator() {
   const { query, items } = useWorkspaceTree();
   const loadFailure = useQueryFailure(query);
   const change = useWorkspaceChange();
+  const saveManager = useSaveManager();
   const { failures, dismiss } = useChangeFailures();
   const [expanded, updateExpanded] = useStoredSet("navigator.expanded");
   const [naming, setNaming] = useState<Naming | null>(null);
@@ -237,6 +239,7 @@ export function Navigator() {
 
   function remove(node: TreeNode) {
     const removed = subtreeIds(items ?? [], node.id);
+    saveManager.discard(removed);
     if (documentId && removed.includes(documentId)) void navigate({ to: "/" });
     void change({ type: "delete", kind: node.kind, id: node.id }).then(
       (accepted) => {
