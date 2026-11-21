@@ -51,6 +51,7 @@ browser tests in [ADR 0009](../docs/adrs/0009-browser-tests.md).
 | [playwright.config.ts](./playwright.config.ts)               | Browser test projects, ports, and the servers each run starts               |
 | [scripts/e2e-service.js](./scripts/e2e-service.js)           | Runs the service on a new data folder for a browser test run                |
 | [e2e/outside.js](./e2e/outside.js)                           | Edits a document's file in that data folder, as another program would       |
+| [e2e/environment.js](./e2e/environment.js)                   | Whether a browser test run is in CI                                         |
 | [scripts/e2e-browsers.js](./scripts/e2e-browsers.js)         | Exits 2 unless every browser the tests use launches                         |
 
 The generated types are committed. Never edit them by hand; regenerate them
@@ -272,7 +273,9 @@ supported browser, so no project runs it. The responsiveness test, which
 types into a synthetic 1 MiB document with the CPU throttled 4×, runs alone
 in a fifth project, `responsiveness`, in desktop Chromium after the others
 finish, because its timings need an otherwise idle machine and throttling
-needs the Chrome DevTools Protocol. To run one
+needs the Chrome DevTools Protocol. In CI, where `CI` is set and runners are
+no particular hardware, it runs unthrottled against the same targets and
+ADR 0008's unthrottled 33 ms for keystrokes. To run one
 project, one file, or tests by title, pass Playwright's options after `--`:
 
 ```bash

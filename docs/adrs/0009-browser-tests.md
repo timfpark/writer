@@ -40,7 +40,10 @@ Amended on 2026-11-21 for the writing surface, which backlog 23 built. A
 fifth project, `responsiveness`, runs
 [ADR 0008's responsiveness test](./0008-editor.md#responsiveness) alone in
 desktop Chromium after the other four finish, because timing targets hold
-only on an otherwise idle machine. The development server runs in Vite's
+only on an otherwise idle machine. ADR 0008 sets its targets on development
+hardware with the CPU throttled 4×; CI runners are no particular hardware, so
+where `CI` is set the test runs unthrottled against the same targets and
+ADR 0008's unthrottled 33 ms for keystrokes. The development server runs in Vite's
 `e2e` mode, which serves packages' production exports as the build does, so
 the test measures what ships rather than development builds with assertions.
 The data folder is named after the service's port, so a test can edit a

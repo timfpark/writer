@@ -1,3 +1,4 @@
+import { inCI } from "./environment.js";
 import { expect, test } from "./fixtures";
 
 declare global {
@@ -7,10 +8,15 @@ declare global {
 }
 
 // ADR 0008's responsiveness targets, on a synthetic manuscript at ADR 0005's
-// 1 MiB content limit, with the CPU throttled 4×.
+// 1 MiB content limit. They hold on development hardware with the CPU
+// throttled 4×, where keystrokes reach the next frame within 50 ms. CI
+// runners are no particular hardware, so there the CPU runs unthrottled
+// against the same targets and ADR 0008's unthrottled 33 ms for keystrokes,
+// which still catches a regression.
 const contentLimit = 1024 * 1024;
+const throttling = inCI ? 1 : 4;
 const editableWithin = 1_000;
-const keystrokeP95 = 50;
+const keystrokeP95 = inCI ? 33 : 50;
 const serializeWithin = 25;
 
 // A small seeded generator, so every run types into the same manuscript.
@@ -105,7 +111,7 @@ test("edits a 1 MiB document within the responsiveness targets", async ({
   await expect(page.getByRole("textbox", { name: warmTitle })).toBeVisible();
 
   const cdp = await page.context().newCDPSession(page);
-  await cdp.send("Emulation.setCPUThrottlingRate", { rate: 4 });
+  await cdp.send("Emulation.setCPUThrottlingRate", { rate: throttling });
 
   await page
     .getByRole("navigation", { name: "Navigator" })

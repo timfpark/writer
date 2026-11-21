@@ -95,6 +95,49 @@ async function workspaceItems(page: Page) {
   return body.items;
 }
 
+// The unsaved text this page keeps for a document in IndexedDB, as
+// ADR 0007's browser storage section describes, or null when there is none.
+async function unsavedText(
+  page: Page,
+  documentId: string,
+): Promise<string | null> {
+  return page.evaluate(
+    (id) =>
+      new Promise<string | null>((resolve, reject) => {
+        const open = indexedDB.open("writer");
+        open.onerror = () => reject(new Error("cannot open IndexedDB"));
+        open.onsuccess = () => {
+          const records = open.result
+            .transaction("unsavedText")
+            .objectStore("unsavedText")
+            .getAll();
+          records.onerror = () => reject(new Error("cannot read records"));
+          records.onsuccess = () => {
+            const list: unknown[] = Array.isArray(records.result)
+              ? records.result
+              : [];
+            const record = list.find(
+              (item) =>
+                typeof item === "object" &&
+                item !== null &&
+                "documentId" in item &&
+                item.documentId === id,
+            );
+            resolve(
+              record &&
+                typeof record === "object" &&
+                "markdown" in record &&
+                typeof record.markdown === "string"
+                ? record.markdown
+                : null,
+            );
+          };
+        };
+      }),
+    documentId,
+  );
+}
+
 function surface(page: Page, title: string): Locator {
   return page.getByRole("textbox", { name: title, exact: true });
 }
@@ -314,13 +357,18 @@ test("keeps text through an unreachable service and a reload, then saves it", as
   await type(page, "Fog rolled over the breakwater.");
   await expect(saveStatus(page, "Retrying…")).toBeVisible();
   await expectAccessible(page);
+  // Too long to send as the page unloads, the text lives on in the
+  // unsaved-text record.
+  await expect
+    .poll(() => unsavedText(page, documentId))
+    .toBe(`${longOpening}\nFog rolled over the breakwater.\n`);
+  expect(await storedContent(page, documentId)).toBe(longOpening);
 
   await page.reload();
   await expect(surface(page, title)).toContainText(
     "Fog rolled over the breakwater.",
   );
   await expect(saveStatus(page, "Retrying…")).toBeVisible();
-  expect(await storedContent(page, documentId)).toBe(longOpening);
 
   await page.unroute(isContentPath);
   await expect(saveStatus(page, "Saved")).toBeVisible({ timeout: 20_000 });
