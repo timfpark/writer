@@ -21,6 +21,6 @@ fi
 export PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 # Chromium's headless shell is all headless runs need, and is smaller than the
 # full browser.
-npx --yes "playwright@${version}" install --with-deps --only-shell chromium firefox webkit
+npx --yes "playwright@${version}" install --with-deps --only-shell chromium webkit
 chmod -R a+rX "$PLAYWRIGHT_BROWSERS_PATH"
 rm -rf /root/.npm /var/lib/apt/lists/*

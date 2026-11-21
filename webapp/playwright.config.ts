@@ -29,7 +29,6 @@ export default defineConfig({
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
-    { name: "firefox", use: { ...devices["Desktop Firefox"] } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
     { name: "ipad-portrait", use: iPadPortrait },
     { name: "ipad-landscape", use: { ...devices["iPad Pro 11 landscape"] } },

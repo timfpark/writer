@@ -10,6 +10,7 @@ const pairs: [foreground: string, background: string, target: number][] = [
   ["--color-ink-muted", "--color-page", 7],
   ["--color-text", "--color-chrome", 4.5],
   ["--color-text-muted", "--color-chrome", 4.5],
+  ["--color-text", "--color-chrome-raised", 4.5],
   ["--color-text-muted", "--color-chrome-raised", 4.5],
   ["--color-text", "--color-current", 4.5],
   ["--color-border", "--color-chrome", 3],

@@ -43,6 +43,20 @@ function healthyService(request: Request): Promise<Response> {
   if (path === "/api/v1/health") {
     return Promise.resolve(Response.json({ status: "ok" }));
   }
+  if (path === "/api/v1/workspace") {
+    return Promise.resolve(
+      Response.json({
+        items: [
+          {
+            id: documentId,
+            kind: "document",
+            parentId: null,
+            title: "Synthetic Chapter One",
+          },
+        ],
+      }),
+    );
+  }
   if (path === `/api/v1/documents/${documentId}`) {
     return Promise.resolve(
       Response.json({
@@ -248,7 +262,9 @@ describe("routes", () => {
     const paths = fetch.mock.calls.map(
       ([request]) => new URL(request.url).pathname,
     );
-    expect(paths).toEqual(["/api/v1/health"]);
+    expect(
+      paths.filter((path) => path.startsWith("/api/v1/documents")),
+    ).toEqual([]);
   });
 
   it("shows a not-found message for any other path", async () => {
@@ -305,16 +321,22 @@ describe("service availability", () => {
   });
 
   it("keeps the message and its button while trying again", async () => {
-    // Fails fast until the query settles, then hangs like a slow network.
-    const fetch = stubFetch(() =>
-      fetch.mock.calls.length <= 4
+    // Fails the health check fast until its query settles, then hangs like a
+    // slow network.
+    let healthChecks = 0;
+    stubFetch((request) => {
+      if (new URL(request.url).pathname !== "/api/v1/health") {
+        return Promise.reject(new TypeError("Failed to fetch"));
+      }
+      healthChecks += 1;
+      return healthChecks <= 4
         ? Promise.reject(new TypeError("Failed to fetch"))
-        : new Promise<Response>(() => {}),
-    );
+        : new Promise<Response>(() => {});
+    });
     renderApp("/", { retryDelay: 0 });
     // The first attempt and three retries all fail, so the query settles.
     await waitFor(() => {
-      expect(fetch).toHaveBeenCalledTimes(4);
+      expect(healthChecks).toBe(4);
     });
     const alert = await screen.findByRole("alert");
     const retry = within(alert).getByRole("button", { name: "Try again" });
@@ -339,7 +361,11 @@ describe("service availability", () => {
     await screen.findByRole("alert");
 
     reachable = true;
-    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    fireEvent.click(
+      within(screen.getByRole("alert")).getByRole("button", {
+        name: "Try again",
+      }),
+    );
 
     expect(await screen.findByText("No document is open")).toBeTruthy();
   });

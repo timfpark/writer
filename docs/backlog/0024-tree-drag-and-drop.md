@@ -23,8 +23,8 @@ serves move and reorder, and
 rejecting a folder moved into its own subtree.
 [ADR 0007](../adrs/0007-webapp-interface.md#components) chooses the
 drag-and-drop approach and its non-dragging alternative, which WCAG 2.2's
-dragging movements criterion requires. [Backlog 22](./0022-workspace-navigator.md)
-builds the tree.
+dragging movements criterion requires. Backlog 22
+built the tree.
 
 ## Scope
 
@@ -49,4 +49,4 @@ builds the tree.
 
 ## Prerequisites
 
-* [Navigate and organize the workspace tree](./0022-workspace-navigator.md)
+None.

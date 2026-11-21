@@ -29,8 +29,8 @@
       "version": "2.105.0",
       "installDirectlyFromGitHubRelease": false
     },
-    // A local feature, after node: installs the headless Chromium, Firefox,
-    // and WebKit builds of this Playwright release, with their system
+    // A local feature, after node: installs the headless Chromium and WebKit
+    // builds of this Playwright release, with their system
     // libraries, into /ms-playwright. Keep it equal to @playwright/test in
     // webapp/package.json; tools/check exits 2 when the browsers do not
     // match.

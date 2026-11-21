@@ -432,7 +432,7 @@ both succeed, in the order the service receives them.
   then returns 404. The storage ADR decides how each backend achieves that.
 * Deletion is permanent. There is no trash in the first release; the
   navigator confirms first and says how many items a folder deletion
-  removes, as [backlog 22](../backlog/0022-workspace-navigator.md) describes.
+  removes, as backlog 22 built it.
 * Deleting an item that does not exist returns 404. A client retrying a
   delete treats 404 as success.
 

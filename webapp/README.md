@@ -19,29 +19,32 @@ The webapp is Writer's client, a React single-page application built with
 Vite. It shows the writing workspace: a header bar above a navigator on the
 left, the writing region in the center, and an assistant on the right. Both
 side panes collapse, so the writing region can take the whole width. The
-navigator and assistant hold placeholders until later stories fill them.
+navigator shows the workspace's folders and documents as a tree; the
+assistant holds a placeholder until a later story fills it.
 Coding agents start with [AGENTS.md](./AGENTS.md); the architecture is
 recorded in [ADR 0003](../docs/adrs/0003-webapp-architecture.md), the API
 conventions in [ADR 0004](../docs/adrs/0004-api-conventions.md), and the
 interface foundation in [ADR 0007](../docs/adrs/0007-webapp-interface.md), and
 the browser tests in [ADR 0009](../docs/adrs/0009-browser-tests.md).
 
-| Path                                                   | Responsibility                                                               |
-|--------------------------------------------------------|------------------------------------------------------------------------------|
-| [src/main.tsx](./src/main.tsx)                         | Startup: global styles, the query client, and the router                     |
-| [src/router.tsx](./src/router.tsx)                     | The typed route tree for `/`, `/documents/$documentId`, and not-found paths  |
-| [src/shell/](./src/shell/)                             | The header, the side panes, their shortcuts, and stored pane preferences     |
-| [src/workspace/](./src/workspace/)                     | What the writing region and the side panes show                              |
-| [src/styles/](./src/styles/)                           | Design tokens for both themes, global styles, and the token contrast test    |
-| [src/api/client.ts](./src/api/client.ts)               | The only module that calls the service, through openapi-fetch                |
-| [src/api/queries.ts](./src/api/queries.ts)             | The query client, retry policy, and query options components read through    |
-| [src/api/generated/](./src/api/generated/)             | Types generated from [service/openapi.json](../service/openapi.json)         |
-| [scripts/api-check.js](./scripts/api-check.js)         | Fails when the generated types differ from the contract                      |
-| [vite.config.ts](./vite.config.ts)                     | Development server, `/api/` proxy, CSS Modules, font licenses, and Vitest    |
-| [e2e/](./e2e/)                                         | Playwright browser and accessibility tests against a running service         |
-| [playwright.config.ts](./playwright.config.ts)         | Browser test projects, ports, and the servers each run starts                |
-| [scripts/e2e-service.js](./scripts/e2e-service.js)     | Runs the service on a new data folder for a browser test run                 |
-| [scripts/e2e-browsers.js](./scripts/e2e-browsers.js)   | Exits 2 unless every browser the tests use launches                          |
+| Path                                                         | Responsibility                                                              |
+|--------------------------------------------------------------|-----------------------------------------------------------------------------|
+| [src/main.tsx](./src/main.tsx)                               | Startup: global styles, the query client, and the router                    |
+| [src/router.tsx](./src/router.tsx)                           | The typed route tree for `/`, `/documents/$documentId`, and not-found paths |
+| [src/shell/](./src/shell/)                                   | The header, the side panes, their shortcuts, and stored pane preferences    |
+| [src/workspace/](./src/workspace/)                           | What the writing region and the side panes show                             |
+| [src/styles/](./src/styles/)                                 | Design tokens for both themes, global styles, and the token contrast test   |
+| [src/api/client.ts](./src/api/client.ts)                     | The only module that calls the service, through openapi-fetch               |
+| [src/api/queries.ts](./src/api/queries.ts)                   | The query client, retry policy, and query options components read through   |
+| [src/api/workspaceChanges.ts](./src/api/workspaceChanges.ts) | Tree changes queued in order, and the tree with pending changes applied     |
+| [src/api/workspaceTree.ts](./src/api/workspaceTree.ts)       | Pure functions that apply tree changes and nest the pre-order item list     |
+| [src/api/generated/](./src/api/generated/)                   | Types generated from [service/openapi.json](../service/openapi.json)        |
+| [scripts/api-check.js](./scripts/api-check.js)               | Fails when the generated types differ from the contract                     |
+| [vite.config.ts](./vite.config.ts)                           | Development server, `/api/` proxy, CSS Modules, font licenses, and Vitest   |
+| [e2e/](./e2e/)                                               | Playwright browser and accessibility tests against a running service        |
+| [playwright.config.ts](./playwright.config.ts)               | Browser test projects, ports, and the servers each run starts               |
+| [scripts/e2e-service.js](./scripts/e2e-service.js)           | Runs the service on a new data folder for a browser test run                |
+| [scripts/e2e-browsers.js](./scripts/e2e-browsers.js)         | Exits 2 unless every browser the tests use launches                         |
 
 The generated types are committed. Never edit them by hand; regenerate them
 as [Checks](#checks) describes. Each `Component.module.css` gets a
@@ -55,6 +58,27 @@ server, build, tests, and `npm run typecheck` write and Git ignores.
 | Navigator button or `Mod+\`       | Shows or hides the navigator                                          |
 | Assistant button or `Mod+Shift+\` | Shows or hides the assistant                                          |
 | Profile button                    | Opens the profile menu for the one local writer, who needs no sign-in |
+
+The navigator lists folders and documents in the service's order, indented
+one level per folder with guide lines:
+
+| Control                                    | Effect                                                      |
+|--------------------------------------------|-------------------------------------------------------------|
+| New document or New folder in its toolbar  | Creates an item at the top level, starting in inline rename |
+| A folder row's hover buttons or menu       | Creates a document or folder inside it                      |
+| A row's More actions button or right click | Renames, deletes, or expands or collapses everything inside |
+| Collapse all folders                       | Collapses every folder                                      |
+| Selecting a document                       | Opens it in the writing region and highlights its row       |
+
+In the tree, the arrow keys move between rows and expand or collapse
+folders, `Home` and `End` jump to the first and last row, typing finds a
+title, and `Enter` opens a document or toggles a folder. In inline rename,
+`Enter` keeps the title and `Escape` discards it. Deleting asks first and
+says how many items a folder deletion removes. Changes appear at once; when
+the service refuses one, the tree returns to the service's version and a
+notice above it says why. Expanded folders are kept in `localStorage` under
+`writer.navigator.expanded`, and opening a document by URL expands the
+folders around it.
 
 `Mod` is Command on macOS and iPadOS and Control elsewhere. In a window 75 rem
 (1,200 px at the default text size) or wider, both panes dock beside the
@@ -188,7 +212,7 @@ Playwright tests from [e2e/](./e2e/) in real browsers, as
 
 | Command                | Checks                                                                        |
 |------------------------|-------------------------------------------------------------------------------|
-| `npm run e2e:browsers` | Chromium, Firefox, and WebKit launch; exits 2, naming the fix, if one cannot  |
+| `npm run e2e:browsers` | Chromium and WebKit launch; exits 2, naming the fix, if one cannot            |
 | `npm run e2e`          | Every browser test, with WCAG 2.2 AA checks by axe-core in both themes        |
 
 Each run starts the service with `cargo run` on loopback port 8898, with a
@@ -198,8 +222,9 @@ it. It needs neither `npm run dev` nor a running service, and leaves those on
 8888 and 5180 alone; it fails if 8898 or 5198 is taken. A test fails if the
 page requests any other origin, so runs need no network.
 
-Every test runs in five projects: Chromium, Firefox, and WebKit at a desktop
-size, and WebKit with touch on an iPad in portrait and landscape. To run one
+Every test runs in four projects: Chromium and WebKit at a desktop size, and
+WebKit with touch on an iPad in portrait and landscape. Firefox is not a
+supported browser, so no project runs it. To run one
 project, one file, or tests by title, pass Playwright's options after `--`:
 
 ```bash
@@ -214,7 +239,7 @@ The development container carries the browsers. On a host, install the
 browsers for the locked Playwright release once, and again after it changes:
 
 ```bash
-npx playwright install chromium firefox webkit
+npx playwright install chromium webkit
 ```
 
 On Linux, add `--with-deps` to install the system libraries they need, which

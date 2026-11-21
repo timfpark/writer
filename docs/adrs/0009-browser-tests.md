@@ -1,6 +1,6 @@
 ---
 title: "ADR 0009: Browser end-to-end and accessibility tests"
-description: Selects Playwright Test with axe-core for browser end-to-end and automated accessibility tests in webapp/e2e/, run on Chromium, Firefox, and WebKit on desktop and WebKit with touch at iPad sizes, against the development server and a real service on a fresh data folder, as a browser phase of tools/check with browsers pinned in the development container
+description: Selects Playwright Test with axe-core for browser end-to-end and automated accessibility tests in webapp/e2e/, run on Chromium and WebKit on desktop and WebKit with touch at iPad sizes, against the development server and a real service on a fresh data folder, as a browser phase of tools/check with browsers pinned in the development container
 author: Tim Park
 ms.date: 2026-11-20
 ms.topic: reference
@@ -32,6 +32,10 @@ deferred, the engines and the accessibility checker that
 [ADR 0001](./0001-monorepo-structure.md#artifact-locations) left to the first
 story needing them.
 
+Amended on 2026-11-21 to drop the `firefox` project, when
+[ADR 0007](./0007-webapp-interface.md#supported-browsers) dropped Firefox from
+the supported browsers. The development container no longer installs it.
+
 ## Decision summary
 
 * Write browser tests with Playwright Test, `@playwright/test` 1.65.1, in
@@ -39,8 +43,8 @@ story needing them.
   `webapp/playwright.config.ts`, and run them with `npm run e2e`.
 * Check accessibility with axe-core through `@axe-core/playwright` 4.14.0,
   against WCAG 2.2 AA in the light and dark themes, on the page as rendered.
-* Run every test on five projects: Chromium, Firefox, and WebKit at a
-  1280 by 720 desktop size, and WebKit with touch at iPad sizes in portrait
+* Run every test on four projects: Chromium and WebKit at a 1280 by 720
+  desktop size, and WebKit with touch at iPad sizes in portrait
   (744 px wide) and landscape (1194 px wide).
 * Start a real service on a new, empty data folder in the system's temporary
   directory, and the webapp's development server proxying to it, for each
@@ -69,7 +73,7 @@ autosave verified the way a writer uses them, which a simulated DOM does not
 do faithfully.
 
 [ADR 0007](./0007-webapp-interface.md#supported-browsers) supports desktop
-Chrome, Edge, Firefox, and Safari, and Safari on iPadOS, and verifies iPad
+Chrome, Edge, and Safari, and Safari on iPadOS, and verifies iPad
 layouts in browser tests at iPad sizes with touch until Writer is served to an
 iPad. Its contrast test checks token pairs; it asks for a checker that
 measures contrast as composed on the page.
@@ -105,7 +109,7 @@ and adding a script from another origin failed every test that loaded it.
 
 ### Test runner
 
-1. Playwright Test drives Chromium, Firefox, and WebKit through one API, with
+1. Playwright Test drives Chromium and WebKit through one API, with
    device descriptors for iPad viewports, touch, and mobile WebKit. It starts
    and stops the servers a run needs, waits on locators by role, retains a
    trace of a failed test, and has no install script.
@@ -126,17 +130,17 @@ and adding a script from another origin failed every test that loaded it.
    surfaces, and reports each violated rule with its WCAG tags and targets.
 2. Lighthouse and Pa11y run axe-core or similar rules in their own Chromium
    session against a URL, so they cannot check a state a test reached, such
-   as an open pane, or run in Firefox and WebKit.
+   as an open pane, or run in WebKit.
 3. Playwright's ARIA snapshots record the accessibility tree but check no
    WCAG rule, including contrast.
 
 ### Engines
 
-1. Chromium, Firefox, and WebKit on desktop, plus WebKit with touch at iPad
-   sizes, cover every supported browser family. Branded Chrome and Edge share
+1. Chromium and WebKit on desktop, plus WebKit with touch at iPad sizes,
+   cover every supported browser family. Branded Chrome and Edge share
    Chromium's engine, and Playwright's WebKit builds track Safari's engine.
-2. Chromium only would run fastest, but would miss Firefox and Safari
-   rendering, and could not emulate iPad touch on WebKit.
+2. Chromium only would run fastest, but would miss Safari rendering, and
+   could not emulate iPad touch on WebKit.
 
 ### Location
 
@@ -197,7 +201,6 @@ webapp source.
 | Project          | Engine   | Viewport    | Input           | Panes at this width                               |
 |------------------|----------|-------------|-----------------|---------------------------------------------------|
 | `chromium`       | Chromium | 1280 by 720 | Mouse           | Both docked                                       |
-| `firefox`        | Firefox  | 1280 by 720 | Mouse           | Both docked                                       |
 | `webkit`         | WebKit   | 1280 by 720 | Mouse           | Both docked                                       |
 | `ipad-portrait`  | WebKit   | 744 by 1133 | Touch, mobile   | Both open over the writing region                 |
 | `ipad-landscape` | WebKit   | 1194 by 834 | Touch, mobile   | Navigator docked, assistant over the writing area |
@@ -273,13 +276,13 @@ and a failing test fails `CI result`.
 ### Development container and hosts
 
 The local feature in `.devcontainer/playwright/` installs, after the node
-feature, the headless Chromium shell, Firefox, and WebKit for its `version`
+feature, the headless Chromium shell and WebKit for its `version`
 option, with their system libraries, into `/ms-playwright`, and sets
 `PLAYWRIGHT_BROWSERS_PATH` to it. `npx` resolves Playwright through the npm
 registry proxy; the browser builds come from Playwright's download host at
 image build time only. The prototype's install took 857 MB on arm64.
 
-On a host, `npx playwright install chromium firefox webkit` in `webapp/`
+On a host, `npx playwright install chromium webkit` in `webapp/`
 installs the browsers for the locked release, with `--with-deps` on Linux to
 add system libraries.
 

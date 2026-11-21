@@ -25,7 +25,7 @@ and the responsiveness targets.
 token and the conflict response. [ADR 0007](../adrs/0007-webapp-interface.md)
 chooses the writing typeface, the contrast target for body text, and the
 browser storage for unsaved text.
-[Backlog 22](./0022-workspace-navigator.md) opens documents into the writing
+Backlog 22 built the navigator, which opens documents into the writing
 region.
 
 ## Scope
@@ -76,4 +76,4 @@ region.
 
 ## Prerequisites
 
-* [Navigate and organize the workspace tree](./0022-workspace-navigator.md)
+None.
