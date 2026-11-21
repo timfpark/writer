@@ -54,6 +54,8 @@ function blockStart(doc: Node, index: number): number {
   return pos;
 }
 
+// Parsing 1 MiB takes several seconds on a shared CI runner, so the test
+// allows more than Vitest's 5 s default.
 test("a 1 MiB manuscript saves unedited and edited", () => {
   const markdown = manuscript(1024 * 1024);
   expect(markdown.length).toBeGreaterThan(1024 * 1024);
@@ -78,4 +80,4 @@ test("a 1 MiB manuscript saves unedited and edited", () => {
   expect(serializeMarkdown(again.doc, loaded)).toBe(
     expected.replace("Typed words ", "More Typed words "),
   );
-});
+}, 60_000);

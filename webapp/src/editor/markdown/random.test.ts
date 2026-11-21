@@ -184,25 +184,33 @@ function texts(doc: Node): string[] {
 
 const empty = parseMarkdown("", schema);
 
+// Each suite is pure computation that takes a couple of seconds here and
+// several times that on a shared CI runner, beyond Vitest's 5 s default.
+const suiteTimeout = 60_000;
+
 describe.each<[Kind, number]>([
   ["prose", 1000],
   ["punctuation", 1000],
   ["formattedPunctuation", 1000],
 ])("random %s documents", (kind, count) => {
-  test("read back with the same text and write the same bytes again", () => {
-    for (let seed = 1; seed <= count; seed++) {
-      const doc = new Generator(seed, kind).doc();
-      const markdown = serializeMarkdown(doc, empty);
-      const loaded = parseMarkdown(markdown, schema);
-      expect({ seed, markdown, texts: texts(loaded.doc) }).toEqual({
-        seed,
-        markdown,
-        texts: texts(doc),
-      });
-      const again = serializeMarkdown(withoutSource(loaded.doc), empty);
-      expect({ seed, markdown: again }).toEqual({ seed, markdown });
-    }
-  });
+  test(
+    "read back with the same text and write the same bytes again",
+    () => {
+      for (let seed = 1; seed <= count; seed++) {
+        const doc = new Generator(seed, kind).doc();
+        const markdown = serializeMarkdown(doc, empty);
+        const loaded = parseMarkdown(markdown, schema);
+        expect({ seed, markdown, texts: texts(loaded.doc) }).toEqual({
+          seed,
+          markdown,
+          texts: texts(doc),
+        });
+        const again = serializeMarkdown(withoutSource(loaded.doc), empty);
+        expect({ seed, markdown: again }).toEqual({ seed, markdown });
+      }
+    },
+    suiteTimeout,
+  );
 });
 
 function withoutSource(doc: Node): Node {
