@@ -1,0 +1,310 @@
+/* The navigator: a toolbar, notices about failed changes, and the tree. */
+
+.navigator {
+  display: flex;
+  flex-direction: column;
+  min-block-size: 100%;
+}
+
+.toolbar {
+  display: flex;
+  gap: var(--space-1);
+  margin: 0 calc(-1 * var(--space-2)) var(--space-2);
+}
+
+.toolbar > :last-child {
+  margin-inline-start: auto;
+}
+
+.notices {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  margin-block-end: var(--space-2);
+  padding: var(--space-2) var(--space-1) var(--space-2) var(--space-3);
+  border-inline-start: 2px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-chrome-raised);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.noticeText {
+  flex: 1;
+  min-inline-size: 0;
+}
+
+/* The space after the last row takes a context menu for the top level. */
+.frame {
+  position: relative;
+  flex: 1;
+  margin-inline: calc(-1 * var(--space-2));
+  padding-block-end: var(--space-8);
+}
+
+.tree {
+  border-radius: var(--radius-sm);
+  outline: none;
+}
+
+.tree[data-focus-visible] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+/* Rows, as ADR 0007's layout and density table sets them. */
+
+.row {
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  outline: none;
+  cursor: default;
+}
+
+.row[data-hovered] {
+  background: var(--color-chrome-raised);
+}
+
+.row[data-selected] {
+  background: var(--color-current);
+}
+
+.row[data-focus-visible] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.cell {
+  display: flex;
+  align-items: center;
+  min-block-size: 1.75rem;
+  padding-inline: var(--space-1);
+}
+
+/* One guide per ancestor, each a line under that ancestor's chevron. */
+.indent {
+  display: flex;
+  flex: none;
+  align-self: stretch;
+}
+
+.guide {
+  position: relative;
+  inline-size: 1rem;
+}
+
+.guide::before {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 11px;
+  border-inline-start: 1px solid var(--color-border);
+  content: "";
+  opacity: 0.5;
+}
+
+.chevron {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 24px;
+  block-size: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.chevron svg {
+  transition: transform var(--duration-fast);
+}
+
+.row[data-expanded] .chevron svg {
+  transform: rotate(90deg);
+}
+
+.icon {
+  flex: none;
+  margin-inline: 2px 6px;
+  color: var(--color-text-muted);
+}
+
+.title {
+  flex: 1;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* At least 16 px text, so Safari on iPadOS does not zoom to the field. */
+.rename {
+  flex: 1;
+  min-inline-size: 0;
+  block-size: 1.5rem;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  background: var(--color-page);
+  color: var(--color-ink);
+  font: inherit;
+  font-size: var(--text-lg);
+  outline: none;
+}
+
+.actions {
+  display: flex;
+  flex: none;
+  opacity: 0;
+}
+
+.row[data-hovered] .actions,
+.row[data-focus-visible] .actions,
+.actions:focus-within,
+.actions:has([aria-expanded="true"]) {
+  opacity: 1;
+}
+
+.rowButton {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 24px;
+  block-size: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+}
+
+.chevron[data-hovered],
+.rowButton[data-hovered],
+.rowButton[data-pressed] {
+  background: var(--color-current);
+  color: var(--color-text);
+}
+
+.chevron[data-focus-visible],
+.rowButton[data-focus-visible] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
+.row[data-selected] .chevron,
+.row[data-selected] .icon,
+.row[data-selected] .rowButton {
+  color: var(--color-text);
+}
+
+.anchor {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+  pointer-events: none;
+}
+
+/* Menus, as ADR 0007's layout and density table sets them. */
+
+.popover {
+  min-inline-size: 12rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-chrome-raised);
+  color: var(--color-text);
+}
+
+.menu {
+  padding: var(--space-1);
+  outline: none;
+}
+
+.menuItem {
+  display: flex;
+  align-items: center;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  font-size: var(--text-md);
+  outline: none;
+}
+
+.menuItem[data-focused] {
+  background: var(--color-current);
+}
+
+.separator {
+  margin: var(--space-1) var(--space-2);
+  border: 0;
+  border-block-start: 1px solid var(--color-border);
+}
+
+.status {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-2);
+}
+
+.statusText {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.statusAction {
+  min-block-size: 2rem;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-chrome);
+  color: var(--color-text);
+  font-size: var(--text-md);
+}
+
+.statusAction[data-hovered] {
+  background: var(--color-current);
+}
+
+.statusAction[data-focus-visible] {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* Touch screens show row controls without hover; the row menu holds the
+   create commands the hover buttons offer elsewhere. */
+@media (hover: none) {
+  .actions {
+    opacity: 1;
+  }
+
+  .createButton {
+    display: none;
+  }
+}
+
+@media (pointer: coarse) {
+  .cell,
+  .menuItem {
+    min-block-size: 2.75rem;
+  }
+
+  .chevron {
+    block-size: 2.75rem;
+  }
+
+  .rowButton {
+    inline-size: 2.75rem;
+    block-size: 2.75rem;
+  }
+
+  .statusAction {
+    min-block-size: 2.75rem;
+  }
+}

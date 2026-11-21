@@ -100,7 +100,7 @@ tools/check
 
 The [development container](./.devcontainer/devcontainer.json) provides Bash,
 Git, Python 3.9 or newer, rustup with a default Rust toolchain, Node.js
-with npm, the GitHub CLI, and the headless Chromium, Firefox, and WebKit
+with npm, the GitHub CLI, and the headless Chromium and WebKit
 builds that the webapp's browser tests run on. Each version is recorded once: the
 [Dockerfile](./.devcontainer/Dockerfile) pins the base image by digest, which
 fixes Python, Bash, and Git, and `devcontainer.json` pins each feature and the
@@ -212,7 +212,7 @@ and again whenever that release changes; on Linux, add `--with-deps` to
 install their system libraries with `sudo`:
 
 ```bash
-npx playwright install chromium firefox webkit
+npx playwright install chromium webkit
 ```
 
 Without them, `tools/check` reports the `browser` phase's prerequisite as

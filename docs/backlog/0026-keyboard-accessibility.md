@@ -17,7 +17,7 @@ without a pointer so that organizing and writing never slow me down.
 
 ## Context
 
-[Backlog 22](./0022-workspace-navigator.md) builds the navigator on the
+Backlog 22 built the navigator on the
 WAI-ARIA treegrid pattern, with arrow keys, `Home`, `End`, and `Enter`, and
 [backlog 24](./0024-tree-drag-and-drop.md) adds a non-dragging move. The
 remaining shortcuts were left out of those stories so the navigator could
@@ -46,5 +46,4 @@ accessibility checks.
 
 ## Prerequisites
 
-* [Navigate and organize the workspace tree](./0022-workspace-navigator.md)
 * [Move and reorder items with drag and drop](./0024-tree-drag-and-drop.md)

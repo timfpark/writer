@@ -52,6 +52,5 @@ the view builds on.
 
 ## Prerequisites
 
-* [Navigate and organize the workspace tree](./0022-workspace-navigator.md)
 * [Write in the editing surface with autosave](./0023-writing-surface.md)
 * [Record and restore commits in the service](./0029-service-history.md)

@@ -30,8 +30,16 @@ type ApiResult<T> = {
   response: Response;
 };
 
+function failure(error: Problem | undefined, response: Response): ServiceError {
+  const contentType = response.headers.get("Content-Type") ?? "";
+  if (error && contentType.startsWith("application/problem+json")) {
+    return new ServiceError(error, response.status);
+  }
+  return new ServiceError(undefined, response.status);
+}
+
 // Turns an openapi-fetch result into its data or a ServiceError.
-async function read<T>(request: Promise<ApiResult<T>>): Promise<T> {
+export async function read<T>(request: Promise<ApiResult<T>>): Promise<T> {
   let result: ApiResult<T>;
   try {
     result = await request;
@@ -42,11 +50,22 @@ async function read<T>(request: Promise<ApiResult<T>>): Promise<T> {
   if (data !== undefined) {
     return data;
   }
-  const contentType = response.headers.get("Content-Type") ?? "";
-  if (error && contentType.startsWith("application/problem+json")) {
-    throw new ServiceError(error, response.status);
+  throw failure(error, response);
+}
+
+// Like read, for a request whose success has no body, such as a delete.
+export async function send(
+  request: Promise<ApiResult<unknown>>,
+): Promise<void> {
+  let result: ApiResult<unknown>;
+  try {
+    result = await request;
+  } catch {
+    throw new ServiceError();
   }
-  throw new ServiceError(undefined, response.status);
+  if (!result.response.ok) {
+    throw failure(result.error, result.response);
+  }
 }
 
 // Queries retry network failures and 5xx responses up to three times and
@@ -73,6 +92,14 @@ export function createQueryClient(): QueryClient {
 export const healthQueryOptions = queryOptions({
   queryKey: ["health"],
   queryFn: ({ signal }) => read(client.GET("/api/v1/health", { signal })),
+});
+
+// The whole tree, which refetches when the window regains focus so changes
+// made in another tab or outside Writer appear.
+export const workspaceQueryOptions = queryOptions({
+  queryKey: ["workspace"],
+  refetchOnWindowFocus: true,
+  queryFn: ({ signal }) => read(client.GET("/api/v1/workspace", { signal })),
 });
 
 // ADR 0005's identifiers are lowercase UUIDs; any other value names no

@@ -43,6 +43,12 @@ Amended on 2026-11-20 by [ADR 0009](./0009-browser-tests.md), which settles
 the browser test engines, including WebKit at iPad sizes with touch, and the
 accessibility checker that measures composed contrast.
 
+Amended on 2026-11-21 to drop Firefox from the
+[supported browsers](#supported-browsers). Writer targets Chrome, Edge, and
+Safari, and testing a fourth engine cost more than it returned: Firefox's
+content process crashed under automated accessibility checks of the
+navigator's tree, a failure no supported browser shares.
+
 ## Decision summary
 
 * Style with CSS Modules and CSS custom properties. `vite-css-modules`
@@ -73,9 +79,9 @@ accessibility checker that measures composed contrast.
 * Lay out for desktop windows and iPad in either orientation, with two fixed
   breakpoints and touch rules keyed to input capability; phones are out of
   scope.
-* Use Lucide icons, and support desktop Chrome and Edge 111, Firefox 114, and
-  Safari 16.4, and Safari on iPadOS 16.4, and later versions: Vite 8's
-  default build target.
+* Use Lucide icons, and support desktop Chrome and Edge 111 and Safari 16.4,
+  and Safari on iPadOS 16.4, and later versions, within Vite 8's default
+  build target. Firefox is not supported.
 
 ## Context
 
@@ -94,7 +100,7 @@ writing surface, and an assistant pane, with both side panes collapsible. The
 writing surface is the product's focus, so its typeface and contrast matter
 more than anything else on the page. Backlog 20, the workspace shell story,
 installed them, and backlogs
-[22](../backlog/0022-workspace-navigator.md),
+22,
 [23](../backlog/0023-writing-surface.md),
 [24](../backlog/0024-tree-drag-and-drop.md), and
 [26](../backlog/0026-keyboard-accessibility.md) build on these choices.
@@ -141,7 +147,7 @@ gzipped JavaScript over a bare React page of 66 KB.
 |--------------------------------------------|----------------|-------------------------------------|----------------------------------------------------------------|
 | CSS Modules with `vite-css-modules` 1.16.1 | 23             | Yes, through generated declarations | Plain CSS; replaces Vite's own CSS Modules handling            |
 | CSS Modules alone                          | 0              | No                                  | Fails `tsc` on every React Aria `className` under our settings |
-| Tailwind CSS 4.3.5                         | 28             | No                                  | Needs Firefox 128; classes in strings                          |
+| Tailwind CSS 4.3.5                         | 28             | No                                  | Classes in strings                                             |
 | vanilla-extract 1.21.3, plugin 5.2.6       | 93             | Yes, from TypeScript sources        | Adds Babel, `vite-node`, and esbuild with an install script    |
 
 1. CSS Modules with custom properties are built into Vite, keep styles in
@@ -161,9 +167,8 @@ gzipped JavaScript over a bare React page of 66 KB.
    properties through `@theme`, and has official React Aria starters. It
    built with no install scripts. A misspelled utility generates no CSS and
    no error, every React Aria component carries a long string of
-   `data-*` variants, the writing surface and editor content still need
-   authored CSS, and Tailwind 4 requires Firefox 128, above Vite's Firefox
-   114 target.
+   `data-*` variants, and the writing surface and editor content still need
+   authored CSS.
 3. vanilla-extract 1.21.3 with `@vanilla-extract/vite-plugin` 5.2.6 (MIT,
    about 3.7 million weekly) exports typed classes and token contracts from
    `.css.ts` files with nothing generated on disk, and built on Vite 8. It
@@ -182,7 +187,7 @@ Writers often work at night, and a dark theme is cheap when components never
 name a color directly, so the first release ships both, following the
 operating system. A theme switch inside Writer can follow when writers ask
 for it. CSS `light-dark()` would halve the token declarations but needs
-Safari 17.5 and Firefox 120, beyond the supported browsers.
+Safari 17.5, beyond the supported browsers.
 
 ### Typefaces
 
@@ -711,8 +716,7 @@ them.
 Small preferences, such as which panes are collapsed and which folders are
 expanded, are kept in `localStorage` under keys starting `writer.`, and a
 missing or unreadable value falls back to the default. The client does not
-call `navigator.storage.persist()`, because Firefox asks the writer for
-permission.
+call `navigator.storage.persist()`.
 
 ### Icons
 
@@ -722,19 +726,18 @@ has an accessible name.
 
 ### Supported browsers
 
-The webapp supports desktop Chrome and Edge 111, Firefox 114, and Safari
-16.4, and Safari on iPadOS 16.4, and later versions: Vite 8's default
-`baseline-widely-available` target, which names iOS 16.4, used for both
-JavaScript and CSS. Every feature this record relies on is
+The webapp supports desktop Chrome and Edge 111 and Safari 16.4, and Safari
+on iPadOS 16.4, and later versions, and no other browser. The build keeps
+Vite 8's default `baseline-widely-available` target, which names iOS 16.4,
+for both JavaScript and CSS. Every feature this record relies on is
 available there, including IndexedDB, Web Locks, `crypto.randomUUID()`,
 variable fonts, and `prefers-color-scheme`; nested CSS is lowered at build. A
-feature outside the target, such as `:has()` before Firefox 121, may only
-enhance a layout that works without it. Phones, including Safari on iPhone,
-are not a target. Until a hosting decision serves Writer to other devices
+feature outside the supported browsers may only enhance a layout that works
+without it. Phones, including Safari on iPhone, are not a target. Until a hosting decision serves Writer to other devices
 over HTTPS, which Web Locks and `crypto.randomUUID()` require away from
 `localhost`, iPad layouts are verified in browser tests at iPad sizes with
 touch. [ADR 0009](./0009-browser-tests.md#projects) runs the browser tests on
-Chromium, Firefox, and WebKit, and on WebKit with touch at iPad sizes.
+Chromium and WebKit, and on WebKit with touch at iPad sizes.
 
 ## Consequences
 

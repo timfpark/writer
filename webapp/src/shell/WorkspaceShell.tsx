@@ -3,10 +3,8 @@ import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { healthQueryOptions } from "../api/queries";
 import { useQueryFailure } from "../api/useQueryFailure";
-import {
-  AssistantPlaceholder,
-  NavigatorPlaceholder,
-} from "../workspace/placeholders";
+import { Navigator } from "../workspace/Navigator";
+import { AssistantPlaceholder } from "../workspace/placeholders";
 import { ServiceUnavailable } from "../workspace/ServiceUnavailable";
 import { Header } from "./Header";
 import { Pane } from "./Pane";
@@ -49,7 +47,7 @@ export function WorkspaceShell() {
       <Header navigator={navigator} assistant={assistant} />
       <div className={styles.body}>
         <Pane pane={navigator} label="Navigator" landmark="nav">
-          <NavigatorPlaceholder />
+          <Navigator />
         </Pane>
         <main className={styles.writing}>
           {failure ? (

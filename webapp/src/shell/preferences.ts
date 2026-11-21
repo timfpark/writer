@@ -38,3 +38,52 @@ export function useStoredBoolean(
   );
   return [value, update];
 }
+
+function readStrings(key: string): string[] {
+  try {
+    const raw = globalThis.localStorage.getItem(prefix + key);
+    const value: unknown = raw === null ? null : JSON.parse(raw);
+    if (
+      Array.isArray(value) &&
+      value.every((entry) => typeof entry === "string")
+    ) {
+      return value;
+    }
+  } catch {
+    // Storage is unavailable or the value is unreadable, so the default applies.
+  }
+  return [];
+}
+
+function writeStrings(key: string, value: ReadonlySet<string>): void {
+  try {
+    globalThis.localStorage.setItem(prefix + key, JSON.stringify([...value]));
+  } catch {
+    // The preference lasts only for this page.
+  }
+}
+
+// A set of strings, such as the expanded folders, empty by default. The
+// setter takes a function of the current set, so callbacks never act on a
+// stale one.
+export function useStoredSet(
+  key: string,
+): [
+  ReadonlySet<string>,
+  (update: (current: ReadonlySet<string>) => ReadonlySet<string>) => void,
+] {
+  const [value, setValue] = useState<ReadonlySet<string>>(
+    () => new Set(readStrings(key)),
+  );
+  const update = useCallback(
+    (change: (current: ReadonlySet<string>) => ReadonlySet<string>) => {
+      setValue((current) => {
+        const next = change(current);
+        if (next !== current) writeStrings(key, next);
+        return next;
+      });
+    },
+    [key],
+  );
+  return [value, update];
+}

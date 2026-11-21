@@ -7,8 +7,8 @@ description: Purpose, boundaries, operational rules, governing decisions, and ex
 
 `webapp/` is a client-rendered React 19 single-page application built with
 Vite 8: Writer's editing workspace. Today it shows the workspace shell, a
-header above a collapsible navigator, the writing region, and a collapsible
-assistant, with placeholders in the panes. Browser tests in `e2e/` drive it
+header above a collapsible navigator holding the workspace tree, the writing
+region, and a collapsible assistant holding a placeholder. Browser tests in `e2e/` drive it
 against a running service. People start with
 [README.md](./README.md), which maps the source folders.
 
@@ -59,6 +59,12 @@ against a running service. People start with
   never add TanStack Router's Vite plugin, generated route files, or
   devtools. Components read server state through the query options in
   [src/api/queries.ts](./src/api/queries.ts) and never write query keys.
+* Change the tree only through `useWorkspaceChange` in
+  [workspaceChanges.ts](./src/api/workspaceChanges.ts), which queues changes
+  in one mutation scope, and read it through `useWorkspaceTree`, which
+  applies pending changes with the pure functions in
+  [workspaceTree.ts](./src/api/workspaceTree.ts), as ADR 0007's server state
+  section decides.
 * Keep small preferences in `localStorage` under keys starting `writer.`,
   through [preferences.ts](./src/shell/preferences.ts), falling back to the
   default when a value is missing or unreadable.
@@ -139,7 +145,7 @@ Consult these when changing architecture, dependencies, or conventions:
   flush events, document styles, the bundle budget, and responsiveness
   targets
 * [ADR 0009](../docs/adrs/0009-browser-tests.md): Playwright and axe-core
-  browser tests in `e2e/`, the five projects, the servers and data folder
+  browser tests in `e2e/`, the four projects, the servers and data folder
   each run starts, the same-origin guard, and the `browser` gate phase
 
 ## Commands
@@ -159,8 +165,8 @@ npm run test                             # Vitest once
 npm run build                            # production build in dist/
 npm run e2e:browsers                     # exit 2 unless every Playwright browser launches
 npm run e2e                              # browser tests against a service on 8898, served on 5198
-npm run e2e -- --project=webkit          # one project: chromium, firefox, webkit, ipad-portrait, ipad-landscape
-npx playwright install chromium firefox webkit  # on a host, install the locked release's browsers
+npm run e2e -- --project=webkit          # one project: chromium, webkit, ipad-portrait, ipad-landscape
+npx playwright install chromium webkit  # on a host, install the locked release's browsers
 npm config get registry                  # expect the packagefeedproxy.microsoft.io proxy
 ```
 

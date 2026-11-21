@@ -1,0 +1,428 @@
+import type { Locator, Page, ViewportSize } from "@playwright/test";
+import { expect, expectAccessible, test } from "./fixtures";
+
+// ADR 0007's navigator breakpoint, 60 rem, in CSS pixels at the 16 px root.
+function docked(viewport: ViewportSize | null): boolean {
+  return (viewport?.width ?? 0) >= 960;
+}
+
+// Browser test runs share one service, so every title is unique to its test.
+function unique(label: string): string {
+  return `${label} ${crypto.randomUUID().slice(0, 8)}`;
+}
+
+// Taps on touch screens and clicks elsewhere, as a writer would.
+async function press(locator: Locator, hasTouch: boolean) {
+  if (hasTouch) await locator.tap();
+  else await locator.click();
+}
+
+interface Context {
+  page: Page;
+  viewport: ViewportSize | null;
+  hasTouch: boolean;
+}
+
+function navigatorPane(page: Page): Locator {
+  return page.getByRole("navigation", { name: "Navigator" });
+}
+
+// The navigator, opened over the writing region first when it does not dock.
+async function showNavigator({
+  page,
+  viewport,
+  hasTouch,
+}: Context): Promise<Locator> {
+  const navigator = navigatorPane(page);
+  if (!docked(viewport) && !(await navigator.isVisible())) {
+    await press(
+      page.getByRole("banner").getByRole("button", {
+        name: "Navigator",
+        exact: true,
+      }),
+      hasTouch,
+    );
+  }
+  await expect(navigator).toBeVisible();
+  await expect(navigator.getByRole("treegrid")).toBeVisible();
+  return navigator;
+}
+
+function row(navigator: Locator, title: string): Locator {
+  return navigator.getByRole("row", { name: title, exact: true });
+}
+
+// Names an item that has just been created, which starts in inline rename.
+async function nameNewItem(navigator: Locator, title: string) {
+  const field = navigator.getByRole("textbox", { name: "Title" });
+  await expect(field).toBeFocused();
+  await expect(field).toHaveValue("Untitled");
+  await field.fill(title);
+  await field.press("Enter");
+  await expect(field).toHaveCount(0);
+}
+
+// Runs a command from a row's actions button, the path every input has.
+async function rowCommand(
+  { page, hasTouch }: Context,
+  target: Locator,
+  command: string,
+) {
+  await press(target.getByRole("button", { name: "More actions" }), hasTouch);
+  await press(page.getByRole("menuitem", { name: command }), hasTouch);
+}
+
+// Waits for a new document to open; an overlaid navigator then closes.
+async function expectOpened({ page, viewport }: Context, title: string) {
+  await expect(page).toHaveURL(/\/documents\/[0-9a-f-]{36}$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(title);
+  if (!docked(viewport)) await expect(navigatorPane(page)).toBeHidden();
+}
+
+interface Built {
+  top: string;
+  middle: string;
+  leaf: string;
+  url: string;
+}
+
+// Builds folder > folder > document from the navigator alone: the toolbar
+// for the top level, the row's hover button or, on touch screens, its menu
+// for the second, and the row's menu for the third.
+async function buildTree(context: Context, label: string): Promise<Built> {
+  const { page, hasTouch } = context;
+  const built = {
+    top: unique(`${label} part`),
+    middle: unique(`${label} chapter`),
+    leaf: unique(`${label} scene`),
+  };
+  let navigator = await showNavigator(context);
+  await press(
+    navigator.getByRole("toolbar").getByRole("button", { name: "New folder" }),
+    hasTouch,
+  );
+  await nameNewItem(navigator, built.top);
+  await expect(row(navigator, built.top)).toHaveAttribute("aria-level", "1");
+
+  if (hasTouch) {
+    await rowCommand(context, row(navigator, built.top), "New folder");
+  } else {
+    await row(navigator, built.top).hover();
+    await row(navigator, built.top)
+      .getByRole("button", { name: "New folder" })
+      .click();
+  }
+  await nameNewItem(navigator, built.middle);
+  await expect(row(navigator, built.middle)).toHaveAttribute("aria-level", "2");
+
+  await rowCommand(context, row(navigator, built.middle), "New document");
+  await nameNewItem(navigator, built.leaf);
+  await expectOpened(context, built.leaf);
+
+  navigator = await showNavigator(context);
+  await expect(row(navigator, built.leaf)).toHaveAttribute("aria-level", "3");
+  await expect(row(navigator, built.leaf)).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  return { ...built, url: page.url() };
+}
+
+// Loads a page and waits until the real service has answered through the
+// development server's proxy. An overlaid navigator reads the tree only when
+// it opens.
+async function openWorkspace(page: Page, path = "/") {
+  const health = page.waitForResponse("**/api/v1/health");
+  await page.goto(path);
+  expect((await health).status()).toBe(200);
+}
+
+test("builds a three-level tree that survives a reload and reveals an opened document", async ({
+  page,
+  viewport,
+  hasTouch,
+}) => {
+  const context = { page, viewport, hasTouch };
+  await openWorkspace(page);
+  const built = await buildTree(context, "Build");
+  await expectAccessible(page);
+
+  let navigator = await showNavigator(context);
+  await press(
+    navigator
+      .getByRole("toolbar")
+      .getByRole("button", { name: "Collapse all folders" }),
+    hasTouch,
+  );
+  await expect(row(navigator, built.middle)).toHaveCount(0);
+  await expect(row(navigator, built.top)).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+
+  // Opening the document by URL expands the folders around it.
+  await openWorkspace(page, built.url);
+  navigator = await showNavigator(context);
+  for (const [title, level] of [
+    [built.top, "1"],
+    [built.middle, "2"],
+    [built.leaf, "3"],
+  ] as const) {
+    await expect(row(navigator, title)).toHaveAttribute("aria-level", level);
+  }
+  await expect(row(navigator, built.top)).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  await expect(row(navigator, built.leaf)).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(built.leaf);
+  await expectAccessible(page);
+
+  if (hasTouch) {
+    const box = await row(navigator, built.leaf).boundingBox();
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+  }
+});
+
+test("folds subtrees and restores each descendant's state", async ({
+  page,
+  viewport,
+  hasTouch,
+}) => {
+  const context = { page, viewport, hasTouch };
+  await openWorkspace(page);
+  const built = await buildTree(context, "Fold");
+  await openWorkspace(page);
+  let navigator = await showNavigator(context);
+  const top = row(navigator, built.top);
+  const middle = row(navigator, built.middle);
+  const leaf = row(navigator, built.leaf);
+
+  await press(top.getByRole("button", { name: /^Collapse/ }), hasTouch);
+  await expect(top).toHaveAttribute("aria-expanded", "false");
+  await expect(middle).toHaveCount(0);
+  await expect(leaf).toHaveCount(0);
+  await expectAccessible(page);
+
+  await press(top.getByRole("button", { name: /^Expand/ }), hasTouch);
+  await expect(middle).toHaveAttribute("aria-expanded", "true");
+  await expect(leaf).toBeVisible();
+
+  await rowCommand(context, top, "Collapse all inside");
+  await expect(middle).toHaveCount(0);
+  await press(top.getByRole("button", { name: /^Expand/ }), hasTouch);
+  await expect(middle).toHaveAttribute("aria-expanded", "false");
+  await expect(leaf).toHaveCount(0);
+
+  await rowCommand(context, top, "Expand all inside");
+  await expect(leaf).toBeVisible();
+
+  // Expansion is a stored preference, so it survives a reload.
+  await press(middle.getByRole("button", { name: /^Collapse/ }), hasTouch);
+  await expect(leaf).toHaveCount(0);
+  await page.reload();
+  navigator = await showNavigator(context);
+  await expect(row(navigator, built.top)).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  await expect(row(navigator, built.middle)).toHaveAttribute(
+    "aria-expanded",
+    "false",
+  );
+
+  // Selecting a document opens it and highlights its row.
+  await press(row(navigator, built.middle), hasTouch);
+  await press(row(navigator, built.leaf), hasTouch);
+  await expectOpened(context, built.leaf);
+  navigator = await showNavigator(context);
+  await expect(row(navigator, built.leaf)).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+});
+
+test("restores the tree and explains when a rename or delete fails", async ({
+  page,
+  viewport,
+  hasTouch,
+}) => {
+  const context = { page, viewport, hasTouch };
+  await openWorkspace(page);
+  const built = await buildTree(context, "Fail");
+  await openWorkspace(page);
+  let navigator = await showNavigator(context);
+  const top = row(navigator, built.top);
+
+  const internalError = {
+    status: 500,
+    contentType: "application/problem+json",
+    body: JSON.stringify({
+      type: "about:blank",
+      title: "Internal Server Error",
+      status: 500,
+      detail: "Synthetic failure for the test.",
+      code: "internalError",
+      errors: [],
+    }),
+  };
+  await page.route("**/api/v1/folders/*/title", (route) =>
+    route.fulfill(internalError),
+  );
+  await rowCommand(context, top, "Rename");
+  const field = navigator.getByRole("textbox", { name: "Title" });
+  await expect(field).toBeFocused();
+  await expect(field).toHaveValue(built.top);
+  await field.fill(unique("Never saved"));
+  await field.press("Enter");
+  await expect(
+    navigator.getByText(
+      "Couldn't rename the folder. The service reported a problem (HTTP 500).",
+    ),
+  ).toBeVisible();
+  await expect(top).toBeVisible();
+  await expectAccessible(page);
+
+  await page.route("**/api/v1/folders/*", (route) =>
+    route.request().method() === "DELETE"
+      ? route.fulfill(internalError)
+      : route.fallback(),
+  );
+  await rowCommand(context, top, "Delete…");
+  const dialog = page.getByRole("alertdialog", {
+    name: `Delete “${built.top}”?`,
+  });
+  await expect(dialog).toContainText(
+    "This permanently deletes the folder and the 2 items inside it.",
+  );
+  await expectAccessible(page);
+  await press(dialog.getByRole("button", { name: "Delete" }), hasTouch);
+  await expect(
+    navigator.getByText(
+      "Couldn't delete the folder. The service reported a problem (HTTP 500).",
+    ),
+  ).toBeVisible();
+  await expect(top).toBeVisible();
+  await expect(row(navigator, built.leaf)).toBeVisible();
+
+  const dismiss = navigator.getByRole("button", { name: "Dismiss" });
+  await expect(dismiss).toHaveCount(2);
+  await press(dismiss.first(), hasTouch);
+  await press(dismiss.first(), hasTouch);
+  await expect(dismiss).toHaveCount(0);
+
+  // Once the service accepts it, the folder and everything in it go, and a
+  // document open inside it closes.
+  await page.unrouteAll({ behavior: "wait" });
+  await press(row(navigator, built.leaf), hasTouch);
+  await expectOpened(context, built.leaf);
+  navigator = await showNavigator(context);
+  await rowCommand(context, row(navigator, built.top), "Delete…");
+  await press(dialog.getByRole("button", { name: "Delete" }), hasTouch);
+  await expect(page).toHaveURL(/\/$/);
+  navigator = await showNavigator(context);
+  await expect(row(navigator, built.top)).toHaveCount(0);
+  await page.reload();
+  navigator = await showNavigator(context);
+  await expect(row(navigator, built.top)).toHaveCount(0);
+});
+
+test("moves through the tree, folds folders, and opens a document with the keyboard", async ({
+  page,
+  viewport,
+  hasTouch,
+}) => {
+  const context = { page, viewport, hasTouch };
+  await openWorkspace(page);
+  const built = await buildTree(context, "Keys");
+  await openWorkspace(page);
+  const navigator = await showNavigator(context);
+  const top = row(navigator, built.top);
+  const middle = row(navigator, built.middle);
+  const leaf = row(navigator, built.leaf);
+  const rows = navigator.getByRole("row");
+
+  // The tree is one tab stop after the toolbar.
+  await navigator
+    .getByRole("toolbar")
+    .getByRole("button", { name: "Collapse all folders" })
+    .focus();
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Tab");
+  await expect(rows.first()).toBeFocused();
+  await expect(navigator.getByRole("row", { selected: true })).toHaveCount(0);
+
+  await page.keyboard.press("End");
+  await expect(rows.last()).toBeFocused();
+  await page.keyboard.press("Home");
+  await expect(rows.first()).toBeFocused();
+
+  // Typing a title moves to it.
+  await page.keyboard.type(built.top);
+  await expect(top).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(top).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("ArrowDown");
+  await expect(middle).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await expect(middle).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("ArrowDown");
+  await expect(leaf).toBeFocused();
+  await expectAccessible(page);
+
+  await page.keyboard.press("ArrowLeft");
+  await expect(middle).toBeFocused();
+  await page.keyboard.press("ArrowLeft");
+  await expect(middle).toHaveAttribute("aria-expanded", "false");
+  await expect(leaf).toHaveCount(0);
+  await page.keyboard.press("Enter");
+  await expect(middle).toHaveAttribute("aria-expanded", "true");
+  await page.keyboard.press("ArrowDown");
+  await expect(leaf).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expectOpened(context, built.leaf);
+});
+
+test("creates items at the top level and in folders from the context menu", async ({
+  page,
+  viewport,
+  hasTouch,
+}) => {
+  test.skip(hasTouch, "a long press does not reliably raise contextmenu");
+  const context = { page, viewport, hasTouch };
+  await openWorkspace(page);
+  const navigator = await showNavigator(context);
+  const folder = unique("Context folder");
+  const document = unique("Context document");
+
+  // Below the last row, the menu creates at the top level. Earlier tests'
+  // items may fill the pane, so it scrolls to the end first.
+  const tree = navigator.getByRole("treegrid");
+  await navigator.evaluate((pane) => {
+    for (const element of pane.querySelectorAll("*")) {
+      element.scrollTop = element.scrollHeight;
+    }
+  });
+  const box = await tree.boundingBox();
+  if (!box) throw new Error("the tree has no layout box");
+  await page.mouse.click(box.x + 40, box.y + box.height + 16, {
+    button: "right",
+  });
+  await expect(
+    page.getByRole("menuitem", { name: "New folder" }),
+  ).toBeVisible();
+  await expectAccessible(page);
+  await page.getByRole("menuitem", { name: "New folder" }).click();
+  await nameNewItem(navigator, folder);
+  await expect(row(navigator, folder)).toHaveAttribute("aria-level", "1");
+
+  await row(navigator, folder).click({ button: "right" });
+  await page.getByRole("menuitem", { name: "New document" }).click();
+  await nameNewItem(navigator, document);
+  await expectOpened(context, document);
+  const reopened = await showNavigator(context);
+  await expect(row(reopened, document)).toHaveAttribute("aria-level", "2");
+});
