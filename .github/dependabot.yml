@@ -72,3 +72,6 @@ updates:
       - dependency-name: typescript
         update-types:
           - version-update:semver-major
+    # An @playwright/test update needs new browsers, so its pull request must
+    # also set the playwright feature's version in .devcontainer/devcontainer.json,
+    # or the browser phase of tools/check exits 2.

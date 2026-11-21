@@ -618,7 +618,8 @@ machines and iPads:
   frames at 60 Hz, without throttling.
 * Serializing the document for a save takes at most 25 ms.
 
-Backlog 23 adds a browser test, on backlog 21's tooling, that generates a
+Backlog 23 adds a browser test, on [ADR 0009](./0009-browser-tests.md)'s
+tooling, that generates a
 synthetic 1 MiB document and fails when a target is missed.
 
 ## Consequences

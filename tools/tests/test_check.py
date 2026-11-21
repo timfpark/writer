@@ -65,7 +65,7 @@ class CheckGateTest(unittest.TestCase):
     def add_node_stub(self, version="26.13.1"):
         self.write_exec(self.bin / "node", f"#!/usr/bin/env bash\necho {version}\n")
 
-    def add_npm_stub(self, lint_rc=0, lint_stderr="", npm_rc=0, fail_script=""):
+    def add_npm_stub(self, lint_rc=0, lint_stderr="", npm_rc=0, fail_script="", fail_rc=1):
         log = self.root / "npm-calls.log"
         self.write_exec(
             self.bin / "npm",
@@ -75,7 +75,7 @@ with open({str(log)!r}, "a", encoding="utf-8") as fh:
     fh.write(os.getcwd() + "|" + " ".join(sys.argv[1:]) + "\\n")
 if sys.argv[1:3] == ["run", {fail_script!r}]:
     sys.stderr.write("npm run " + sys.argv[2] + " simulated failure\\n")
-    sys.exit(1)
+    sys.exit({fail_rc})
 if sys.argv[1:2] == ["run"]:
     sys.exit(0)
 if len(sys.argv) < 2 or sys.argv[1] != "ci":
@@ -180,8 +180,11 @@ if sys.argv[1:2] == [{fail_subcommand!r}]:
         res = self.run_check()
         self.assertEqual(res.returncode, 1)
         self.assertFalse((self.root / "tools/node_modules/.lock-stamp").exists())
-        self.assertIn("FAILED phases: docs webapp", res.stderr)
-        self.assertEqual(self.npm_calls(log, "webapp"), ["ci --include=dev --no-audit --no-fund"])
+        self.assertIn("FAILED phases: docs webapp\n", res.stderr)
+        self.assertEqual(
+            self.npm_calls(log, "webapp"),
+            ["ci --include=dev --no-audit --no-fund", "run e2e:browsers", "run e2e"],
+        )
 
     def test_markdownlint_failure_fails_docs_phase_with_exit_1(self):
         self.add_node_stub()
@@ -243,8 +246,11 @@ if sys.argv[1:2] == [{fail_subcommand!r}]:
                 "run typecheck",
                 "run test",
                 "run build",
+                "run e2e:browsers",
+                "run e2e",
             ],
         )
+        self.assertLess(res.stdout.index("<== webapp: passed"), res.stdout.index("<== browser: passed"))
 
     def test_stale_client_fails_webapp_phase_with_exit_1_and_runs_the_rest(self):
         self.add_node_stub()
@@ -253,7 +259,34 @@ if sys.argv[1:2] == [{fail_subcommand!r}]:
         self.assertEqual(res.returncode, 1)
         self.assertIn("npm run api:check simulated failure", res.stderr)
         self.assertIn("FAILED phases: webapp", res.stderr)
-        self.assertEqual(len(self.npm_calls(log, "webapp")), 7)
+        self.assertEqual(len(self.npm_calls(log, "webapp")), 9)
+
+    def test_browsers_that_cannot_launch_exit_2_without_running_browser_tests(self):
+        self.add_node_stub()
+        log = self.add_npm_stub(fail_script="e2e:browsers", fail_rc=2)
+        res = self.run_check()
+        self.assertEqual(res.returncode, 2)
+        self.assertIn("<== browser: PREREQUISITE MISSING", res.stderr)
+        self.assertIn("check: prerequisite missing in phases: browser", res.stderr)
+        self.assertNotIn("FAILED phases", res.stderr)
+        self.assertEqual(self.npm_calls(log, "webapp")[-1], "run e2e:browsers")
+
+    def test_failing_browser_test_fails_browser_phase_with_exit_1(self):
+        self.add_node_stub()
+        self.add_npm_stub(fail_script="e2e")
+        res = self.run_check()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("npm run e2e simulated failure", res.stderr)
+        self.assertIn("FAILED phases: browser", res.stderr)
+
+    def test_failed_phase_with_missing_prerequisite_exits_1_and_reports_both(self):
+        self.add_node_stub()
+        self.add_npm_stub(fail_script="e2e:browsers", fail_rc=2)
+        self.add_cargo_stub(fail_subcommand="fmt")
+        res = self.run_check()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("FAILED phases: service", res.stderr)
+        self.assertIn("prerequisite missing in phases: browser", res.stderr)
 
 
 if __name__ == "__main__":

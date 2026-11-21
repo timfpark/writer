@@ -35,8 +35,8 @@ Writer is a local-first writing workspace and AI pair writer (see
   and `tools/tests/` directly when inspecting repository tooling; avoid broad
   globs under `tools/` because `tools/node_modules/` holds installed lint
   packages. Skip `service/target/`, which holds Cargo build output, and
-  `webapp/node_modules/` and `webapp/dist/`, which hold installed packages and
-  build output.
+  `webapp/node_modules/`, `webapp/dist/`, and `webapp/test-results/`, which
+  hold installed packages, build output, and browser test traces.
 * Treat [.devcontainer/](./.devcontainer/) as the canonical source of pinned
   toolchain versions and global registry proxies, and keep local scratch or
   manuscripts inside ignored `.local/`.
@@ -91,8 +91,8 @@ Writer is a local-first writing workspace and AI pair writer (see
 
 * Use fast targeted commands while iterating: `python3 tools/check_docs.py`,
   `python3 -m unittest discover --start-directory tools/tests`, or the affected
-  subsystem's test runner, such as `cargo test --workspace` in `service/` or
-  `npm run test` in `webapp/`.
+  subsystem's test runner, such as `cargo test --workspace` in `service/`, or
+  `npm run test` and `npm run e2e` in `webapp/`.
 * Before every commit and before reporting work complete, run `tools/check`
   with no arguments from the repository root on the final contents of the
   change, and rerun it after any edit. If `tools/check` fails or cannot run,

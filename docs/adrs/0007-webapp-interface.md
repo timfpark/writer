@@ -39,6 +39,10 @@ the editor loaded as its own chunk, the flush events that drive unsaved-text
 writes, and document styles built on these tokens, adding `--color-ink` on
 `--color-chrome` to the contrast test.
 
+Amended on 2026-11-20 by [ADR 0009](./0009-browser-tests.md), which settles
+the browser test engines, including WebKit at iPad sizes with touch, and the
+accessibility checker that measures composed contrast.
+
 ## Decision summary
 
 * Style with CSS Modules and CSS custom properties. `vite-css-modules`
@@ -444,8 +448,9 @@ semantic token in both themes, and asserts every pair in this table with the
 WCAG 2 contrast formula, so a color change that misses a target fails the
 gate. Vitest loads CSS as empty unless `test.css.include` lists it, so the
 configuration includes `tokens.css`; the prototype's test read nothing until
-it did. Browser accessibility checks, which [backlog 21](../backlog/0021-browser-tests.md)
-adds, cover colors as composed on the page.
+it did. Browser accessibility checks, which
+[ADR 0009](./0009-browser-tests.md#accessibility-checks) adds, cover colors as
+composed on the page.
 
 ### Typefaces
 
@@ -728,7 +733,8 @@ enhance a layout that works without it. Phones, including Safari on iPhone,
 are not a target. Until a hosting decision serves Writer to other devices
 over HTTPS, which Web Locks and `crypto.randomUUID()` require away from
 `localhost`, iPad layouts are verified in browser tests at iPad sizes with
-touch. Backlog 21 chooses the engines the browser tests run.
+touch. [ADR 0009](./0009-browser-tests.md#projects) runs the browser tests on
+Chromium, Firefox, and WebKit, and on WebKit with touch at iPad sizes.
 
 ## Consequences
 
@@ -804,9 +810,9 @@ Trade-offs and risks:
 * The editor: settled by [ADR 0008](./0008-editor.md), including the bundle
   budget, the autosave timing and flush events that drive unsaved-text
   writes, and styles for document content built on these tokens
-* Browser tests ([backlog 21](../backlog/0021-browser-tests.md)): the engines
-  covered, including WebKit at iPad sizes with touch, and the accessibility
-  checker that checks composed contrast
+* Browser tests: settled by [ADR 0009](./0009-browser-tests.md), including
+  the engines covered, WebKit at iPad sizes with touch, and axe-core, which
+  checks composed contrast
 * Hosting: fallback routing to `index.html`, and a content security policy
   that can allow fonts, styles, and scripts from the webapp's own origin only
 * A theme control inside Writer, if writers ask for one

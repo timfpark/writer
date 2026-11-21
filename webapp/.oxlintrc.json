@@ -21,6 +21,7 @@
     "src/api/generated/**",
     "dist/**",
     "coverage/**",
+    "test-results/**",
     "**/*.module.css.d.ts"
   ]
 }

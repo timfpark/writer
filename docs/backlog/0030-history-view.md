@@ -52,7 +52,6 @@ the view builds on.
 
 ## Prerequisites
 
-* [Add browser end-to-end tests to the gate](./0021-browser-tests.md)
 * [Navigate and organize the workspace tree](./0022-workspace-navigator.md)
 * [Write in the editing surface with autosave](./0023-writing-surface.md)
 * [Record and restore commits in the service](./0029-service-history.md)

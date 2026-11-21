@@ -100,11 +100,20 @@ tools/check
 
 The [development container](./.devcontainer/devcontainer.json) provides Bash,
 Git, Python 3.9 or newer, rustup with a default Rust toolchain, Node.js
-with npm, and the GitHub CLI. Each version is recorded once: the
+with npm, the GitHub CLI, and the headless Chromium, Firefox, and WebKit
+builds that the webapp's browser tests run on. Each version is recorded once: the
 [Dockerfile](./.devcontainer/Dockerfile) pins the base image by digest, which
 fixes Python, Bash, and Git, and `devcontainer.json` pins each feature and the
 Node.js and Rust versions exactly. The Dev Container CLI records each
 feature's content digest in `devcontainer-lock.json`.
+
+The browsers come from a local feature,
+[.devcontainer/playwright/](./.devcontainer/playwright/install.sh), which
+installs them and their system libraries into `/ms-playwright` at image build
+for the Playwright release its `version` option names. That release must equal
+`@playwright/test` in `webapp/package.json`; change both together and rebuild
+the container. Building the image downloads the browsers from Playwright's
+download host; running the tests downloads nothing.
 
 It runs as the non-root `vscode` user. The image configures the registry
 proxies globally, so every user, shell, and folder in the container uses them
@@ -197,6 +206,18 @@ rustup installs the Rust version that `service/rust-toolchain.toml` pins, with
 the registry proxies above. The `.npmrc` files in `tools/` and `webapp/`
 already set the npm proxy for their folders, and Cargo needs no proxy.
 
+The `browser` phase also needs the Playwright browsers for the release
+`webapp/package.json` locks. Install them once from `webapp/`, after `npm ci`,
+and again whenever that release changes; on Linux, add `--with-deps` to
+install their system libraries with `sudo`:
+
+```bash
+npx playwright install chromium firefox webkit
+```
+
+Without them, `tools/check` reports the `browser` phase's prerequisite as
+missing, names the fix, and exits 2.
+
 The [service guide](./service/README.md) and the
 [webapp guide](./webapp/README.md) cover running and configuring each
 subsystem.
@@ -205,7 +226,7 @@ subsystem.
 
 The [CI workflow](./.github/workflows/ci.yml) builds the development container
 and runs `tools/check` inside it on every pull request and every push to
-`main`. On pull requests, a dependency review job also fails when a change to
+`main`, including the browser tests on every engine. On pull requests, a dependency review job also fails when a change to
 a lockfile or other manifest adds a dependency with a known vulnerability, in
 any scope and at any severity. A newer push to a pull request cancels that
 pull request's running checks. The final `CI result` check passes only when

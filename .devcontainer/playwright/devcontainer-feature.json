@@ -1,0 +1,17 @@
+{
+  "id": "playwright",
+  "version": "1.0.0",
+  "name": "Playwright browsers",
+  "description": "Installs the headless browsers and system libraries that webapp/e2e runs on, for the Playwright release webapp/package.json pins",
+  "options": {
+    "version": {
+      "type": "string",
+      "default": "",
+      "description": "Playwright release whose browsers to install; must equal @playwright/test in webapp/package.json"
+    }
+  },
+  "containerEnv": {
+    "PLAYWRIGHT_BROWSERS_PATH": "/ms-playwright"
+  },
+  "installsAfter": ["ghcr.io/devcontainers/features/node"]
+}
