@@ -75,25 +75,9 @@
   min-block-size: 0;
 }
 
-.paneHeader {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-  min-block-size: calc(2rem + 2 * var(--space-2));
-  padding: var(--space-2) var(--space-4);
-}
-
-.paneTitle {
-  margin: 0;
-  color: var(--color-text-muted);
-  font-size: var(--text-sm);
-  font-weight: var(--weight-semibold);
-}
-
 .content {
   flex: 1;
   min-block-size: 0;
   overflow: auto;
-  padding: 0 var(--space-4) var(--space-4);
+  padding: var(--space-2) var(--space-4) var(--space-4);
 }

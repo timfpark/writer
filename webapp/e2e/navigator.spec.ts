@@ -1,5 +1,7 @@
 import type { Locator, Page, ViewportSize } from "@playwright/test";
 import { expect, expectAccessible, test } from "./fixtures";
+import { itemLocation } from "./outside.js";
+import { servicePort } from "./ports";
 
 // ADR 0007's navigator breakpoint, 60 rem, in CSS pixels at the 16 px root.
 function docked(viewport: ViewportSize | null): boolean {
@@ -52,13 +54,23 @@ function row(navigator: Locator, title: string): Locator {
   return navigator.getByRole("row", { name: title, exact: true });
 }
 
-// Names an item that has just been created, which starts in inline rename.
+// Names an item that has just been created, which starts in inline rename,
+// and waits for the service to accept the title, so a reload that follows
+// cannot cancel the rename while it waits its turn.
 async function nameNewItem(navigator: Locator, title: string) {
   const field = navigator.getByRole("textbox", { name: "Title" });
   await expect(field).toBeFocused();
   await expect(field).toHaveValue("Untitled");
   await field.fill(title);
+  const renamed = navigator
+    .page()
+    .waitForResponse(
+      (response) =>
+        response.request().method() === "PUT" &&
+        response.url().endsWith("/title"),
+    );
   await field.press("Enter");
+  expect((await renamed).status()).toBe(200);
   await expect(field).toHaveCount(0);
 }
 
@@ -321,7 +333,14 @@ test("restores the tree and explains when a rename or delete fails", async ({
   await expectOpened(context, built.leaf);
   navigator = await showNavigator(context);
   await rowCommand(context, row(navigator, built.top), "Delete…");
+  // Waits for the service, so the reload below cannot cancel the deletion.
+  const deleted = page.waitForResponse(
+    (response) =>
+      response.request().method() === "DELETE" &&
+      response.url().includes("/api/v1/folders/"),
+  );
   await press(dialog.getByRole("button", { name: "Delete" }), hasTouch);
+  expect((await deleted).status()).toBe(204);
   await expect(page).toHaveURL(/\/$/);
   navigator = await showNavigator(context);
   await expect(row(navigator, built.top)).toHaveCount(0);
@@ -355,8 +374,12 @@ test("moves through the tree, folds folders, and opens a document with the keybo
   await expect(rows.first()).toBeFocused();
   await expect(navigator.getByRole("row", { selected: true })).toHaveCount(0);
 
-  await page.keyboard.press("End");
-  await expect(rows.last()).toBeFocused();
+  // Other tests add rows at the end, so End is pressed again if one arrives
+  // after it.
+  await expect(async () => {
+    await page.keyboard.press("End");
+    await expect(rows.last()).toBeFocused({ timeout: 1000 });
+  }).toPass();
   await page.keyboard.press("Home");
   await expect(rows.first()).toBeFocused();
 
@@ -425,4 +448,241 @@ test("creates items at the top level and in folders from the context menu", asyn
   await expectOpened(context, document);
   const reopened = await showNavigator(context);
   await expect(row(reopened, document)).toHaveAttribute("aria-level", "2");
+});
+
+// Creates an item through the service's API, last in its parent, for tests
+// about moving items rather than creating them.
+async function createItem(
+  page: Page,
+  kind: "folder" | "document",
+  title: string,
+  parentId: string | null = null,
+): Promise<string> {
+  const id = crypto.randomUUID();
+  const response = await page.request.post(`/api/v1/${kind}s`, {
+    data: { [`${kind}Id`]: id, parentId, beforeId: null, title },
+  });
+  expect(response.status()).toBe(201);
+  return id;
+}
+
+// Drags one row onto a point of another. The target is centered first,
+// because near the pane's edges the tree scrolls under the pointer, and other
+// tests' items can push it there.
+async function drag(
+  source: Locator,
+  target: Locator,
+  position?: { x: number; y: number },
+) {
+  await target.evaluate((element) => {
+    element.scrollIntoView({ block: "center" });
+  });
+  await source.dragTo(target, position ? { targetPosition: position } : {});
+}
+
+async function expand(navigator: Locator, title: string, hasTouch: boolean) {
+  const target = row(navigator, title);
+  if ((await target.getAttribute("aria-expanded")) !== "true") {
+    await press(target.getByRole("button", { name: /^Expand/ }), hasTouch);
+  }
+  await expect(target).toHaveAttribute("aria-expanded", "true");
+}
+
+// Where a document's file sits in the data folder, relative to the folder
+// that holds it.
+async function expectFileIn(documentId: string, folderId: string) {
+  await expect
+    .poll(() => {
+      const document = itemLocation(servicePort, documentId);
+      const folder = itemLocation(servicePort, folderId);
+      return folder && document?.slice(0, -1).join("/") === folder.join("/");
+    })
+    .toBe(true);
+}
+
+test("drags items between siblings and into folders, and refuses a folder dropped inside itself", async ({
+  page,
+  viewport,
+  hasTouch,
+}) => {
+  test.skip(
+    hasTouch,
+    "Playwright cannot synthesize the long press that starts a native drag on a touch screen; the row menu test covers touch",
+  );
+  const context = { page, viewport, hasTouch };
+  const titles = {
+    source: unique("Drag source"),
+    first: unique("Drag first"),
+    second: unique("Drag second"),
+    inner: unique("Drag inner"),
+    target: unique("Drag target"),
+  };
+  await openWorkspace(page);
+  const sourceId = await createItem(page, "folder", titles.source);
+  const firstId = await createItem(page, "document", titles.first, sourceId);
+  await createItem(page, "document", titles.second, sourceId);
+  await createItem(page, "folder", titles.inner, sourceId);
+  const targetId = await createItem(page, "folder", titles.target);
+  await openWorkspace(page);
+  let navigator = await showNavigator(context);
+  await expand(navigator, titles.source, hasTouch);
+  const rows = navigator.getByRole("row");
+  await expect(rows).toContainText([titles.first, titles.second]);
+
+  // The top edge of a row drops before it.
+  await drag(row(navigator, titles.second), row(navigator, titles.first), {
+    x: 60,
+    y: 2,
+  });
+  await expect(rows).toContainText([
+    titles.source,
+    titles.second,
+    titles.first,
+    titles.inner,
+    titles.target,
+  ]);
+  await expect(row(navigator, titles.second)).toHaveAttribute(
+    "aria-level",
+    "2",
+  );
+
+  // The middle of a folder drops inside it, last, and expands it.
+  await drag(row(navigator, titles.first), row(navigator, titles.target));
+  await expect(row(navigator, titles.target)).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  await expect(row(navigator, titles.first)).toHaveAttribute("aria-level", "2");
+  await expect(rows).toContainText([titles.target, titles.first]);
+  await expectFileIn(firstId, targetId);
+  await expectAccessible(page);
+
+  // A folder dropped on a folder inside it is refused before any request.
+  const moves: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/position")) moves.push(request.url());
+  });
+  await drag(row(navigator, titles.source), row(navigator, titles.inner));
+  await expect(row(navigator, titles.source)).toHaveAttribute(
+    "aria-level",
+    "1",
+  );
+  await expect(row(navigator, titles.inner)).toHaveAttribute("aria-level", "2");
+  expect(moves).toEqual([]);
+
+  // The new order and places are the service's, so they survive a reload.
+  await page.reload();
+  navigator = await showNavigator(context);
+  await expect(navigator.getByRole("row")).toContainText([
+    titles.source,
+    titles.second,
+    titles.inner,
+    titles.target,
+    titles.first,
+  ]);
+});
+
+test("moves items with the row menu instead of dragging, and restores the tree when a move fails", async ({
+  page,
+  viewport,
+  hasTouch,
+}) => {
+  const context = { page, viewport, hasTouch };
+  const titles = {
+    shelf: unique("Menu shelf"),
+    alpha: unique("Menu alpha"),
+    beta: unique("Menu beta"),
+    gamma: unique("Menu gamma"),
+    box: unique("Menu box"),
+  };
+  await openWorkspace(page);
+  const shelfId = await createItem(page, "folder", titles.shelf);
+  const alphaId = await createItem(page, "document", titles.alpha, shelfId);
+  const betaId = await createItem(page, "document", titles.beta, shelfId);
+  await createItem(page, "document", titles.gamma, shelfId);
+  const boxId = await createItem(page, "folder", titles.box);
+  await openWorkspace(page);
+  let navigator = await showNavigator(context);
+  await expand(navigator, titles.shelf, hasTouch);
+  const rows = navigator.getByRole("row");
+
+  // The first sibling cannot move up, and the last cannot move down.
+  await press(
+    row(navigator, titles.alpha).getByRole("button", { name: "More actions" }),
+    hasTouch,
+  );
+  await expect(page.getByRole("menuitem", { name: "Move up" })).toHaveAttribute(
+    "aria-disabled",
+    "true",
+  );
+  await expectAccessible(page);
+  await page.keyboard.press("Escape");
+  await rowCommand(context, row(navigator, titles.gamma), "Move up");
+  await expect(rows).toContainText([titles.alpha, titles.gamma, titles.beta]);
+  await rowCommand(context, row(navigator, titles.alpha), "Move down");
+  await expect(rows).toContainText([titles.gamma, titles.alpha, titles.beta]);
+
+  // Move to places an item last in another folder, or at the top level.
+  await rowCommand(context, row(navigator, titles.beta), "Move to…");
+  const dialog = page.getByRole("dialog", { name: `Move “${titles.beta}”` });
+  await expect(
+    dialog.getByRole("option", { name: `${titles.shelf} (current)` }),
+  ).toHaveAttribute("aria-disabled", "true");
+  await expectAccessible(page);
+  await press(dialog.getByRole("option", { name: titles.box }), hasTouch);
+  await press(dialog.getByRole("button", { name: "Move" }), hasTouch);
+  await expect(dialog).toHaveCount(0);
+  await expect(row(navigator, titles.box)).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
+  await expect(rows).toContainText([titles.box, titles.beta]);
+  await expectFileIn(betaId, boxId);
+
+  await rowCommand(context, row(navigator, titles.alpha), "Move to…");
+  await press(
+    page.getByRole("option", { name: "Top level", exact: true }),
+    hasTouch,
+  );
+  await press(page.getByRole("button", { name: "Move" }), hasTouch);
+  await expect(row(navigator, titles.alpha)).toHaveAttribute("aria-level", "1");
+  await expect.poll(() => itemLocation(servicePort, alphaId)?.length).toBe(1);
+
+  // A move the service refuses returns the tree to the service's version.
+  await page.route("**/api/v1/documents/*/position", (route) =>
+    route.fulfill({
+      status: 409,
+      contentType: "application/problem+json",
+      body: JSON.stringify({
+        type: "about:blank",
+        title: "Conflict",
+        status: 409,
+        detail: "Synthetic conflict for the test.",
+        code: "conflict",
+        errors: [],
+      }),
+    }),
+  );
+  await rowCommand(context, row(navigator, titles.beta), "Move to…");
+  await press(page.getByRole("option", { name: titles.shelf }), hasTouch);
+  await press(page.getByRole("button", { name: "Move" }), hasTouch);
+  await expect(
+    navigator.getByText(
+      "Couldn't move the document. Its destination no longer exists or is inside it, so the navigator now shows the latest tree.",
+    ),
+  ).toBeVisible();
+  await expect(rows).toContainText([titles.box, titles.beta]);
+  await expect(row(navigator, titles.beta)).toHaveAttribute("aria-level", "2");
+  await expectAccessible(page);
+  await page.unrouteAll({ behavior: "wait" });
+
+  await page.reload();
+  navigator = await showNavigator(context);
+  await expect(navigator.getByRole("row")).toContainText([
+    titles.shelf,
+    titles.gamma,
+    titles.box,
+    titles.beta,
+    titles.alpha,
+  ]);
 });

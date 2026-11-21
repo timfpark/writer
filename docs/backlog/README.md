@@ -37,9 +37,8 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | #  | Work item                                                                             | Subsystems             | Outcome                                                                                | Prerequisite   |
 |----|---------------------------------------------------------------------------------------|------------------------|----------------------------------------------------------------------------------------|----------------|
 | 32 | [Resolve the KaTeX advisory in the tools lockfile](./0032-katex-advisory.md)          | `repository`           | No open security alert remains for the tools lockfile.                                 | None           |
-| 24 | [Move and reorder items with drag and drop](./0024-tree-drag-and-drop.md)             | `webapp`               | Writers move and reorder items by dragging or with a menu.                             | None           |
 | 25 | [Prototype the assistant pane](./0025-assistant-pane.md)                              | `webapp`               | The right pane holds a stubbed conversation ready for the agent.                       | None           |
-| 26 | [Make the workspace fully keyboard operable](./0026-keyboard-accessibility.md)        | `webapp`               | Every workspace operation works from the keyboard and passes checks.                   | 24             |
+| 26 | [Make the workspace fully keyboard operable](./0026-keyboard-accessibility.md)        | `webapp`               | Every workspace operation works from the keyboard and passes checks.                   | None           |
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)    | `service`              | An accepted ADR fixes the agent framework, provider, prompts, and evals.               | None           |
 | 12 | [Deliver the first pair-writing agent capability](./0012-first-pair-writing-agent.md) | `service`              | The service returns pair-writer questions backed by prompts and evals.                 | 10             |
 | 27 | [Record the change control ADR](./0027-change-control-adr.md)                         | `service`, `webapp`    | An accepted ADR fixes the commit model, commit timing, restore, and progress measures. | None           |
@@ -72,9 +71,9 @@ Item 20 built the webapp's workspace shell on ADR 0007's foundation, and
 item 21 added the browser tests that drive it, as
 [ADR 0009](../adrs/0009-browser-tests.md) decides. Item 22 built the
 keyboard-navigable navigator, and item 23 built the writing surface with
-autosave, which together make the first usable release. Drag and drop (24),
-the assistant pane prototype (25), and the remaining keyboard shortcuts (26)
-complete it.
+autosave, which together make the first usable release. Item 24 added drag
+and drop with move commands in each row's menu, and the assistant pane
+prototype (25) and the remaining keyboard shortcuts (26) complete it.
 
 The pair-writing agent follows the workspace. Item 10 records the agent
 decision before item 12 creates `service/prompts/` and `service/evals/`.

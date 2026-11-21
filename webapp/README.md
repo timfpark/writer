@@ -50,7 +50,7 @@ browser tests in [ADR 0009](../docs/adrs/0009-browser-tests.md).
 | [e2e/](./e2e/)                                               | Playwright browser and accessibility tests against a running service        |
 | [playwright.config.ts](./playwright.config.ts)               | Browser test projects, ports, and the servers each run starts               |
 | [scripts/e2e-service.js](./scripts/e2e-service.js)           | Runs the service on a new data folder for a browser test run                |
-| [e2e/outside.js](./e2e/outside.js)                           | Edits a document's file in that data folder, as another program would       |
+| [e2e/outside.js](./e2e/outside.js)                           | Finds and edits items' files in that data folder, as another program would  |
 | [e2e/environment.js](./e2e/environment.js)                   | Whether a browser test run is in CI                                         |
 | [scripts/e2e-browsers.js](./scripts/e2e-browsers.js)         | Exits 2 unless every browser the tests use launches                         |
 
@@ -70,19 +70,27 @@ server, build, tests, and `npm run typecheck` write and Git ignores.
 The navigator lists folders and documents in the service's order, indented
 one level per folder with guide lines:
 
-| Control                                    | Effect                                                      |
-|--------------------------------------------|-------------------------------------------------------------|
-| New document or New folder in its toolbar  | Creates an item at the top level, starting in inline rename |
-| A folder row's hover buttons or menu       | Creates a document or folder inside it                      |
-| A row's More actions button or right click | Renames, deletes, or expands or collapses everything inside |
-| Collapse all folders                       | Collapses every folder                                      |
-| Selecting a document                       | Opens it in the writing region and highlights its row       |
+| Control                                    | Effect                                                             |
+|--------------------------------------------|--------------------------------------------------------------------|
+| New document or New folder in its toolbar  | Creates an item at the top level, starting in inline rename        |
+| A folder row's hover buttons or menu       | Creates a document or folder inside it                             |
+| A row's More actions button or right click | Renames, moves, deletes, or expands or collapses everything inside |
+| Dragging a row or its drag handle          | Moves the item before or after a row, or into a folder             |
+| Move up or Move down in a row's menu       | Swaps the item with its previous or next sibling                   |
+| Move to… in a row's menu                   | Moves the item last into a folder or the top level that you choose |
+| Collapse all folders                       | Collapses every folder                                             |
+| Selecting a document                       | Opens it in the writing region and highlights its row              |
 
 In the tree, the arrow keys move between rows and expand or collapse
 folders, `Home` and `End` jump to the first and last row, typing finds a
 title, and `Enter` opens a document or toggles a folder. In inline rename,
 `Enter` keeps the title and `Escape` discards it. Deleting asks first and
-says how many items a folder deletion removes. Changes appear at once; when
+says how many items a folder deletion removes. While dragging, a line shows
+where the item will land and an outlined folder shows it will go inside;
+holding over a collapsed folder expands it, the pane scrolls near its edges,
+and a folder cannot be dropped inside itself. The menu's move commands reach
+every place a drag can, without dragging, and the drag handle also starts a
+drag from the keyboard. Changes appear at once; when
 the service refuses one, the tree returns to the service's version and a
 notice above it says why. Expanded folders are kept in `localStorage` under
 `writer.navigator.expanded`, and opening a document by URL expands the
@@ -93,7 +101,7 @@ folders around it.
 writing region. From 60 to 75 rem the assistant opens over the writing region,
 and below 60 rem both do, so the region keeps its width on an iPad in either
 orientation. A pane over the writing region closes on `Escape`, a tap outside
-it, its close button, or a change of route. Whether each docked pane is
+it, its toggle in the header, or a change of route. Whether each docked pane is
 collapsed is kept in `localStorage` under `writer.navigator.collapsed` and
 `writer.assistant.collapsed`, so it survives a reload.
 

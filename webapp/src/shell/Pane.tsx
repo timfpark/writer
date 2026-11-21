@@ -1,7 +1,5 @@
-import { X } from "lucide-react";
 import type { ReactNode } from "react";
-import { Button, Dialog, Modal, ModalOverlay } from "react-aria-components";
-import controls from "./controls.module.css";
+import { Dialog, Modal, ModalOverlay } from "react-aria-components";
 import styles from "./Pane.module.css";
 import type { PaneState } from "./usePane";
 
@@ -17,18 +15,13 @@ export function paneId(pane: PaneState): string {
 }
 
 // A side pane, docked beside the writing region or, below its breakpoint,
-// opened over it. An overlaid pane closes on Escape, a tap outside it, or its
-// close button, and React Aria returns focus to where it was.
+// opened over it. It shows no heading, so its content starts at the top;
+// its label names the landmark for assistive technology. An overlaid pane
+// closes on Escape, a tap outside it, or the header's toggle, and React Aria
+// returns focus to where it was.
 export function Pane({ pane, label, landmark: Landmark, children }: PaneProps) {
-  const headingId = `${pane.name}-pane-title`;
-  const body = (closeButton: ReactNode) => (
-    <Landmark className={styles.landmark} aria-labelledby={headingId}>
-      <div className={styles.paneHeader}>
-        <h2 id={headingId} className={styles.paneTitle}>
-          {label}
-        </h2>
-        {closeButton}
-      </div>
+  const body = (
+    <Landmark className={styles.landmark} aria-label={label}>
       <div className={styles.content}>{children}</div>
     </Landmark>
   );
@@ -41,7 +34,7 @@ export function Pane({ pane, label, landmark: Landmark, children }: PaneProps) {
         className={`${styles.docked} ${styles[pane.name]}`}
         hidden={!pane.open}
       >
-        {body(null)}
+        {body}
       </div>
     );
   }
@@ -56,16 +49,8 @@ export function Pane({ pane, label, landmark: Landmark, children }: PaneProps) {
       isDismissable
     >
       <Modal className={`${styles.drawer} ${styles[pane.name]}`}>
-        <Dialog className={styles.dialog} aria-labelledby={headingId}>
-          {body(
-            <Button
-              slot="close"
-              className={controls.iconButton}
-              aria-label={`Close ${label.toLowerCase()}`}
-            >
-              <X aria-hidden size={18} />
-            </Button>,
-          )}
+        <Dialog className={styles.dialog} aria-label={label}>
+          {body}
         </Dialog>
       </Modal>
     </ModalOverlay>

@@ -5,6 +5,8 @@ import {
   applyChange,
   applyChanges,
   buildTree,
+  dropPlacement,
+  siblingPlacement,
   subtreeIds,
 } from "./workspaceTree";
 
@@ -33,6 +35,11 @@ function create(parentId: string | null, beforeId: string | null) {
     beforeId,
     title: "New",
   } as const;
+}
+
+function move(id: string, parentId: string | null, beforeId: string | null) {
+  const kind = items.find((item) => item.id === id)?.kind ?? "document";
+  return { type: "move", kind, id, parentId, beforeId } as const;
 }
 
 describe("applyChange", () => {
@@ -88,6 +95,36 @@ describe("applyChange", () => {
     ).toEqual(["epilogue"]);
   });
 
+  it("moves an item with its subtree into another parent or position", () => {
+    const toTop = applyChange(items, move("scene", null, "part"));
+    expect(ids(toTop)).toEqual(["scene", "draft", "part", "notes", "epilogue"]);
+    expect(toTop[0]?.parentId).toBeNull();
+    expect(toTop[1]?.parentId).toBe("scene");
+    expect(ids(applyChange(items, move("epilogue", "scene", null)))).toEqual([
+      "part",
+      "scene",
+      "draft",
+      "epilogue",
+      "notes",
+    ]);
+    expect(ids(applyChange(items, move("notes", "part", "scene")))).toEqual([
+      "part",
+      "notes",
+      "scene",
+      "draft",
+      "epilogue",
+    ]);
+  });
+
+  it("ignores a move into the item's own subtree or one that changes nothing", () => {
+    expect(applyChange(items, move("part", "scene", null))).toBe(items);
+    expect(applyChange(items, move("part", "part", null))).toBe(items);
+    expect(applyChange(items, move("notes", "part", "notes"))).toBe(items);
+    expect(applyChange(items, move("notes", "part", null))).toBe(items);
+    expect(applyChange(items, move("scene", "part", "notes"))).toBe(items);
+    expect(applyChange(items, move("notes", "missing", null))).toBe(items);
+  });
+
   it("applies pending changes in order, so later ones build on earlier ones", () => {
     const result = applyChanges(items, [
       { ...create("scene", null), kind: "folder" },
@@ -123,5 +160,48 @@ describe("tree helpers", () => {
     expect(ancestorIds(items, "draft")).toEqual(["scene", "part"]);
     expect(ancestorIds(items, "epilogue")).toEqual([]);
     expect(ancestorIds(items, "missing")).toBeUndefined();
+  });
+
+  it("turns a drop before, on, or after a row into a placement", () => {
+    const none = new Set<string>();
+    expect(dropPlacement(items, "notes", "before", none)).toEqual({
+      parentId: "part",
+      beforeId: "notes",
+    });
+    expect(dropPlacement(items, "scene", "on", none)).toEqual({
+      parentId: "scene",
+      beforeId: null,
+    });
+    expect(dropPlacement(items, "draft", "on", none)).toBeUndefined();
+    expect(dropPlacement(items, "scene", "after", none)).toEqual({
+      parentId: "part",
+      beforeId: "notes",
+    });
+    // After a row whose next sibling is the moved item, it skips that item.
+    expect(dropPlacement(items, "scene", "after", new Set(["notes"]))).toEqual({
+      parentId: "part",
+      beforeId: null,
+    });
+    expect(dropPlacement(items, "epilogue", "after", none)).toEqual({
+      parentId: null,
+      beforeId: null,
+    });
+  });
+
+  it("swaps an item with its previous or next sibling", () => {
+    expect(siblingPlacement(items, "notes", "up")).toEqual({
+      parentId: "part",
+      beforeId: "scene",
+    });
+    expect(siblingPlacement(items, "scene", "down")).toEqual({
+      parentId: "part",
+      beforeId: null,
+    });
+    expect(siblingPlacement(items, "part", "down")).toEqual({
+      parentId: null,
+      beforeId: null,
+    });
+    expect(siblingPlacement(items, "scene", "up")).toBeUndefined();
+    expect(siblingPlacement(items, "notes", "down")).toBeUndefined();
   });
 });
