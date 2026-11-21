@@ -3,7 +3,7 @@
 .page {
   flex: 1 0 auto;
   inline-size: 100%;
-  max-inline-size: calc(var(--writing-measure) + 2 * var(--page-inset));
+  max-inline-size: var(--page-width);
   margin-inline: auto;
   padding: var(--space-12) var(--page-inset);
   background: var(--color-page);

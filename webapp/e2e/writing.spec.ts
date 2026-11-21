@@ -158,7 +158,8 @@ function isContentPath(url: URL): boolean {
 }
 
 // Where the header's title text starts, where the document's text starts,
-// and the boxes the title must not overlap, in CSS pixels.
+// the boxes the title must not overlap, and each docked pane's width and
+// distance from the page, in CSS pixels.
 async function headerLayout(page: Page) {
   return page.evaluate(() => {
     const textLeft = (element: Element | null) => {
@@ -177,7 +178,19 @@ async function headerLayout(page: Page) {
     const named = (name: string) =>
       buttons.find((button) => button.getAttribute("aria-label") === name) ??
       null;
+    const main = document.querySelector("main");
+    let sheet = document.querySelector("[role=textbox]");
+    while (sheet && sheet.parentElement !== main) sheet = sheet.parentElement;
+    const page = box(sheet);
+    const pane = (id: string) => {
+      const element = document.getElementById(id);
+      if (!element || element.hidden) return null;
+      const { left, right, width } = element.getBoundingClientRect();
+      return { width, gap: Math.max(page.left - right, left - page.right) };
+    };
     return {
+      navigatorPane: pane("navigator-pane"),
+      assistantPane: pane("assistant-pane"),
       title: textLeft(document.querySelector("h1 button")),
       text: textLeft(document.querySelector("[role=textbox] p")),
       heading: box(document.querySelector("h1")),
@@ -188,7 +201,10 @@ async function headerLayout(page: Page) {
   });
 }
 
-test("starts the title over the document's text in each pane layout without covering the controls", async ({
+// ADR 0007's maximum docked pane widths, 24 and 32 rem, in CSS pixels.
+const paneMaxWidths = { navigatorPane: 384, assistantPane: 512 } as const;
+
+test("starts the title over the document's text, with docked panes meeting the page, in each pane layout", async ({
   page,
   viewport,
   hasTouch,
@@ -219,6 +235,14 @@ test("starts the title over the document's text in each pane layout without cove
     expect(layout.heading.left).toBeGreaterThanOrEqual(layout.navigator.right);
     expect(layout.heading.right).toBeLessThanOrEqual(layout.status.left);
     expect(layout.status.right).toBeLessThanOrEqual(layout.assistant.left);
+    // A docked pane takes the room beside the page, up to its maximum; only
+    // a scroll bar's gutter may separate them.
+    for (const name of ["navigatorPane", "assistantPane"] as const) {
+      const pane = layout[name];
+      if (pane && pane.width < paneMaxWidths[name] - 1) {
+        expect(pane.gap).toBeLessThanOrEqual(20);
+      }
+    }
   };
 
   await expectLayout();

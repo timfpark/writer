@@ -75,10 +75,14 @@ against a running service. People start with
   [conversation.ts](./src/workspace/conversation.ts), whose default is the
   client-side stub. Keep the conversation in `WorkspaceShell`, never in the
   pane, because an overlaid pane unmounts while it is closed.
-* Align the header's title with the writing page through the shared
-  `--page-inset`, `--navigator-width`, `--assistant-width`, and
-  `--control-size` tokens, and change them only in
-  [tokens.css](./src/styles/tokens.css).
+* Size the docked panes, the writing region, and the header's matching
+  columns from the same layout tokens in
+  [tokens.css](./src/styles/tokens.css) (`--page-width`, `--page-inset`, the
+  pane widths and maximums, and `--control-size`), and change a column's flex
+  sizing in [Pane.module.css](./src/shell/Pane.module.css) or
+  [WorkspaceShell.module.css](./src/shell/WorkspaceShell.module.css) together
+  with [Header.module.css](./src/shell/Header.module.css), so the title stays
+  over the page's text.
 * Keep both breakpoints, 60 and 75 rem, and the touch rules keyed to
   `(hover: none)` and `(pointer: coarse)` as ADR 0007's responsive layout
   sets, so the shell works on iPad in both orientations.

@@ -99,7 +99,9 @@ folders around it.
 
 `Mod` is Command on macOS and iPadOS and Control elsewhere. In a window 75 rem
 (1,200 px at the default text size) or wider, both panes dock beside the
-writing region. From 60 to 75 rem the assistant opens over the writing region,
+writing region, each growing into the room the page leaves, up to 24 rem for
+the navigator and 32 rem for the assistant. From 60 to 75 rem the assistant
+opens over the writing region,
 and below 60 rem both do, so the region keeps its width on an iPad in either
 orientation. A pane over the writing region closes on `Escape`, a tap outside
 it, its toggle in the header, or a change of route. Whether each docked pane is
@@ -111,7 +113,8 @@ The header's title slot shows the open document's title, or Writer's name at
 When the service cannot be reached, the writing region says so and
 offers to try again.
 
-The assistant shows a conversation with the pair writer above a message box.
+The assistant shows a conversation with the pair writer above a message box
+that grows with its text.
 `Enter` or the Send button sends, and `Shift+Enter` starts a new line. Until
 the pair-writing agent arrives, a stub in the browser answers that the
 assistant is not connected yet, so a message sends no request. The

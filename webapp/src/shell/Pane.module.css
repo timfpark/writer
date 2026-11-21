@@ -1,6 +1,12 @@
+/*
+ * A docked pane starts at its width and takes the room the writing page
+ * leaves, up to its maximum, so no empty strip sits between the page and the
+ * pane. Its large grow factor gives it that room before the writing region,
+ * which takes the rest once both panes reach their maximum. The header's
+ * columns in Header.module.css repeat these sizes.
+ */
 .docked {
   display: flex;
-  flex: none;
   flex-direction: column;
   min-block-size: 0;
   overflow: auto;
@@ -11,11 +17,21 @@
   display: none;
 }
 
-.navigator {
+.docked.navigator {
+  flex: 1000 0 var(--navigator-width);
+  max-inline-size: var(--navigator-max-width);
+}
+
+.docked.assistant {
+  flex: 1000 0 var(--assistant-width);
+  max-inline-size: var(--assistant-max-width);
+}
+
+.drawer.navigator {
   inline-size: var(--navigator-width);
 }
 
-.assistant {
+.drawer.assistant {
   inline-size: var(--assistant-width);
 }
 

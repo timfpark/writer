@@ -36,7 +36,11 @@ export function Header({ navigator, assistant }: HeaderProps) {
       <div className={styles.start}>
         <PaneToggle pane={navigator} label="Navigator" icon={PanelLeft} />
       </div>
-      <DocumentTitle />
+      <div className={styles.columns}>
+        <div className={styles.startPane} />
+        <DocumentTitle />
+        <div className={styles.endPane} />
+      </div>
       <div className={styles.end}>
         <PaneToggle pane={assistant} label="Assistant" icon={PanelRight} />
         <ProfileMenu />

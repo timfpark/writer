@@ -51,9 +51,11 @@ navigator's tree, a failure no supported browser shares.
 
 Amended on 2026-11-21 by backlog items 25 and 33. They add the
 `--color-success` and `--color-success-surface` tokens for the header's Saved
-badge, with their contrast pair, and layout tokens shared by the header and
-the writing page. The header's title now starts where the writing page's text
-starts.
+badge, with their contrast pair, and layout tokens shared by the header, the
+side panes, and the writing page. `--writing-measure` is written in rem, the
+same 36 em of the writing size, so every element measures the page alike.
+Docked panes grow from their widths into the room the page leaves, up to a
+maximum, and the header's title starts where the page's text starts.
 
 ## Decision summary
 
@@ -388,14 +390,14 @@ Tokens come in two layers. Primitive tokens name raw values, such as
 name roles, such as `--color-page` and `--color-ink`, and are the only color
 tokens components use. Other tokens:
 
-| Group            | Tokens                                                                                                                                                               |
-|------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Spacing          | `--space-1`, `-2`, `-3`, `-4`, `-6`, `-8`, `-12`, and `-16`: 0.25, 0.5, 0.75, 1, 1.5, 2, 3, and 4 rem                                                                |
-| Interface type   | `--text-sm` 0.8125 rem, `--text-md` 0.875 rem (the default), `--text-lg` 1 rem, `--text-xl` 1.25 rem; weights 400, 500, and 600                                      |
-| Writing type     | `--writing-size` 1.25 rem, `--writing-leading` 1.6, `--writing-measure` 36 em (about 70 characters); headings 2, 1.5, and 1.25 rem at weight 600                     |
-| Families         | `--font-interface`: Inter, then `system-ui`; `--font-writing`: Newsreader, then Georgia; `--font-mono`: `ui-monospace` and system faces, downloaded from nowhere     |
-| Shape and motion | `--radius-sm` 4 px, `--radius-md` 6 px, `--duration-fast` 150 ms, set to 0 under `prefers-reduced-motion`                                                            |
-| Layout           | `--navigator-width` 16 rem, `--assistant-width` 18 rem, `--control-size` 2 rem (2.75 rem for coarse pointers), `--page-inset` `--space-8` (`--space-6` below 60 rem) |
+| Group            | Tokens                                                                                                                                                                                                                                                                                                |
+|------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Spacing          | `--space-1`, `-2`, `-3`, `-4`, `-6`, `-8`, `-12`, and `-16`: 0.25, 0.5, 0.75, 1, 1.5, 2, 3, and 4 rem                                                                                                                                                                                                 |
+| Interface type   | `--text-sm` 0.8125 rem, `--text-md` 0.875 rem (the default), `--text-lg` 1 rem, `--text-xl` 1.25 rem; weights 400, 500, and 600                                                                                                                                                                       |
+| Writing type     | `--writing-size` 1.25 rem, `--writing-leading` 1.6, `--writing-measure` 36 em of `--writing-size` (about 70 characters), written as `calc(36 * var(--writing-size))`; headings 2, 1.5, and 1.25 rem at weight 600                                                                                     |
+| Families         | `--font-interface`: Inter, then `system-ui`; `--font-writing`: Newsreader, then Georgia; `--font-mono`: `ui-monospace` and system faces, downloaded from nowhere                                                                                                                                      |
+| Shape and motion | `--radius-sm` 4 px, `--radius-md` 6 px, `--duration-fast` 150 ms, set to 0 under `prefers-reduced-motion`                                                                                                                                                                                             |
+| Layout           | `--navigator-width` 16 rem growing to `--navigator-max-width` 24 rem, `--assistant-width` 18 rem growing to `--assistant-max-width` 32 rem, `--control-size` 2 rem (2.75 rem for coarse pointers), `--page-inset` `--space-8` (`--space-6` below 60 rem), `--page-width` the measure plus both insets |
 
 Sizes are in `rem`, so a writer's browser font size scales the whole
 interface. Backlogs 20 and 23 may refine values within these structures;
@@ -503,18 +505,18 @@ or decorative borders, and motion is limited to state changes of
 `--duration-fast`. The prototype established these starting values, which
 backlogs 20, 22, and 23 may tune within the tokens:
 
-| Element            | Starting treatment                                                                                                                                                |
-|--------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Header             | One row padded `--space-2` by `--space-4`, separated from the regions below by a single 1 px `--color-border` line; the title starts where the page's text starts |
-| Side panes         | 16 rem navigator and 18 rem assistant on `--color-chrome`, the header's color, with no divider of their own                                                       |
-| Writing page       | A sheet on `--color-page`, centered at `--writing-measure`, padded `--space-12` by `--space-8`, with no border or shadow; it stands out by lightness alone        |
-| Page headings      | Newsreader at 2 rem with line height 1.2, its optical size following the font size                                                                                |
-| Interface text     | Inter at `--text-md` with line height 1.4; secondary text in `--color-text-muted`                                                                                 |
-| Tree rows          | At least 1.75 rem tall with a 4 px radius, indented 1 rem per level, with 16 px folder and document icons                                                         |
-| Row controls       | 24 px drag handle and chevron with 14 px icons; the chevron turns 90 degrees over `--duration-fast` when a folder expands                                         |
-| Row states         | The open document tinted `--color-current` with no border, focus shown by a 2 px `--color-accent` outline inset 2 px, a dragged row at half opacity               |
-| Menus and popovers | `--color-chrome-raised` with a 1 px `--color-border` edge and a 6 px radius; the focused item tinted `--color-current`                                            |
-| Icons              | Lucide's default 2 px stroke in `currentColor`, 16 to 18 px                                                                                                       |
+| Element            | Starting treatment                                                                                                                                                              |
+|--------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Header             | One row padded `--space-2` by `--space-4`, separated from the regions below by a single 1 px `--color-border` line; the title starts where the page's text starts               |
+| Side panes         | 16 rem navigator and 18 rem assistant on `--color-chrome`, the header's color, with no divider of their own; docked, each grows into the room the page leaves, to 24 and 32 rem |
+| Writing page       | A sheet on `--color-page`, centered at `--writing-measure`, padded `--space-12` by `--space-8`, with no border or shadow; it stands out by lightness alone                      |
+| Page headings      | Newsreader at 2 rem with line height 1.2, its optical size following the font size                                                                                              |
+| Interface text     | Inter at `--text-md` with line height 1.4; secondary text in `--color-text-muted`                                                                                               |
+| Tree rows          | At least 1.75 rem tall with a 4 px radius, indented 1 rem per level, with 16 px folder and document icons                                                                       |
+| Row controls       | 24 px drag handle and chevron with 14 px icons; the chevron turns 90 degrees over `--duration-fast` when a folder expands                                                       |
+| Row states         | The open document tinted `--color-current` with no border, focus shown by a 2 px `--color-accent` outline inset 2 px, a dragged row at half opacity                             |
+| Menus and popovers | `--color-chrome-raised` with a 1 px `--color-border` edge and a 6 px radius; the focused item tinted `--color-current`                                                          |
+| Icons              | Lucide's default 2 px stroke in `currentColor`, 16 to 18 px                                                                                                                     |
 
 ### Responsive layout and touch
 

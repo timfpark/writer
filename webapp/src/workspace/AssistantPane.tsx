@@ -1,5 +1,5 @@
 import { ArrowUp } from "lucide-react";
-import { useEffect, useRef, type KeyboardEvent } from "react";
+import { useEffect, useLayoutEffect, useRef, type KeyboardEvent } from "react";
 import { Button, Form, TextArea, TextField } from "react-aria-components";
 import controls from "../shell/controls.module.css";
 import styles from "./AssistantPane.module.css";
@@ -15,12 +15,23 @@ export function AssistantPane({
 }) {
   const { messages, draft, setDraft, send } = conversation;
   const transcriptRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const transcript = transcriptRef.current;
     if (!transcript || messages.length === 0) return;
     transcript.scrollTop = transcript.scrollHeight;
   }, [messages]);
+
+  // The box grows with its text up to its maximum height, then scrolls, and
+  // returns to its starting height once the message is sent. CSS
+  // field-sizing would do this, but Safari 16.4 lacks it.
+  useLayoutEffect(() => {
+    const input = inputRef.current;
+    if (!input) return;
+    input.style.blockSize = "";
+    if (draft) input.style.blockSize = `${input.scrollHeight}px`;
+  }, [draft]);
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     // An input method may use Enter to confirm composed text.
@@ -72,20 +83,23 @@ export function AssistantPane({
           onChange={setDraft}
         >
           <TextArea
+            ref={inputRef}
             className={styles.input}
-            rows={3}
-            placeholder="Message the assistant"
+            rows={2}
+            placeholder="Ask your pair writer"
             onKeyDown={onKeyDown}
           />
         </TextField>
-        <Button
-          type="submit"
-          className={`${controls.iconButton} ${styles.send}`}
-          aria-label="Send"
-          isDisabled={!draft.trim()}
-        >
-          <ArrowUp aria-hidden size={18} />
-        </Button>
+        <div className={styles.actions}>
+          <Button
+            type="submit"
+            className={`${controls.iconButton} ${styles.send}`}
+            aria-label="Send"
+            isDisabled={!draft.trim()}
+          >
+            <ArrowUp aria-hidden size={16} strokeWidth={2.5} />
+          </Button>
+        </div>
       </Form>
     </div>
   );
