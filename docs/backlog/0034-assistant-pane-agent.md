@@ -22,10 +22,12 @@ Backlog 25 built the assistant pane around the `Assistant` interface in
 stub that never leaves the browser.
 [Backlog 12](./0012-first-pair-writing-agent.md) adds the conversation
 endpoint and a fake provider for tests. The
-[agent ADR](./0010-agent-architecture-adr.md) decides what context a message
-carries and what the pane shows when no provider is configured. The
-[conversations ADR](./0037-agent-conversations-adr.md) decides whether
-conversations persist and how writers move between them.
+[experience ADR](./0038-pair-writing-experience-adr.md) decides what the pane
+shows, including its no-provider and failure states and how writers move
+between conversations. The [agent ADR](./0010-agent-architecture-adr.md)
+decides what context a message carries, and the
+[conversations ADR](./0037-agent-conversations-adr.md) decides how
+conversations persist.
 [ADR 0003](../adrs/0003-webapp-architecture.md)
 consumes streamed results over SSE,
 [ADR 0007](../adrs/0007-webapp-interface.md) sets the interface foundation,
@@ -40,9 +42,10 @@ real service.
 * Show a reply as it streams in, keep the message box usable meanwhile, and
   let the writer stop a reply.
 * Show distinct states when no provider is configured, when a reply fails,
-  with a way to retry, and when no document is open.
+  with a way to retry, and when no document is open, as the experience ADR
+  describes them.
 * Keep the conversation across reloads, and show past conversations, as the
-  conversations ADR decides.
+  experience and conversations ADRs decide.
 * Announce new replies to assistive technology without moving focus, and keep
   every action operable from the keyboard.
 * Update the assistant browser tests to run against a real service using the

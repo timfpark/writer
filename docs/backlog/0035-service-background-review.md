@@ -18,9 +18,12 @@ not think to ask for.
 
 ## Context
 
-The [agent ADR](./0010-agent-architecture-adr.md) defines the kinds of
-finding, how they anchor to passages, what triggers a review, how reviews
-skip unchanged text, how cost is bounded, and how findings reach the webapp.
+The [experience ADR](./0038-pair-writing-experience-adr.md) defines the kinds
+of finding that ship first, from suggestions, questions, and disconnects,
+and the targets for review frequency and cost. The
+[agent ADR](./0010-agent-architecture-adr.md) decides how findings anchor to
+passages, how reviews start, skip unchanged text, and stay within those
+targets, and how findings reach the webapp.
 The [conversations ADR](./0037-agent-conversations-adr.md) decides whether
 each review is stored as a conversation of its own and how it points to the
 version of the text it read.
@@ -32,31 +35,33 @@ same pull request.
 
 ## Scope
 
-* Add the background review prompts to `service/prompts/`.
-* Add synthetic evaluation cases for each kind of finding: suggestions
-  grounded in the passage, questions that open a direction the text has not
-  taken, and disconnects between passages. Include coherent documents that
-  should produce no disconnect, so the cases catch false alarms as well as
-  misses.
+* Add the background review prompts to `service/prompts/`, starting from the
+  experience ADR's trial prompts.
+* Add synthetic evaluation cases for each kind of finding the experience ADR
+  ships, such as suggestions grounded in the passage, questions that open a
+  direction the text has not taken, and disconnects between passages.
+  Include coherent documents that should produce no finding of a kind, so
+  the cases catch false alarms as well as misses.
 * Add the review endpoint or stream the agent ADR decides, returning findings
   with their kind, text, and passage anchors, and regenerate
   `service/openapi.json`.
-* Enforce the ADR's limits in the service: skip text already reviewed, and
-  cap reviews per document and per period.
+* Enforce the experience ADR's frequency and cost targets in the service as
+  the agent ADR decides: skip text already reviewed, and cap reviews per
+  document and per period.
 * Record each review and its findings as the conversations ADR decides,
   pointing to the version of the text it read.
-* Record dismissed findings as the ADR decides so that they do not return for
-  unchanged text.
-* Extend the fake provider to return findings of each kind.
+* Record dismissed findings as the experience ADR decides so that they do
+  not return for unchanged text.
+* Extend the fake provider to return findings of each shipped kind.
 * Extend the `service/README.md` walkthrough to review a synthetic document.
 
 ## Acceptance criteria
 
-* [ ] Following the walkthrough with provider settings returns findings for a
-  synthetic document written to contain a weak passage, an open thread, and
-  a disconnect, and each anchor resolves to the passage it names.
+* [ ] Following the walkthrough with provider settings returns findings of
+  each shipped kind for a synthetic document written to contain them, and
+  each anchor resolves to the passage it names.
 * [ ] The evaluation cases run as the agent ADR decides and include coherent
-  documents that must produce no disconnect.
+  documents that must produce no finding of a kind.
 * [ ] Reviewing unchanged text again makes no model call, and a test proves
   it with the fake provider.
 * [ ] No document or finding text appears in a log line or error response,
