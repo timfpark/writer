@@ -23,8 +23,10 @@ stub that never leaves the browser.
 [Backlog 12](./0012-first-pair-writing-agent.md) adds the conversation
 endpoint and a fake provider for tests. The
 [agent ADR](./0010-agent-architecture-adr.md) decides what context a message
-carries, where the conversation lives, and what the pane shows when no
-provider is configured. [ADR 0003](../adrs/0003-webapp-architecture.md)
+carries and what the pane shows when no provider is configured. The
+[conversations ADR](./0037-agent-conversations-adr.md) decides whether
+conversations persist and how writers move between them.
+[ADR 0003](../adrs/0003-webapp-architecture.md)
 consumes streamed results over SSE,
 [ADR 0007](../adrs/0007-webapp-interface.md) sets the interface foundation,
 and [ADR 0009](../adrs/0009-browser-tests.md) runs browser tests against a
@@ -39,7 +41,8 @@ real service.
   let the writer stop a reply.
 * Show distinct states when no provider is configured, when a reply fails,
   with a way to retry, and when no document is open.
-* Keep or persist the conversation across reloads as the agent ADR decides.
+* Keep the conversation across reloads, and show past conversations, as the
+  conversations ADR decides.
 * Announce new replies to assistive technology without moving focus, and keep
   every action operable from the keyboard.
 * Update the assistant browser tests to run against a real service using the

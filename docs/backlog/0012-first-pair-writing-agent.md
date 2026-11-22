@@ -25,8 +25,11 @@ ADR 0001 places agent prompts in `service/prompts/` and evaluation cases in
 this story rather than creating them empty. The agent ADR from
 [backlog 10](./0010-agent-architecture-adr.md) chooses the framework, model
 provider, prompt loading, and evaluation running. It also decides what
-context a conversation request carries, where the conversation lives, and how
-tests run without a model provider.
+context a conversation request carries and how tests run without a model
+provider. The conversations ADR from
+[backlog 37](./0037-agent-conversations-adr.md) decides whether the service
+stores conversations, how they point to the text they discuss, and the
+resources that expose them.
 [ADR 0002](../adrs/0002-service-architecture.md) sets the crate rules, the
 contract freshness test, and SSE for streamed results.
 [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint's path, field
@@ -49,9 +52,11 @@ the agent ADR, amend it in the same pull request.
   and other ideas to explore. Run them the way the agent ADR decides.
 * Add the fake provider the agent ADR chooses for tests that run without a
   model provider.
-* Add one conversation endpoint that accepts the conversation and the
-  document context the agent ADR decides, and returns the reply, streamed or
-  whole as the ADR decides. Regenerate `service/openapi.json`.
+* Add the conversation endpoints the conversations ADR defines, which take
+  the writer's message with the document context the agent ADR decides and
+  return the reply, streamed or whole as the agent ADR decides. Store
+  conversations as the conversations ADR decides, and regenerate
+  `service/openapi.json`.
 * Start the service without provider settings, and answer conversation
   requests then with the problem details response the agent ADR names.
 * Add the provider settings to `service/.env.example` with placeholders only.
@@ -78,3 +83,4 @@ the agent ADR, amend it in the same pull request.
 ## Prerequisites
 
 * [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)
+* [Record the agent conversations ADR](./0037-agent-conversations-adr.md)

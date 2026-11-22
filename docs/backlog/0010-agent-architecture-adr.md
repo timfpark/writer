@@ -111,8 +111,10 @@ what this ADR decides.
   document, the selection, and whether other documents in the folder or
   workspace are included, since a disconnect can span documents. Decide how
   the service fits long documents into the model's context window.
-* Decide whether the conversation stays in the browser and travels with each
-  request, or is held by the service, and whether it survives a reload.
+* Leave to [backlog 37](./0037-agent-conversations-adr.md) how
+  conversations are kept, tied to versions of the text, shown as separate
+  chats, and revived or audited, and agree with it on what a request
+  carries.
 * Define the kinds of finding background review produces, at least
   suggestions, questions, and disconnects, and the fields each one carries.
 * Decide how a finding names the passages it concerns, how those anchors
@@ -125,10 +127,10 @@ what this ADR decides.
 * Decide how findings reach the webapp under
   [ADR 0004](../adrs/0004-api-conventions.md): returned per request, polled,
   or streamed over SSE.
-* Decide where findings appear: in the conversation, so the writer can answer
-  the agent's questions, or in a separate list; how a writer dismisses one
-  without it returning; and how new findings announce themselves without
-  interrupting typing or moving focus.
+* Decide how a writer dismisses a finding without it returning, and how new
+  findings announce themselves without interrupting typing or moving focus.
+  Backlog 37 decides whether findings appear as conversations or in a
+  separate list.
 * Decide how the writer turns background review on and off and its default,
   given that it sends text to a model provider without a request from the
   writer each time.
@@ -154,8 +156,8 @@ what this ADR decides.
   provider and client, and the alternatives weighed against them.
 * [ ] The ADR states how prompts load and how evaluations run, and confirms
   `tools/check` needs no credentials or network access to model providers.
-* [ ] The ADR defines both modes, the context each request carries, where the
-  conversation lives, the kinds of finding and how they anchor to passages,
+* [ ] The ADR defines both modes, the context each request carries, the
+  kinds of finding and how they anchor to passages,
   what triggers background review and how its cost is bounded, and how the
   writer turns it on and off.
 * [ ] ADR 0008's follow-up decision on passages and suggestions links to the

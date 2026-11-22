@@ -21,6 +21,9 @@ not think to ask for.
 The [agent ADR](./0010-agent-architecture-adr.md) defines the kinds of
 finding, how they anchor to passages, what triggers a review, how reviews
 skip unchanged text, how cost is bounded, and how findings reach the webapp.
+The [conversations ADR](./0037-agent-conversations-adr.md) decides whether
+each review is stored as a conversation of its own and how it points to the
+version of the text it read.
 [Backlog 12](./0012-first-pair-writing-agent.md) builds the agent crate,
 `service/prompts/`, `service/evals/`, and the fake provider this story
 extends. [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint
@@ -40,6 +43,8 @@ same pull request.
   `service/openapi.json`.
 * Enforce the ADR's limits in the service: skip text already reviewed, and
   cap reviews per document and per period.
+* Record each review and its findings as the conversations ADR decides,
+  pointing to the version of the text it read.
 * Record dismissed findings as the ADR decides so that they do not return for
   unchanged text.
 * Extend the fake provider to return findings of each kind.

@@ -37,7 +37,8 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | #  | Work item                                                                                | Subsystems          | Outcome                                                                                | Prerequisite |
 |----|------------------------------------------------------------------------------------------|---------------------|----------------------------------------------------------------------------------------|--------------|
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)       | `service`, `webapp` | An accepted ADR fixes where the agent runs, its build, and both of its modes.          | None         |
-| 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md) | `service`           | The service answers the writer about the open document, backed by prompts and evals.   | 10           |
+| 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                  | `service`, `webapp` | An accepted ADR fixes how conversations are kept, versioned, shown, and audited.       | None         |
+| 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md) | `service`           | The service answers the writer about the open document, backed by prompts and evals.   | 10, 37       |
 | 34 | [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)          | `webapp`            | The assistant pane streams the pair writer's answers about the open document.          | 12           |
 | 35 | [Review documents in the background in the service](./0035-service-background-review.md) | `service`           | The service returns suggestions, questions, and disconnects anchored to passages.      | 12           |
 | 36 | [Show background findings in the webapp](./0036-background-findings-view.md)             | `webapp`            | Findings appear beside the text while writing, linked to their passages.               | 34, 35       |
@@ -82,11 +83,12 @@ panes, a shortcut reference, and keyboard-only browser tests.
 The pair-writing agent follows the workspace. It answers the writer in the
 assistant pane and reviews their text in the background, offering
 suggestions, questions, and disconnects between passages. Item 10 records the
-agent decision for both modes before item 12 creates `service/prompts/` and
-`service/evals/` with the conversation endpoint. Item 34 connects the
-assistant pane to that endpoint, so writers can use the agent for the first
-time. Item 35 adds background review to the service, and item 36 shows its
-findings beside the text.
+agent decision for both modes, and item 37 decides how its conversations are
+kept, tied to versions of the text, and shown as separate chats. Item 12 then
+creates `service/prompts/` and `service/evals/` with the conversation
+endpoint. Item 34 connects the assistant pane to that endpoint, so writers
+can use the agent for the first time. Item 35 adds background review to the
+service, and item 36 shows its findings beside the text.
 
 Change control, the later release the
 [README](../../README.md#product-direction) promises, follows. Item 27

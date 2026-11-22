@@ -22,8 +22,10 @@ they concern.
 to passages, and [backlog 34](./0034-assistant-pane-agent.md) connects the
 assistant pane to the service. The
 [agent ADR](./0010-agent-architecture-adr.md) decides what triggers a
-review, where findings appear, how they are dismissed, and how the writer
-turns background review on and off.
+review, how findings are dismissed, and how the writer turns background
+review on and off. The
+[conversations ADR](./0037-agent-conversations-adr.md) decides whether
+findings appear as conversations of their own or in a separate list.
 [ADR 0008](../adrs/0008-editor.md) sets the editor that highlights passages,
 and [responsiveness.spec.ts](../../webapp/e2e/responsiveness.spec.ts) guards
 typing latency, which a review must never degrade.
@@ -33,8 +35,8 @@ typing latency, which a review must never degrade.
 * Regenerate the webapp's API client from the updated contract.
 * Request reviews on the trigger the agent ADR decides, never while the
   writer is typing, and cancel a review whose text has since changed.
-* Show findings where the ADR decides, marked by kind and distinct from
-  replies, and let the writer answer a question from the agent.
+* Show findings where the conversations ADR decides, marked by kind and
+  distinct from replies, and let the writer answer a question from the agent.
 * Highlight a finding's passage in the editor and scroll to it when the
   writer selects the finding, and mark or remove a finding whose passage has
   changed.

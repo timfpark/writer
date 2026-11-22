@@ -66,6 +66,9 @@ happen, not only on how they are stored.
   diffs.
 * Decide whether to follow items renamed or moved outside Writer, which
   otherwise restart their history under a new identifier.
+* Reconcile with the [agent conversations ADR](./0037-agent-conversations-adr.md)
+  on whether agent conversations point to commits, to automatic snapshots,
+  or to versions of the text that history does not otherwise keep.
 * Amend ADR 0005 and ADR 0006 where the decision departs from them, and add
   the ADR to the index with `service` and `webapp` in its `subsystems` field.
 
