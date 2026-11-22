@@ -1,4 +1,5 @@
 import { defineConfig, devices } from "@playwright/test";
+import { inCI } from "./e2e/environment.js";
 import { servicePort, webappPort } from "./e2e/ports";
 
 const baseURL = `http://127.0.0.1:${webappPort}`;
@@ -16,6 +17,9 @@ const iPadPortrait = {
 export default defineConfig({
   testDir: "e2e",
   outputDir: "test-results",
+  // Shared CI runners vary in speed from run to run, and the longest iPad
+  // tests already take most of Playwright's 30 s default there.
+  timeout: inCI ? 60_000 : 30_000,
   forbidOnly: true,
   fullyParallel: true,
   retries: 0,

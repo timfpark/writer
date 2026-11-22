@@ -323,7 +323,8 @@ in a fifth project, `responsiveness`, in desktop Chromium after the others
 finish, because its timings need an otherwise idle machine and throttling
 needs the Chrome DevTools Protocol. In CI, where `CI` is set and runners are
 no particular hardware, it runs unthrottled against the same targets and
-ADR 0008's unthrottled 33 ms for keystrokes. To run one
+ADR 0008's unthrottled 33 ms for keystrokes. Each test may take 30 seconds,
+or 60 in CI, whose runners vary in speed from run to run. To run one
 project, one file, or tests by title, pass Playwright's options after `--`:
 
 ```bash
