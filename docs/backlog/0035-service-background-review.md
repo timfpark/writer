@@ -1,0 +1,64 @@
+---
+title: Review documents in the background in the service
+description: Add background review that reads a document and returns suggestions, questions, and disconnects anchored to the passages they concern.
+author: Tim Park
+ms.date: 2026-11-22
+ms.topic: reference
+subsystems:
+  - service
+estimated_reading_time: 2
+---
+
+## Story
+
+As a writer, I want the pair writer to read my text while I work and come
+back with suggestions to improve it, questions that open other directions,
+and places where passages do not connect cleanly so that I get help I did
+not think to ask for.
+
+## Context
+
+The [agent ADR](./0010-agent-architecture-adr.md) defines the kinds of
+finding, how they anchor to passages, what triggers a review, how reviews
+skip unchanged text, how cost is bounded, and how findings reach the webapp.
+[Backlog 12](./0012-first-pair-writing-agent.md) builds the agent crate,
+`service/prompts/`, `service/evals/`, and the fake provider this story
+extends. [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint
+conventions. If building reveals a flaw in the agent ADR, amend it in the
+same pull request.
+
+## Scope
+
+* Add the background review prompts to `service/prompts/`.
+* Add synthetic evaluation cases for each kind of finding: suggestions
+  grounded in the passage, questions that open a direction the text has not
+  taken, and disconnects between passages. Include coherent documents that
+  should produce no disconnect, so the cases catch false alarms as well as
+  misses.
+* Add the review endpoint or stream the agent ADR decides, returning findings
+  with their kind, text, and passage anchors, and regenerate
+  `service/openapi.json`.
+* Enforce the ADR's limits in the service: skip text already reviewed, and
+  cap reviews per document and per period.
+* Record dismissed findings as the ADR decides so that they do not return for
+  unchanged text.
+* Extend the fake provider to return findings of each kind.
+* Extend the `service/README.md` walkthrough to review a synthetic document.
+
+## Acceptance criteria
+
+* [ ] Following the walkthrough with provider settings returns findings for a
+  synthetic document written to contain a weak passage, an open thread, and
+  a disconnect, and each anchor resolves to the passage it names.
+* [ ] The evaluation cases run as the agent ADR decides and include coherent
+  documents that must produce no disconnect.
+* [ ] Reviewing unchanged text again makes no model call, and a test proves
+  it with the fake provider.
+* [ ] No document or finding text appears in a log line or error response,
+  and a test with a synthetic marker proves it.
+* [ ] `tools/check` exits 0 without provider credentials or network access to
+  model providers.
+
+## Prerequisites
+
+* [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md)

@@ -34,15 +34,18 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 ## Backlog
 
-| #  | Work item                                                                             | Subsystems             | Outcome                                                                                | Prerequisite   |
-|----|---------------------------------------------------------------------------------------|------------------------|----------------------------------------------------------------------------------------|----------------|
-| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)    | `service`              | An accepted ADR fixes the agent framework, provider, prompts, and evals.               | None           |
-| 12 | [Deliver the first pair-writing agent capability](./0012-first-pair-writing-agent.md) | `service`              | The service returns pair-writer questions backed by prompts and evals.                 | 10             |
-| 27 | [Record the change control ADR](./0027-change-control-adr.md)                         | `service`, `webapp`    | An accepted ADR fixes the commit model, commit timing, restore, and progress measures. | None           |
-| 28 | [Build the SQLite backend and copy command](./0028-sqlite-backend.md)                 | `service`              | The workspace persists in SQLite and copies between backends intact.                   | None           |
-| 29 | [Record and restore commits in the service](./0029-service-history.md)                | `service`              | The contract records commits, reads earlier versions, and restores them.               | 27             |
-| 30 | [Browse, compare, and restore history in the webapp](./0030-history-view.md)          | `webapp`               | Writers commit, browse history, compare versions, and roll back.                       | 29             |
-| 31 | [Show writing progress over time](./0031-writing-progress.md)                         | `service`, `webapp`    | Writers see words added and removed per document and folder over time.                 | 29, 30         |
+| #  | Work item                                                                                | Subsystems          | Outcome                                                                                | Prerequisite |
+|----|------------------------------------------------------------------------------------------|---------------------|----------------------------------------------------------------------------------------|--------------|
+| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)       | `service`, `webapp` | An accepted ADR fixes the agent's build, conversation, and background review.          | None         |
+| 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md) | `service`           | The service answers the writer about the open document, backed by prompts and evals.   | 10           |
+| 34 | [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)          | `webapp`            | The assistant pane streams the pair writer's answers about the open document.          | 12           |
+| 35 | [Review documents in the background in the service](./0035-service-background-review.md) | `service`           | The service returns suggestions, questions, and disconnects anchored to passages.      | 12           |
+| 36 | [Show background findings in the webapp](./0036-background-findings-view.md)             | `webapp`            | Findings appear beside the text while writing, linked to their passages.               | 34, 35       |
+| 27 | [Record the change control ADR](./0027-change-control-adr.md)                            | `service`, `webapp` | An accepted ADR fixes the commit model, commit timing, restore, and progress measures. | None         |
+| 28 | [Build the SQLite backend and copy command](./0028-sqlite-backend.md)                    | `service`           | The workspace persists in SQLite and copies between backends intact.                   | None         |
+| 29 | [Record and restore commits in the service](./0029-service-history.md)                   | `service`           | The contract records commits, reads earlier versions, and restores them.               | 27           |
+| 30 | [Browse, compare, and restore history in the webapp](./0030-history-view.md)             | `webapp`            | Writers commit, browse history, compare versions, and roll back.                       | 29           |
+| 31 | [Show writing progress over time](./0031-writing-progress.md)                            | `service`, `webapp` | Writers see words added and removed per document and folder over time.                 | 29, 30       |
 
 [ADR 0002](../adrs/0002-service-architecture.md),
 [ADR 0003](../adrs/0003-webapp-architecture.md), and
@@ -76,8 +79,14 @@ without a gap, and the markers of formatted text show at the caret. Item 26
 completed it with the navigator's remaining shortcuts, `F6` between the
 panes, a shortcut reference, and keyboard-only browser tests.
 
-The pair-writing agent follows the workspace. Item 10 records the agent
-decision before item 12 creates `service/prompts/` and `service/evals/`.
+The pair-writing agent follows the workspace. It answers the writer in the
+assistant pane and reviews their text in the background, offering
+suggestions, questions, and disconnects between passages. Item 10 records the
+agent decision for both modes before item 12 creates `service/prompts/` and
+`service/evals/` with the conversation endpoint. Item 34 connects the
+assistant pane to that endpoint, so writers can use the agent for the first
+time. Item 35 adds background review to the service, and item 36 shows its
+findings beside the text.
 
 Change control, the later release the
 [README](../../README.md#product-direction) promises, follows. Item 27
