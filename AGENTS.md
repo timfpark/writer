@@ -62,6 +62,11 @@ Writer is a local-first writing workspace and AI pair writer (see
   the standard library only (or `uv` via
   `https://packagefeedproxy.microsoft.io/pypi/simple/` if ever required).
   Cargo uses crates.io directly; no registry proxy is required.
+* Keep the `overrides` entry in [tools/package.json](./tools/package.json)
+  that pins `katex`, which `markdownlint` reaches through
+  `micromark-extension-math`, to a release outside advisory
+  GHSA-238p-pmpm-9mq7; remove it once `markdownlint` accepts KaTeX 0.18.2 or
+  later.
 * Record consequential architectural choices in `docs/adrs/` and maintain the
   ADR and backlog indexes as [docs/adrs/README.md](./docs/adrs/README.md) and
   [docs/backlog/README.md](./docs/backlog/README.md) specify.
