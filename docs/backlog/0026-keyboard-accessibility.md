@@ -31,7 +31,9 @@ accessibility checks.
   create and move actions.
 * Add shortcuts that move focus between the navigator, the writing surface,
   and the assistant, and return focus sensibly when a pane collapses.
-* Add a shortcut reference reachable from the header.
+* Add a shortcut reference reachable from the header, including the writing
+  surface's `Enter`, `Shift+Enter`, and marker keys that `webapp/README.md`
+  lists.
 * Extend browser tests to keyboard-only paths, with no serious automated
   accessibility violations.
 * Record a manual screen reader check in `webapp/README.md`.

@@ -126,19 +126,29 @@ reopens, and a reload clears it.
 The writing region edits the open document in Newsreader on a centered page,
 hiding the Markdown it is stored as. Typing Markdown, such as `##` and a space or
 `**bold**`, formats as it goes, and `Backspace` straight after undoes the
-formatting. Markdown outside the
+formatting. While the caret is in or beside formatted text, the Markdown
+markers around that text, such as `*`, `**`, or a link's `[` and
+`](address)`, show in a muted color and hide again when the caret leaves. Each
+marker has a caret stop on either side, and text typed on its inner side is
+formatted while text on its outer side is not. Formatting never continues
+onto a new line.
+Markdown outside the
 [supported subset](../docs/adrs/0008-editor.md#supported-markdown), such as a
 table or front matter, shows as source in a dashed frame and is saved exactly
 as it was.
 
-| Control                         | Effect                                                       |
-|---------------------------------|--------------------------------------------------------------|
-| The title in the header         | Edits it in place; `Enter` or leaving the field renames      |
-| `Mod+S`                         | Saves at once instead of opening the browser's save dialog   |
-| `Mod+K`                         | Adds, changes, or removes the link at the caret or selection |
-| `Mod+B`, `Mod+I`, and `Mod+E`   | Strong emphasis, emphasis, and code                          |
-| `Mod+Z`, `Mod+Shift+Z`, `Mod+Y` | Undo and redo, kept per open document until it closes        |
-| `Tab` and `Shift+Tab`           | Nest and unnest a list item; elsewhere, move focus out       |
+| Control                         | Effect                                                             |
+|---------------------------------|--------------------------------------------------------------------|
+| The title in the header         | Edits it in place; `Enter` or leaving the field renames            |
+| `Enter`                         | Starts a new line in a paragraph; twice, starts a new paragraph    |
+| `Shift+Enter`                   | Starts a new line anywhere but a heading, including in a list item |
+| `ArrowLeft` and `ArrowRight`    | Step across a shown marker, one side at a time                     |
+| `Backspace` or `Delete`         | Into a shown marker, removes that formatting and keeps the text    |
+| `Mod+S`                         | Saves at once instead of opening the browser's save dialog         |
+| `Mod+K`                         | Adds, changes, or removes the link at the caret or selection       |
+| `Mod+B`, `Mod+I`, and `Mod+E`   | Strong emphasis, emphasis, and code                                |
+| `Mod+Z`, `Mod+Shift+Z`, `Mod+Y` | Undo and redo, kept per open document until it closes              |
+| `Tab` and `Shift+Tab`           | Nest and unnest a list item; elsewhere, move focus out             |
 
 Every change saves itself a second after typing pauses, and at least every
 five seconds while it continues, and again on leaving the document, leaving
@@ -155,19 +165,19 @@ says so in a notice above the page.
 
 ### Dependencies and typefaces
 
-| Package                                                                                                                         | Purpose                                               |
-|---------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
-| `react-aria-components`                                                                                                         | Buttons, menus, popovers, overlays, and tooltips      |
-| `@tanstack/react-router`                                                                                                        | Routes and typed links                                |
-| `@tanstack/react-query`                                                                                                         | Server-state cache and retries                        |
-| `idb`                                                                                                                           | IndexedDB access for unsaved text                     |
-| `@tiptap/core`, `@tiptap/pm`, `@tiptap/react`, `@tiptap/starter-kit`, `@tiptap/extension-code`, and `@tiptap/extension-heading` | The editor, on ProseMirror                            |
-| `mdast-util-from-markdown` and the `micromark-extension-*` and `mdast-util-*` GFM and front matter extensions                   | Reading Markdown with source positions for the bridge |
-| `@types/mdast` (development)                                                                                                    | Syntax tree types                                     |
-| `lucide-react`                                                                                                                  | Icons                                                 |
-| `@fontsource-variable/newsreader` and `@fontsource-variable/inter`                                                              | The self-hosted writing and interface typefaces       |
-| `vite-css-modules` (development)                                                                                                | Typed CSS Module declarations                         |
-| `@playwright/test` and `@axe-core/playwright` (development)                                                                     | Browser tests and their accessibility checks          |
+| Package                                                                                                                                             | Purpose                                               |
+|-----------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| `react-aria-components`                                                                                                                             | Buttons, menus, popovers, overlays, and tooltips      |
+| `@tanstack/react-router`                                                                                                                            | Routes and typed links                                |
+| `@tanstack/react-query`                                                                                                                             | Server-state cache and retries                        |
+| `idb`                                                                                                                                               | IndexedDB access for unsaved text                     |
+| `@tiptap/core`, `@tiptap/pm`, `@tiptap/react`, `@tiptap/starter-kit`, and the `@tiptap/extension-*` bold, italic, code, and heading marks and nodes | The editor, on ProseMirror                            |
+| `mdast-util-from-markdown` and the `micromark-extension-*` and `mdast-util-*` GFM and front matter extensions                                       | Reading Markdown with source positions for the bridge |
+| `@types/mdast` (development)                                                                                                                        | Syntax tree types                                     |
+| `lucide-react`                                                                                                                                      | Icons                                                 |
+| `@fontsource-variable/newsreader` and `@fontsource-variable/inter`                                                                                  | The self-hosted writing and interface typefaces       |
+| `vite-css-modules` (development)                                                                                                                    | Typed CSS Module declarations                         |
+| `@playwright/test` and `@axe-core/playwright` (development)                                                                                         | Browser tests and their accessibility checks          |
 
 Writing is set in Newsreader, by Production Type, and the interface in Inter,
 by Rasmus Andersson, both under the SIL Open Font License 1.1. The build
