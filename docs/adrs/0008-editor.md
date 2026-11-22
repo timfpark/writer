@@ -520,8 +520,9 @@ input rule and shortcut, which are StarterKit's defaults. In addition:
   keyboard is never trapped.
 * Underline and strikethrough are not registered, so `Mod+U` applies no
   formatting.
-* [Backlog 26](../backlog/0026-keyboard-accessibility.md) verifies the
-  shortcuts and the focus path with a keyboard and a screen reader.
+* Backlog 26 tests the shortcuts and the focus path from the keyboard in
+  browser tests, and the webapp README's manual screen reader check covers
+  them with a screen reader.
 
 While the writing surface has focus and the caret is inside or at the edge
 of a run of emphasis, strong emphasis, a code span, or a link, the run's

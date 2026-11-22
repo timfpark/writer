@@ -7,7 +7,7 @@ description: Purpose, boundaries, operational rules, governing decisions, and ex
 
 `webapp/` is a client-rendered React 19 single-page application built with
 Vite 8: Writer's editing workspace. Today it shows the workspace shell, a
-header with the open document's editable title and save status above a
+header with the open document's editable title and save status and a keyboard shortcut reference above a
 collapsible navigator holding the workspace tree, the writing region editing
 the open document with autosave, and a collapsible assistant holding an
 in-memory conversation answered by a client-side stub. Browser tests in
@@ -71,6 +71,13 @@ against a running service. People start with
 * Keep small preferences in `localStorage` under keys starting `writer.`,
   through [preferences.ts](./src/shell/preferences.ts), falling back to the
   default when a value is missing or unreadable.
+* Match and label every keyboard shortcut through
+  [shortcuts.ts](./src/shell/shortcuts.ts), and list each one in the
+  reference in [ShortcutsDialog.tsx](./src/shell/ShortcutsDialog.tsx) and in
+  [README.md](./README.md)'s control tables. `F6` and the focus a closing
+  pane returns rely on [regions.ts](./src/shell/regions.ts): keep
+  `data-region` on each pane and the writing region, and `data-focus-target`
+  on the one control in each that takes focus.
 * Get the assistant's replies only through the `Assistant` interface in
   [conversation.ts](./src/workspace/conversation.ts), whose default is the
   client-side stub. Keep the conversation in `WorkspaceShell`, never in the

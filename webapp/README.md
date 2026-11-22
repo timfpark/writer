@@ -2,7 +2,7 @@
 title: Writer webapp
 description: How to set up, run, configure, and check the Writer webapp, a React single-page writing workspace that calls the service through a generated API client
 author: Tim Park
-ms.date: 2026-11-21
+ms.date: 2026-11-22
 ms.topic: overview
 keywords:
   - webapp
@@ -34,7 +34,7 @@ browser tests in [ADR 0009](../docs/adrs/0009-browser-tests.md).
 |--------------------------------------------------------------|-----------------------------------------------------------------------------|
 | [src/main.tsx](./src/main.tsx)                               | Startup: global styles, the query client, and the router                    |
 | [src/router.tsx](./src/router.tsx)                           | The typed route tree for `/`, `/documents/$documentId`, and not-found paths |
-| [src/shell/](./src/shell/)                                   | The header, the side panes, their shortcuts, and stored pane preferences    |
+| [src/shell/](./src/shell/)                                   | The header, the side panes, keyboard shortcuts, focus, and pane preferences |
 | [src/workspace/](./src/workspace/)                           | What the writing region and the side panes show                             |
 | [src/editor/](./src/editor/)                                 | The editor, its schema, and the link dialog, loaded as their own chunk      |
 | [src/editor/markdown/](./src/editor/markdown/)               | The Markdown bridge, its round-trip corpus, and its tests                   |
@@ -62,11 +62,21 @@ server, build, tests, and `npm run typecheck` write and Git ignores.
 
 ### The workspace
 
-| Control                           | Effect                                                                |
-|-----------------------------------|-----------------------------------------------------------------------|
-| Navigator button or `Mod+\`       | Shows or hides the navigator                                          |
-| Assistant button or `Mod+Shift+\` | Shows or hides the assistant                                          |
-| Profile button                    | Opens the profile menu for the one local writer, who needs no sign-in |
+| Control                              | Effect                                                                |
+|--------------------------------------|-----------------------------------------------------------------------|
+| Navigator button or `Mod+\`          | Shows or hides the navigator                                          |
+| Assistant button or `Mod+Shift+\`    | Shows or hides the assistant                                          |
+| `F6` and `Shift+F6`                  | Moves focus to the next or previous pane                              |
+| Keyboard shortcuts button or `Mod+/` | Lists every keyboard shortcut in the workspace                        |
+| Profile button                       | Opens the profile menu for the one local writer, who needs no sign-in |
+
+`F6` moves focus among the panes shown beside the writing page, wrapping
+around: to the tree's current row, the open document (or the writing region
+when none is open), and the message box. In a pane opened over the writing
+region, it moves focus to that pane's tree or message box. Closing a pane
+never loses focus: hiding a docked pane that holds focus moves focus to the
+document, a pane over the writing region returns focus to where it was, and
+a document opened from that pane takes focus.
 
 The navigator lists folders and documents in the service's order, indented
 one level per folder with guide lines:
@@ -76,6 +86,7 @@ one level per folder with guide lines:
 | New document or New folder in its toolbar  | Creates an item at the top level, starting in inline rename        |
 | A folder row's hover buttons or menu       | Creates a document or folder inside it                             |
 | A row's More actions button or right click | Renames, moves, deletes, or expands or collapses everything inside |
+| `Shift+F10` or the `Menu` key on a row     | Opens the same menu, focused on its first command                  |
 | Dragging a row or its drag handle          | Moves the item before or after a row, or into a folder             |
 | Move up or Move down in a row's menu       | Swaps the item with its previous or next sibling                   |
 | Move to… in a row's menu                   | Moves the item last into a folder or the top level that you choose |
@@ -84,7 +95,13 @@ one level per folder with guide lines:
 
 In the tree, the arrow keys move between rows and expand or collapse
 folders, `Home` and `End` jump to the first and last row, typing finds a
-title, and `Enter` opens a document or toggles a folder. In inline rename,
+title, and `Enter` opens a document or toggles a folder. On a document or an
+expanded folder, `ArrowRight` and `ArrowLeft` step through the row's buttons.
+`F2` renames the focused item, `Delete` deletes it, and `Alt+ArrowUp` and
+`Alt+ArrowDown` move it up or down among its siblings; on Apple keyboards
+without a `Delete` key, `Mod+Backspace` deletes, as in the Finder. The row
+menu shows each command's key. Focus stays on a moved item, and after a
+deletion it moves to the row beside the deleted one. In inline rename,
 `Enter` keeps the title and `Escape` discards it. Deleting asks first and
 says how many items a folder deletion removes. While dragging, a line shows
 where the item will land and an outlined folder shows it will go inside;
@@ -306,7 +323,8 @@ in a fifth project, `responsiveness`, in desktop Chromium after the others
 finish, because its timings need an otherwise idle machine and throttling
 needs the Chrome DevTools Protocol. In CI, where `CI` is set and runners are
 no particular hardware, it runs unthrottled against the same targets and
-ADR 0008's unthrottled 33 ms for keystrokes. To run one
+ADR 0008's unthrottled 33 ms for keystrokes. Each test may take 30 seconds,
+or 60 in CI, whose runners vary in speed from run to run. To run one
 project, one file, or tests by title, pass Playwright's options after `--`:
 
 ```bash
@@ -316,6 +334,9 @@ npm run e2e -- e2e/shell.spec.ts -g "collapses"
 
 A failed test keeps a trace in `test-results/`, which Git ignores; open it
 with `npx playwright show-trace <path to trace.zip>`.
+
+Browser tests drive the navigator, the panes, and the shortcut reference
+from the keyboard alone, and check each state they reach with axe-core.
 
 The development container carries the browsers. On a host, install the
 browsers for the locked Playwright release once, and again after it changes:
@@ -331,3 +352,36 @@ The build prints Vite's advisory warning that the JavaScript chunk exceeds
 500 KB minified; it fails nothing, and
 [ADR 0008](../docs/adrs/0008-editor.md#bundle-budget) sets the budget the
 webapp is held to.
+
+### Screen reader check
+
+Automated rules cannot hear what a screen reader announces, so check the
+workspace by hand with VoiceOver and Safari on macOS before merging a change
+to the shell, the navigator, the editor, or a dialog. With NVDA and Chrome on
+Windows at hand, repeat it there. Use a workspace of synthetic folders and
+documents, never a real manuscript.
+
+1. Open a document and turn on VoiceOver with `Cmd+F5`. In the rotor
+   (`VO+U`), the landmarks list the banner, the Navigator navigation, the
+   main region, and the Assistant complementary region.
+2. Press `F6` repeatedly. VoiceOver reads the open document's row in the
+   tree with its level, position, and selected state, then the document as an
+   edit text named by its title, then the Message the assistant box.
+3. In the tree, the arrow keys read each row's title, level, and whether a
+   folder is expanded or collapsed; typing part of a title moves to that row.
+4. `F2` reads the Title field holding the old title, and after `Enter` the
+   renamed row is read again.
+5. `Shift+F10` reads the row's actions menu, and each command is read with
+   its key as its description, such as Move up with Option Up Arrow.
+6. `Delete` reads the alert dialog's question and what the deletion removes;
+   `Escape` returns to the row and reads it.
+7. `Alt+ArrowDown` moves the row, which stays focused and is read in its new
+   position.
+8. `Mod+/` reads the Keyboard shortcuts dialog, whose groups the rotor lists
+   as headings.
+9. Typing in the document reads what you type, and `Tab` outside a list
+   leaves the document for the next control.
+
+Note in the pull request which screen reader and browser you used and
+anything read wrongly, and fix it or record it in the
+[backlog](../docs/backlog/README.md).

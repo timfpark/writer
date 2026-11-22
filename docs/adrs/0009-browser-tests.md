@@ -332,8 +332,9 @@ Trade-offs and risks:
   An upgrade to one alone makes `tools/check` exit 2 until the other matches.
 * Tests share one service per run, so a test that assumed an empty workspace
   would depend on test order.
-* axe-core finds only what automated rules can; screen reader and keyboard
-  checks stay manual, as backlog 26 plans.
+* axe-core finds only what automated rules can. Backlog 26 added browser
+  tests of keyboard-only paths, and screen reader checks stay manual, as the
+  webapp README's screen reader check records.
 
 ## Revisit triggers
 

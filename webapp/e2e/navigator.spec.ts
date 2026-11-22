@@ -407,6 +407,10 @@ test("moves through the tree, folds folders, and opens a document with the keybo
   await expect(leaf).toBeFocused();
   await page.keyboard.press("Enter");
   await expectOpened(context, built.leaf);
+  // An overlaid navigator closes as the document opens, leaving focus in it.
+  if (!docked(viewport)) {
+    await expect(page.getByRole("textbox", { name: built.leaf })).toBeFocused();
+  }
 });
 
 test("creates items at the top level and in folders from the context menu", async ({
@@ -746,4 +750,140 @@ test("moves items with the row menu instead of dragging, and restores the tree w
     titles.beta,
     titles.alpha,
   ]);
+});
+
+// Moves focus down a menu or list until the named item has it.
+async function focusItem(item: Locator) {
+  await expect(async () => {
+    const focused = await item.evaluate(
+      (element) => element === document.activeElement,
+    );
+    if (!focused) await item.page().keyboard.press("ArrowDown");
+    await expect(item).toBeFocused({ timeout: 250 });
+  }).toPass();
+}
+
+test("renames, moves, creates, and deletes items with the keyboard alone", async ({
+  page,
+  viewport,
+}) => {
+  const titles = {
+    shelf: unique("Keyboard shelf"),
+    alpha: unique("Keyboard alpha"),
+    beta: unique("Keyboard beta"),
+    box: unique("Keyboard box"),
+    renamed: unique("Keyboard renamed"),
+    folder: unique("Keyboard folder"),
+  };
+  await openWorkspace(page);
+  const shelfId = await createItem(page, "folder", titles.shelf);
+  await createItem(page, "document", titles.alpha, shelfId);
+  await createItem(page, "document", titles.beta, shelfId);
+  await createItem(page, "folder", titles.box);
+  await openWorkspace(page);
+
+  // F6 reaches a docked navigator; an overlaid one opens with its shortcut
+  // and F6 then moves into its tree, once the tree has loaded.
+  if (!docked(viewport)) await page.keyboard.press("ControlOrMeta+Backslash");
+  const navigator = navigatorPane(page);
+  await expect(row(navigator, titles.shelf)).toBeVisible();
+  await page.keyboard.press("F6");
+  const rows = navigator.getByRole("row");
+  await expect(rows.first()).toBeFocused();
+
+  await page.keyboard.type(titles.shelf);
+  await expect(row(navigator, titles.shelf)).toBeFocused();
+  await page.keyboard.press("ArrowRight");
+  await page.keyboard.press("ArrowDown");
+  await expect(row(navigator, titles.alpha)).toBeFocused();
+
+  // F2 renames in place.
+  await page.keyboard.press("F2");
+  const field = navigator.getByRole("textbox", { name: "Title" });
+  await expect(field).toBeFocused();
+  await expect(field).toHaveValue(titles.alpha);
+  await page.keyboard.type(titles.renamed);
+  const renamed = page.waitForResponse(
+    (response) =>
+      response.request().method() === "PUT" &&
+      response.url().endsWith("/title"),
+  );
+  await page.keyboard.press("Enter");
+  expect((await renamed).status()).toBe(200);
+  const moved = row(navigator, titles.renamed);
+  await expect(moved).toBeFocused();
+
+  // Alt with an arrow moves the item among its siblings, keeping focus.
+  await page.keyboard.press("Alt+ArrowDown");
+  await expect(rows).toContainText([titles.shelf, titles.beta, titles.renamed]);
+  await expect(moved).toBeFocused();
+  await page.keyboard.press("Alt+ArrowUp");
+  await expect(rows).toContainText([titles.shelf, titles.renamed, titles.beta]);
+  await expect(moved).toBeFocused();
+
+  // Shift+F10 opens the row's menu at its first command; Move to… moves
+  // the item into another folder.
+  await page.keyboard.press("Shift+F10");
+  const menu = page.getByRole("menu", {
+    name: `Actions for ${titles.renamed}`,
+  });
+  await expect(menu.getByRole("menuitem").first()).toBeFocused();
+  await expectAccessible(page);
+  await focusItem(menu.getByRole("menuitem", { name: "Move to…" }));
+  await page.keyboard.press("Enter");
+  const dialog = page.getByRole("dialog", { name: `Move “${titles.renamed}”` });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Tab");
+  await expect(dialog.getByRole("option").first()).toBeFocused();
+  await page.keyboard.type(titles.box);
+  const destination = dialog.getByRole("option", { name: titles.box });
+  await expect(destination).toBeFocused();
+  // Space straight after typing would continue the search.
+  await page.keyboard.press("Enter");
+  await expect(destination).toHaveAttribute("aria-selected", "true");
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(dialog.getByRole("button", { name: "Move" })).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(dialog).toHaveCount(0);
+  await expect(moved).toHaveAttribute("aria-level", "2");
+  await expect(rows).toContainText([titles.box, titles.renamed]);
+  await expect(moved).toBeFocused();
+
+  // The menu creates inside a folder.
+  await page.keyboard.press("ArrowUp");
+  await expect(row(navigator, titles.box)).toBeFocused();
+  await page.keyboard.press("Shift+F10");
+  await focusItem(page.getByRole("menuitem", { name: "New folder" }));
+  await page.keyboard.press("Enter");
+  await nameNewItem(navigator, titles.folder);
+  const folder = row(navigator, titles.folder);
+  await expect(folder).toHaveAttribute("aria-level", "2");
+  await expect(folder).toBeFocused();
+
+  // Delete asks first; Escape keeps the item and its focus.
+  await page.keyboard.press("Delete");
+  const confirm = page.getByRole("alertdialog", {
+    name: `Delete “${titles.folder}”?`,
+  });
+  await expect(confirm).toBeVisible();
+  await expectAccessible(page);
+  await page.keyboard.press("Escape");
+  await expect(confirm).toHaveCount(0);
+  await expect(folder).toBeFocused();
+
+  // Mod+Backspace deletes too, for keyboards without a Delete key, and
+  // focus moves to a row beside the deleted one.
+  await page.keyboard.press("ControlOrMeta+Backspace");
+  await expect(confirm).toBeVisible();
+  await page.keyboard.press("Tab");
+  await page.keyboard.press("Tab");
+  await expect(confirm.getByRole("button", { name: "Delete" })).toBeFocused();
+  const deleted = page.waitForResponse(
+    (response) => response.request().method() === "DELETE",
+  );
+  await page.keyboard.press("Enter");
+  expect((await deleted).status()).toBe(204);
+  await expect(folder).toHaveCount(0);
+  await expect(navigator.locator("[role='row']:focus")).toHaveCount(1);
 });
