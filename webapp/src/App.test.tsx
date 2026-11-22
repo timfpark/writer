@@ -12,6 +12,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createQueryClient } from "./api/queries";
 import { App } from "./App";
 import { createAppRouter } from "./router";
+import { notConnectedReply } from "./workspace/conversation";
 
 const documentId = "0b6f3c9e-5d1a-4c2b-9e7f-1a2b3c4d5e6f";
 
@@ -371,6 +372,108 @@ describe("writing", () => {
     expect(fetch.mock.calls.some(([request]) => request.method === "PUT")).toBe(
       false,
     );
+  });
+});
+
+function messageBox() {
+  return screen.getByRole("textbox", { name: "Message the assistant" });
+}
+
+function transcript() {
+  return screen.getByRole("log", { name: "Conversation" });
+}
+
+describe("assistant", () => {
+  it("shows a sent message and the stub's reply without any request", async () => {
+    const fetch = stubFetch(healthyService);
+    renderApp();
+    await screen.findByText("No document is open");
+    const requests = fetch.mock.calls.length;
+
+    fireEvent.change(messageBox(), {
+      target: { value: "  Is the opening\ntoo slow? " },
+    });
+    fireEvent.keyDown(messageBox(), { key: "Enter" });
+
+    await within(transcript()).findByText(notConnectedReply);
+    const messages = within(transcript()).getAllByRole("listitem");
+    expect(messages.map((message) => message.textContent)).toEqual([
+      "YouIs the opening\ntoo slow?",
+      `Assistant${notConnectedReply}`,
+    ]);
+    expect(messageBox()).toHaveProperty("value", "");
+    expect(fetch.mock.calls.length).toBe(requests);
+  });
+
+  it("starts a new line on Shift+Enter and sends nothing blank", async () => {
+    stubFetch(healthyService);
+    renderApp();
+    await screen.findByText("No document is open");
+
+    fireEvent.change(messageBox(), { target: { value: "A first line" } });
+    fireEvent.keyDown(messageBox(), { key: "Enter", shiftKey: true });
+    expect(messageBox()).toHaveProperty("value", "A first line");
+
+    fireEvent.change(messageBox(), { target: { value: "   " } });
+    fireEvent.keyDown(messageBox(), { key: "Enter" });
+    expect(screen.getByRole("button", { name: "Send" })).toHaveProperty(
+      "disabled",
+      true,
+    );
+    expect(within(transcript()).queryAllByRole("listitem")).toHaveLength(0);
+  });
+
+  it("sends from the Send button", async () => {
+    stubFetch(healthyService);
+    renderApp();
+    await screen.findByText("No document is open");
+
+    fireEvent.change(messageBox(), { target: { value: "Name the harbor." } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    expect(
+      await within(transcript()).findByText(notConnectedReply),
+    ).toBeTruthy();
+  });
+
+  it("keeps the conversation while a docked pane collapses and expands", async () => {
+    stubFetch(healthyService);
+    renderApp();
+    await screen.findByText("No document is open");
+    fireEvent.change(messageBox(), { target: { value: "Keep this." } });
+    fireEvent.keyDown(messageBox(), { key: "Enter" });
+    await within(transcript()).findByText(notConnectedReply);
+
+    fireEvent.click(toggle("Assistant"));
+    fireEvent.click(toggle("Assistant"));
+
+    expect(within(transcript()).getByText("Keep this.")).toBeTruthy();
+    expect(within(transcript()).getByText(notConnectedReply)).toBeTruthy();
+  });
+
+  it("keeps the conversation and the draft while an overlaid pane closes", async () => {
+    stubViewport(false);
+    stubFetch(healthyService);
+    renderApp();
+    await screen.findByText("No document is open");
+
+    fireEvent.click(toggle("Assistant"));
+    const dialog = await screen.findByRole("dialog", { name: "Assistant" });
+    fireEvent.change(messageBox(), { target: { value: "Keep this." } });
+    fireEvent.keyDown(messageBox(), { key: "Enter" });
+    await within(transcript()).findByText(notConnectedReply);
+    fireEvent.change(messageBox(), { target: { value: "Half a thought" } });
+
+    fireEvent.keyDown(dialog, { key: "Escape" });
+    await waitFor(() => {
+      expect(screen.queryByRole("dialog", { name: "Assistant" })).toBeNull();
+    });
+    fireEvent.click(toggle("Assistant"));
+    await screen.findByRole("dialog", { name: "Assistant" });
+
+    expect(within(transcript()).getByText("Keep this.")).toBeTruthy();
+    expect(within(transcript()).getByText(notConnectedReply)).toBeTruthy();
+    expect(messageBox()).toHaveProperty("value", "Half a thought");
   });
 });
 

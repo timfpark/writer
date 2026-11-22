@@ -3,8 +3,9 @@ import { Outlet, useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { healthQueryOptions } from "../api/queries";
 import { useQueryFailure } from "../api/useQueryFailure";
+import { AssistantPane } from "../workspace/AssistantPane";
+import { useConversation } from "../workspace/conversation";
 import { Navigator } from "../workspace/Navigator";
-import { AssistantPlaceholder } from "../workspace/placeholders";
 import { SaveNotices } from "../workspace/SaveNotices";
 import { ServiceUnavailable } from "../workspace/ServiceUnavailable";
 import { Header } from "./Header";
@@ -23,6 +24,7 @@ export function WorkspaceShell() {
   const navigator = usePane("navigator", pathname);
   const assistant = usePane("assistant", pathname);
   const health = useQuery(healthQueryOptions);
+  const conversation = useConversation();
 
   const toggleNavigator = navigator.toggle;
   const toggleAssistant = assistant.toggle;
@@ -62,7 +64,7 @@ export function WorkspaceShell() {
           )}
         </main>
         <Pane pane={assistant} label="Assistant" landmark="aside">
-          <AssistantPlaceholder />
+          <AssistantPane conversation={conversation} />
         </Pane>
       </div>
     </div>

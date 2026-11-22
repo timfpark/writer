@@ -13,11 +13,17 @@
   padding-block-end: env(safe-area-inset-bottom);
 }
 
-/* The writing region takes every pixel the side panes do not use. */
+/*
+ * The writing region starts at the page's width, gives way to the docked
+ * panes as they grow, and takes every pixel they leave. Its gutter is
+ * reserved on both edges, so a scroll bar never moves the page off the
+ * column the header's title shares.
+ */
 .writing {
   display: flex;
-  flex: 1 1 0;
+  flex: 1 1 var(--page-width);
   flex-direction: column;
   min-inline-size: 0;
   overflow: auto;
+  scrollbar-gutter: stable both-edges;
 }

@@ -466,18 +466,70 @@ async function createItem(
   return id;
 }
 
-// Drags one row onto a point of another. The target is centered first,
-// because near the pane's edges the tree scrolls under the pointer, and other
-// tests' items can push it there.
+// Drags one row onto a point of another: by default its middle, which drops
+// on it, or a given point, which the tests use for the top edge, dropping
+// before it. The target is centered first, because near the pane's edges the
+// tree scrolls under the pointer, and other tests' items can push it there.
+// A busy browser starts the native drag late and may report the pointer's
+// last position late, so the pointer moves on only once the row is being
+// dragged, and releases only once the intended drop shows, unless the drop is
+// expected to be refused.
 async function drag(
   source: Locator,
   target: Locator,
   position?: { x: number; y: number },
+  { refused = false } = {},
 ) {
   await target.evaluate((element) => {
     element.scrollIntoView({ block: "center" });
   });
-  await source.dragTo(target, position ? { targetPosition: position } : {});
+  const page = source.page();
+  const from = await source.boundingBox();
+  if (!from) throw new Error("the dragged row has no layout box");
+  const start = { x: from.x + 60, y: from.y + from.height / 2 };
+  await page.mouse.move(start.x, start.y);
+  await page.mouse.down();
+  await page.mouse.move(start.x, start.y + 6, { steps: 3 });
+  await expect(source).toHaveAttribute("data-dragging", "true");
+
+  const to = await target.boundingBox();
+  if (!to) throw new Error("the target row has no layout box");
+  const offset = position ?? { x: to.width / 2, y: to.height / 2 };
+  const end = { x: to.x + offset.x, y: to.y + offset.y };
+  await page.mouse.move(end.x, end.y, { steps: 5 });
+  if (!refused) {
+    const title = await target.getAttribute("aria-label");
+    const insert = `[aria-label^="Insert"][aria-label$="${title}"]`;
+    const shown = position
+      ? page.locator(`[data-drop-target]:is(${insert}, :has(${insert}))`)
+      : target.and(page.locator("[data-drop-target]"));
+    let nudge = 1;
+    await expect(async () => {
+      nudge = -nudge;
+      await page.mouse.move(end.x + nudge, end.y);
+      await expect(shown).toHaveCount(1, { timeout: 250 });
+    }).toPass();
+  }
+  await page.mouse.up();
+}
+
+// Drags a row to make a move, and waits for the tree to settle: the service
+// accepts the move, then the tree is read again, so the next drag never
+// starts on rows about to be replaced.
+async function dragToMove(
+  source: Locator,
+  target: Locator,
+  position?: { x: number; y: number },
+) {
+  const reread = source
+    .page()
+    .waitForResponse(
+      (response) =>
+        response.request().method() === "GET" &&
+        new URL(response.url()).pathname === "/api/v1/workspace",
+    );
+  await drag(source, target, position);
+  await reread;
 }
 
 async function expand(navigator: Locator, title: string, hasTouch: boolean) {
@@ -530,10 +582,14 @@ test("drags items between siblings and into folders, and refuses a folder droppe
   await expect(rows).toContainText([titles.first, titles.second]);
 
   // The top edge of a row drops before it.
-  await drag(row(navigator, titles.second), row(navigator, titles.first), {
-    x: 60,
-    y: 2,
-  });
+  await dragToMove(
+    row(navigator, titles.second),
+    row(navigator, titles.first),
+    {
+      x: 60,
+      y: 2,
+    },
+  );
   await expect(rows).toContainText([
     titles.source,
     titles.second,
@@ -547,7 +603,7 @@ test("drags items between siblings and into folders, and refuses a folder droppe
   );
 
   // The middle of a folder drops inside it, last, and expands it.
-  await drag(row(navigator, titles.first), row(navigator, titles.target));
+  await dragToMove(row(navigator, titles.first), row(navigator, titles.target));
   await expect(row(navigator, titles.target)).toHaveAttribute(
     "aria-expanded",
     "true",
@@ -562,7 +618,12 @@ test("drags items between siblings and into folders, and refuses a folder droppe
   page.on("request", (request) => {
     if (request.url().endsWith("/position")) moves.push(request.url());
   });
-  await drag(row(navigator, titles.source), row(navigator, titles.inner));
+  await drag(
+    row(navigator, titles.source),
+    row(navigator, titles.inner),
+    undefined,
+    { refused: true },
+  );
   await expect(row(navigator, titles.source)).toHaveAttribute(
     "aria-level",
     "1",
