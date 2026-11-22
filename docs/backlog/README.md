@@ -36,7 +36,7 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                                | Subsystems          | Outcome                                                                                | Prerequisite |
 |----|------------------------------------------------------------------------------------------|---------------------|----------------------------------------------------------------------------------------|--------------|
-| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)       | `service`, `webapp` | An accepted ADR fixes the agent's build, conversation, and background review.          | None         |
+| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)       | `service`, `webapp` | An accepted ADR fixes where the agent runs, its build, and both of its modes.          | None         |
 | 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md) | `service`           | The service answers the writer about the open document, backed by prompts and evals.   | 10           |
 | 34 | [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)          | `webapp`            | The assistant pane streams the pair writer's answers about the open document.          | 12           |
 | 35 | [Review documents in the background in the service](./0035-service-background-review.md) | `service`           | The service returns suggestions, questions, and disconnects anchored to passages.      | 12           |

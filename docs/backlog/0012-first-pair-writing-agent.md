@@ -34,8 +34,10 @@ casing and nullability, problem details errors, operation ID, and, if it
 streams, how the stream signals its end and failures.
 [Backlog 34](./0034-assistant-pane-agent.md) connects the assistant pane to
 this endpoint, and [backlog 35](./0035-service-background-review.md) builds
-background review on the same crate. If building reveals a flaw in the agent
-ADR, amend it in the same pull request.
+background review on the same crate. This story assumes the agent ADR keeps
+the agent in the Rust service; if the ADR moves it to a separate process, the
+ADR's pull request revises this story first. If building reveals a flaw in
+the agent ADR, amend it in the same pull request.
 
 ## Scope
 

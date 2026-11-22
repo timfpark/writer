@@ -1,21 +1,22 @@
 ---
 title: Record the pair-writing agent architecture ADR
-description: Decide how the pair-writing agent is built and how writers work with it, both in conversation in the assistant pane and in background review of their text.
+description: Decide where the pair-writing agent runs, how it is built, and how writers work with it, both in conversation in the assistant pane and in background review of their text.
 author: Tim Park
 ms.date: 2026-11-22
 ms.topic: reference
 subsystems:
   - service
   - webapp
-estimated_reading_time: 3
+estimated_reading_time: 4
 ---
 
 ## Story
 
-As a contributor or coding agent, I want the pair-writing agent's framework,
-model provider, prompts, evaluations, and interaction model decided and
-accepted before any agent code exists so that the agent stories implement a
-deliberate choice rather than justifying one after the fact.
+As a contributor or coding agent, I want where the pair-writing agent runs,
+and its framework, model provider, prompts, evaluations, and interaction
+model, decided and accepted before any agent code exists so that the agent
+stories implement a deliberate choice rather than justifying one after the
+fact.
 
 ## Context
 
@@ -46,6 +47,16 @@ accepted. Backlog 25 built the assistant pane around the `Assistant`
 interface in [conversation.ts](../../webapp/src/workspace/conversation.ts),
 answered by a stub, with the conversation held in browser memory only.
 
+ADR 0001 rejected a separate `agent/` subsystem when the agent was expected
+to answer one request at a time. Background review is long-running work
+triggered by the writer's activity, and agent frameworks, provider SDKs, and
+evaluation tools are more mature in Python than in Rust. The key question is
+whether contributors, working with coding agents, can build and maintain in
+Rust the parts of a Python agent framework that Writer needs, keeping one
+service, one language, and one contract. If that is not a good bet, the
+agent moves out of the Rust service and ADR 0001 and ADR 0002 change with
+it.
+
 [Backlog 12](./0012-first-pair-writing-agent.md) and
 [backlog 34](./0034-assistant-pane-agent.md) build the conversation, and
 [backlog 35](./0035-service-background-review.md) and
@@ -54,8 +65,32 @@ what this ADR decides.
 
 ## Scope
 
-* Choose whether to adopt an agent framework or call model providers
-  directly, and compare at least two options.
+* Decide first where the agent runs, since every later choice depends on it:
+  as a crate in the Rust service, as ADR 0001 and ADR 0002 assume; as a
+  separate local process built on a Python or TypeScript agent framework and
+  called by the service; or in the browser.
+* Test the assumption the Rust option rests on. List the capabilities Writer
+  needs from an agent framework, such as provider abstraction, streaming,
+  structured output for findings, tool calls, retries and rate limits,
+  context assembly, tracing, and an evaluation harness. For each, record
+  whether a maintained Rust crate covers it or what building and maintaining
+  it in Rust with coding agents would take, against adopting at least one
+  established Python agent framework. Ground the comparison in throwaway
+  spikes rather than estimates alone.
+* Weigh the cost of a second runtime: a contract between the service and the
+  agent, another toolchain in the development container and `tools/check`,
+  packaging for local use, and the repository rule that keeps Python tooling
+  on the standard library.
+* If the agent leaves the Rust service, amend ADR 0001's rejected `agent/`
+  subsystem and ADR 0002's agent crate and runtime decisions, follow ADR
+  0001's [Adding a subsystem](../adrs/0001-monorepo-structure.md#adding-a-subsystem)
+  checklist, and revise backlog 12 and backlog 35 to build in the new
+  location.
+* Decide where background reviews execute, as tasks on the service's Tokio
+  runtime or in a separate worker, and how a review is scheduled, cancelled,
+  and recovered after a restart.
+* Within that location, choose whether to adopt an agent framework or call
+  model providers directly, and compare at least two options.
 * Choose the first model provider and the async client that calls it, and
   decide how the service stays open to other providers.
 * Decide how credentials and provider settings reach the service at run time,
@@ -70,8 +105,8 @@ what this ADR decides.
 * Decide how service tests and browser tests exercise the agent without a
   model provider, such as a deterministic fake provider chosen by
   configuration.
-* Name the agent crate's responsibility and its place in ADR 0002's dependency
-  direction.
+* Name the agent's responsibility and its place in ADR 0002's dependency
+  direction, or the boundary between the service and a separate agent.
 * Decide what context each request carries: the conversation, the open
   document, the selection, and whether other documents in the folder or
   workspace are included, since a disconnect can span documents. Decide how
@@ -109,6 +144,12 @@ what this ADR decides.
 ## Acceptance criteria
 
 * [ ] The agent ADR is accepted and listed in the ADR index.
+* [ ] The ADR states where the agent and its background reviews run, and
+  records the capability-by-capability comparison of building in Rust
+  against adopting a Python agent framework, with what the spikes showed.
+* [ ] If the agent leaves the Rust service, ADR 0001 and ADR 0002 are
+  amended in the same pull request, and backlog 12 and backlog 35 describe
+  the new location.
 * [ ] The ADR names the framework or direct-client approach, the first model
   provider and client, and the alternatives weighed against them.
 * [ ] The ADR states how prompts load and how evaluations run, and confirms
