@@ -181,12 +181,15 @@ async function headerLayout(page: Page) {
     const main = document.querySelector("main");
     let sheet = document.querySelector("[role=textbox]");
     while (sheet && sheet.parentElement !== main) sheet = sheet.parentElement;
-    const page = box(sheet);
+    const sheetBox = box(sheet);
     const pane = (id: string) => {
       const element = document.getElementById(id);
       if (!element || element.hidden) return null;
       const { left, right, width } = element.getBoundingClientRect();
-      return { width, gap: Math.max(page.left - right, left - page.right) };
+      return {
+        width,
+        gap: Math.max(sheetBox.left - right, left - sheetBox.right),
+      };
     };
     return {
       navigatorPane: pane("navigator-pane"),
