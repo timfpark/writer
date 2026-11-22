@@ -87,6 +87,7 @@ export function AssistantPane({
             className={styles.input}
             rows={2}
             placeholder="Ask your pair writer"
+            data-focus-target=""
             onKeyDown={onKeyDown}
           />
         </TextField>

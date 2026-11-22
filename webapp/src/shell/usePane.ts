@@ -1,5 +1,6 @@
 import { useCallback, useState } from "react";
 import { useStoredBoolean } from "./preferences";
+import { focusRegion, regionElement } from "./regions";
 import { useMediaQuery } from "./useMediaQuery";
 
 export type PaneName = "navigator" | "assistant";
@@ -38,11 +39,16 @@ export function usePane(name: PaneName, pathname: string): PaneState {
   const open = docked ? !collapsed : overlayOpen;
   const toggle = useCallback(() => {
     if (docked) {
+      // Hiding the pane would leave focus nowhere, so it moves to the
+      // writing region first. An overlaid pane returns focus itself.
+      if (open && regionElement(name)?.contains(document.activeElement)) {
+        focusRegion("writing");
+      }
       setCollapsed(open);
     } else {
       setOverlayOpen(!open);
     }
-  }, [docked, open, setCollapsed]);
+  }, [name, docked, open, setCollapsed]);
   const close = useCallback(() => {
     setOverlayOpen(false);
   }, []);

@@ -26,6 +26,7 @@ import {
 import {
   Button,
   DropIndicator,
+  Keyboard,
   Menu,
   MenuItem,
   MenuTrigger,
@@ -59,6 +60,12 @@ import {
 import controls from "../shell/controls.module.css";
 import { useSaveManager } from "../saving/saveManager";
 import { useStoredSet } from "../shell/preferences";
+import {
+  keyLabel,
+  navigatorKeys,
+  navigatorShortcut,
+  type Keys,
+} from "../shell/shortcuts";
 import { failureMessage } from "./changeFailure";
 import { DeleteDialog } from "./DeleteDialog";
 import { MoveDialog } from "./MoveDialog";
@@ -94,11 +101,13 @@ interface Naming {
 }
 
 // An open context menu: the row it was raised on, or null for the empty
-// part of the tree, and where it was raised, relative to the tree's frame.
+// part of the tree, where it was raised, relative to the tree's frame, and
+// whether from the keyboard, which focuses its first command.
 interface ContextMenu {
   node: TreeNode | null;
   x: number;
   y: number;
+  fromKeyboard: boolean;
 }
 
 const newTitle = "Untitled";
@@ -106,6 +115,11 @@ const newTitle = "Untitled";
 function folderIdsIn(node: TreeNode): string[] {
   if (node.kind !== "folder") return [];
   return [node.id, ...node.children.flatMap(folderIdsIn)];
+}
+
+function rowIn(frame: HTMLElement | null, id: string): HTMLElement | undefined {
+  const rows = frame?.querySelectorAll<HTMLElement>("[data-item-id]") ?? [];
+  return [...rows].find((row) => row.dataset.itemId === id);
 }
 
 function isRenameField(target: EventTarget): target is HTMLInputElement {
@@ -135,6 +149,13 @@ export function Navigator() {
   // Each new document's create, so it opens once the service has it.
   const creates = useRef(new Map<string, Promise<boolean>>());
   const revealed = useRef<string | undefined>(undefined);
+  // The row to focus once a move or deletion changes the tree from the one
+  // it started from, or null for the tree itself. Moving a row's element in
+  // the page takes focus from it, and a deleted row's focus would otherwise
+  // be lost.
+  const focusAfterChange = useRef<
+    { id: string | null; from: WorkspaceItem[] | undefined } | undefined
+  >(undefined);
 
   const roots = useMemo(() => buildTree(items ?? []), [items]);
   const nodes = useMemo(() => {
@@ -172,10 +193,32 @@ export function Navigator() {
     );
   }, [documentId, items, updateExpanded]);
 
-  function rowElement(id: string): HTMLElement | undefined {
-    const rows =
-      frameRef.current?.querySelectorAll<HTMLElement>("[data-item-id]") ?? [];
-    return [...rows].find((row) => row.dataset.itemId === id);
+  useEffect(() => {
+    const pending = focusAfterChange.current;
+    if (!pending || pending.from === items) return;
+    focusAfterChange.current = undefined;
+    const frame = frameRef.current;
+    const target =
+      pending.id === null
+        ? frame?.querySelector<HTMLElement>("[role='treegrid']")
+        : rowIn(frame, pending.id);
+    if (target && document.activeElement !== target) target.focus();
+  }, [items]);
+
+  // The visible row nearest a removed subtree: the next one, or else the
+  // previous one, or null when none is left.
+  function rowBeside(id: string, removed: string[]): string | null {
+    const rows = [
+      ...(frameRef.current?.querySelectorAll<HTMLElement>("[data-item-id]") ??
+        []),
+    ].map((row) => row.dataset.itemId ?? "");
+    const index = rows.indexOf(id);
+    const kept = (ids: string[]) => ids.find((row) => !removed.includes(row));
+    return (
+      kept(rows.slice(index + 1)) ??
+      kept(rows.slice(0, index).reverse()) ??
+      null
+    );
   }
 
   function expand(ids: string[]) {
@@ -223,7 +266,7 @@ export function Navigator() {
         title,
       });
     }
-    if (refocus) rowElement(current.id)?.focus();
+    if (refocus) rowIn(frameRef.current, current.id)?.focus();
     const created = creates.current.get(current.id);
     if (created) {
       creates.current.delete(current.id);
@@ -256,6 +299,7 @@ export function Navigator() {
   function remove(node: TreeNode) {
     const removed = subtreeIds(items ?? [], node.id);
     saveManager.discard(removed);
+    focusAfterChange.current = { id: rowBeside(node.id, removed), from: items };
     if (documentId && removed.includes(documentId)) void navigate({ to: "/" });
     void change({ type: "delete", kind: node.kind, id: node.id }).then(
       (accepted) => {
@@ -273,6 +317,7 @@ export function Navigator() {
       if (subtreeIds(items ?? [], node.id).includes(parentId)) return;
       expand([parentId, ...(ancestorIds(items ?? [], parentId) ?? [])]);
     }
+    focusAfterChange.current = { id: node.id, from: items };
     void change({ type: "move", kind: node.kind, id: node.id, ...placement });
   }
 
@@ -341,37 +386,83 @@ export function Navigator() {
     }
   }
 
-  function onContextMenu(event: MouseEvent<HTMLDivElement>) {
+  // Opens the menu for a row, or for the top level when row is null, at a
+  // pointer position in the page. A menu raised from the keyboard has no
+  // pointer position, so it opens below the row.
+  function openMenu(row: HTMLElement | null, x = 0, y = 0) {
     const frame = frameRef.current;
-    if (!frame || isRenameField(event.target)) return;
-    event.preventDefault();
-    const row =
-      event.target instanceof Element
-        ? event.target.closest<HTMLElement>("[data-item-id]")
-        : null;
+    if (!frame) return;
     const node = (row && nodes.get(row.dataset.itemId ?? "")) || null;
-    let { clientX: x, clientY: y } = event;
-    // A menu raised from the keyboard has no pointer position.
-    if (x === 0 && y === 0) {
+    const fromKeyboard = x === 0 && y === 0;
+    if (fromKeyboard) {
       const box = (row ?? frame).getBoundingClientRect();
       x = box.left;
       y = box.bottom;
     }
     const bounds = frame.getBoundingClientRect();
-    setContextMenu({ node, x: x - bounds.left, y: y - bounds.top });
+    setContextMenu({
+      node,
+      x: x - bounds.left,
+      y: y - bounds.top,
+      fromKeyboard,
+    });
+  }
+
+  function onContextMenu(event: MouseEvent<HTMLDivElement>) {
+    const frame = frameRef.current;
+    if (!frame || isRenameField(event.target)) return;
+    event.preventDefault();
+    // An open menu renders elsewhere in the page but reports here.
+    if (!(event.target instanceof Element) || !frame.contains(event.target)) {
+      return;
+    }
+    openMenu(
+      event.target.closest<HTMLElement>("[data-item-id]"),
+      event.clientX,
+      event.clientY,
+    );
+  }
+
+  // The keys for the focused row, or for one of its buttons. Keys from an
+  // open menu, which renders elsewhere in the page, are the menu's.
+  function onShortcut(event: KeyboardEvent<HTMLDivElement>) {
+    const shortcut = navigatorShortcut(event.nativeEvent);
+    const { target } = event;
+    const frame = frameRef.current;
+    if (!shortcut || !frame || !(target instanceof Element)) return;
+    if (!frame.contains(target) || dragAndDropHooks.isVirtualDragging?.()) {
+      return;
+    }
+    const row = target.closest<HTMLElement>("[data-item-id]");
+    const node = (row && nodes.get(row.dataset.itemId ?? "")) || null;
+    if (shortcut === "menu") {
+      event.preventDefault();
+      event.stopPropagation();
+      openMenu(row);
+      return;
+    }
+    if (!node) return;
+    event.preventDefault();
+    event.stopPropagation();
+    run(shortcut, node);
   }
 
   // The rename field's keys, presses, and focus belong to it. The tree's
   // rows handle keys in their capture phase, moving focus between rows,
   // selecting, and finding titles by typing, so the field's events are
-  // stopped here, above the tree, before any row sees them.
+  // stopped here, above the tree, before any row sees them. The navigator's
+  // own shortcuts are taken here too, before a row can move focus on them.
   function stopForField(event: SyntheticEvent) {
     if (isRenameField(event.target)) event.stopPropagation();
   }
   const fieldHandlers = {
     onKeyDownCapture(event: KeyboardEvent<HTMLDivElement>) {
       const field = event.target;
-      if (!isRenameField(field) || event.key === "Tab") return;
+      if (!isRenameField(field)) {
+        onShortcut(event);
+        return;
+      }
+      if (event.key === "Tab") return;
       event.stopPropagation();
       if (event.key === "Enter" || event.key === "Escape") {
         event.preventDefault();
@@ -530,8 +621,12 @@ export function Navigator() {
         <Tree
           aria-label="Folders and documents"
           className={styles.tree}
+          data-focus-target=""
           selectionMode="single"
           disallowEmptySelection
+          // The selection is the open document, which Escape never clears,
+          // so Escape reaches a pane over the page and closes it.
+          escapeKeyBehavior="none"
           selectedKeys={openDocument ? [openDocument] : []}
           onSelectionChange={(keys) => {
             if (keys === "all") return;
@@ -584,6 +679,7 @@ export function Navigator() {
             <ItemMenu
               node={contextMenu.node}
               items={items}
+              focusOnOpen={contextMenu.fromKeyboard ? "first" : "menu"}
               onCommand={(command) => {
                 setContextMenu(null);
                 run(command, contextMenu.node);
@@ -646,17 +742,23 @@ function RenameField({ title }: { title: string }) {
   );
 }
 
-// The commands for a row, or for the top level when node is null.
+// The commands for a row, or for the top level when node is null. Like any
+// menu, it takes focus as it opens: a menu trigger chooses where itself,
+// and a context menu passes focusOnOpen, focusing its first command when
+// raised from the keyboard.
 function ItemMenu({
   node,
   items,
+  focusOnOpen,
   onCommand,
 }: {
   node: TreeNode | null;
   items: WorkspaceItem[];
+  focusOnOpen?: "first" | "menu";
   onCommand: (command: Command) => void;
 }) {
   const isFolder = node?.kind === "folder";
+  const keys = navigatorKeys();
   const disabled: Command[] = [];
   if (node && !siblingPlacement(items, node.id, "up")) disabled.push("moveUp");
   if (node && !siblingPlacement(items, node.id, "down")) {
@@ -667,6 +769,9 @@ function ItemMenu({
       className={styles.menu}
       aria-label={node ? `Actions for ${node.title}` : "Workspace actions"}
       disabledKeys={disabled}
+      {...(focusOnOpen
+        ? { autoFocus: focusOnOpen === "first" ? "first" : true }
+        : {})}
       onAction={(key) => {
         if (isCommand(key)) onCommand(key);
       }}
@@ -692,20 +797,14 @@ function ItemMenu({
       </MenuItem>
       {node ? <Separator className={styles.separator} /> : null}
       {node ? (
-        <MenuItem id="rename" className={styles.menuItem}>
-          Rename
-        </MenuItem>
+        <CommandItem id="rename" label="Rename" keys={keys.rename} />
       ) : null}
       {node ? <Separator className={styles.separator} /> : null}
       {node ? (
-        <MenuItem id="moveUp" className={styles.menuItem}>
-          Move up
-        </MenuItem>
+        <CommandItem id="moveUp" label="Move up" keys={keys.moveUp} />
       ) : null}
       {node ? (
-        <MenuItem id="moveDown" className={styles.menuItem}>
-          Move down
-        </MenuItem>
+        <CommandItem id="moveDown" label="Move down" keys={keys.moveDown} />
       ) : null}
       {node ? (
         <MenuItem id="moveTo" className={styles.menuItem}>
@@ -714,11 +813,32 @@ function ItemMenu({
       ) : null}
       {node ? <Separator className={styles.separator} /> : null}
       {node ? (
-        <MenuItem id="delete" className={styles.menuItem}>
-          Delete…
-        </MenuItem>
+        <CommandItem id="delete" label="Delete…" keys={keys.delete} />
       ) : null}
     </Menu>
+  );
+}
+
+// A menu command that shows the key that runs it from the tree. The key is
+// the command's description, hidden from its name, which comes from its
+// content rather than a label, so its name still holds all its visible
+// label, as WCAG 2.5.3 requires.
+function CommandItem({
+  id,
+  label,
+  keys,
+}: {
+  id: Command;
+  label: string;
+  keys: Keys;
+}) {
+  return (
+    <MenuItem id={id} textValue={label} className={styles.menuItem}>
+      {label}
+      <Keyboard className={styles.shortcut} aria-hidden>
+        {keyLabel(keys)}
+      </Keyboard>
+    </MenuItem>
   );
 }
 

@@ -294,6 +294,18 @@
   background: var(--color-current);
 }
 
+.shortcut {
+  margin-inline-start: auto;
+  padding-inline-start: var(--space-6);
+  color: var(--color-text-muted);
+  font-family: inherit;
+  font-size: var(--text-sm);
+}
+
+.menuItem[data-focused] .shortcut {
+  color: var(--color-text);
+}
+
 .separator {
   margin: var(--space-1) var(--space-2);
   border: 0;

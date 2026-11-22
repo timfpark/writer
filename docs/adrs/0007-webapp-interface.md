@@ -107,11 +107,7 @@ header, a navigator showing folders and documents with drag and drop, a
 writing surface, and an assistant pane, with both side panes collapsible. The
 writing surface is the product's focus, so its typeface and contrast matter
 more than anything else on the page. Backlog 20, the workspace shell story,
-installed them, and backlogs
-22,
-23,
-24, and
-[26](../backlog/0026-keyboard-accessibility.md) build on these choices.
+installed them, and backlogs 22, 23, 24, and 26 build on these choices.
 
 The first release has one local user on a desktop browser, the service on
 loopback, and no hosting beyond the development server. Writing on an iPad
@@ -803,9 +799,9 @@ Trade-offs and risks:
 
 * Vite types CSS Modules itself, or `vite-css-modules` lags a Vite major
   release: drop the plugin, or generate declarations another way.
-* A screen reader test in backlog 26 finds the treegrid confusing: reconsider
-  the tree's pattern, which may mean a primitive other than React Aria's
-  `Tree`.
+* The webapp README's manual screen reader check finds the treegrid
+  confusing: reconsider the tree's pattern, which may mean a primitive other
+  than React Aria's `Tree`.
 * The bundle exceeds [ADR 0008's budget](./0008-editor.md#bundle-budget):
   split by route and load drag and drop, menus, and dialogs on demand.
 * Writers ask to choose a theme inside Writer: add an override stored per

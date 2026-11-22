@@ -6,6 +6,7 @@ import type { DocumentContent } from "../api/client";
 import type { DocumentSaver } from "../saving/documentSaver";
 import type { SaveManager } from "../saving/saveManager";
 import { titleId } from "../shell/Header";
+import { regionElement } from "../shell/regions";
 import styles from "./DocumentEditor.module.css";
 import { editorExtensions } from "./extensions";
 import { LinkDialog, type LinkTarget } from "./LinkDialog";
@@ -142,6 +143,8 @@ export default function DocumentEditor({
           role: "textbox",
           "aria-multiline": "true",
           "aria-labelledby": titleId,
+          // The shell's F6 shortcut focuses the writing region here.
+          "data-focus-target": "",
           spellcheck: "true",
         },
         // Keeps the caret clear of the page edges and the on-screen keyboard.
@@ -157,6 +160,19 @@ export default function DocumentEditor({
 
   useEffect(() => {
     openLinkRef.current = () => setLink(linkTarget(editor));
+  }, [editor]);
+
+  // Focus left on the writing region, such as by a pane that closed as this
+  // document opened, moves into the document once the editor is ready.
+  useEffect(() => {
+    if (document.activeElement !== regionElement("writing")) return undefined;
+    const frame = requestAnimationFrame(() => {
+      if (editor.isDestroyed) return;
+      // The writer may have put the caret somewhere meanwhile.
+      if (document.activeElement !== regionElement("writing")) return;
+      editor.commands.focus("start");
+    });
+    return () => cancelAnimationFrame(frame);
   }, [editor]);
 
   // Shows the document's text without adding it to undo history or

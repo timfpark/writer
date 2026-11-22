@@ -2,15 +2,17 @@
  * The header's columns repeat the region below: a docked navigator, the
  * writing region, and a docked assistant, sized as Pane.module.css and
  * WorkspaceShell.module.css size them, so the title sits over the page. The
- * pane toggles and profile button lie over the outer edges in the same grid
- * cell and may reach into the writing column, so the title keeps clear of
- * them.
+ * pane toggles and the shortcuts and profile buttons lie over the outer
+ * edges in the same grid cell and may reach into the writing column, so the
+ * title keeps clear of them.
  */
 .header {
   --start-pane: 0px;
   --end-pane: 0px;
   --start-reach: calc(var(--space-4) + var(--control-size));
-  --end-reach: calc(var(--space-4) + var(--space-2) + 2 * var(--control-size));
+  --end-reach: calc(
+    var(--space-4) + 2 * var(--space-2) + 3 * var(--control-size)
+  );
 
   display: grid;
   align-items: center;

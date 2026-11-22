@@ -2,7 +2,7 @@
 title: Backlog
 description: Prioritized index of planned work for the Writer service and clients
 author: Tim Park
-ms.date: 2026-11-21
+ms.date: 2026-11-22
 ms.topic: reference
 keywords:
   - backlog
@@ -36,7 +36,6 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                             | Subsystems             | Outcome                                                                                | Prerequisite   |
 |----|---------------------------------------------------------------------------------------|------------------------|----------------------------------------------------------------------------------------|----------------|
-| 26 | [Make the workspace fully keyboard operable](./0026-keyboard-accessibility.md)        | `webapp`               | Every workspace operation works from the keyboard and passes checks.                   | None           |
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)    | `service`              | An accepted ADR fixes the agent framework, provider, prompts, and evals.               | None           |
 | 12 | [Deliver the first pair-writing agent capability](./0012-first-pair-writing-agent.md) | `service`              | The service returns pair-writer questions backed by prompts and evals.                 | 10             |
 | 27 | [Record the change control ADR](./0027-change-control-adr.md)                         | `service`, `webapp`    | An accepted ADR fixes the commit model, commit timing, restore, and progress measures. | None           |
@@ -73,8 +72,9 @@ autosave, which together make the first usable release. Item 24 added drag
 and drop with move commands in each row's menu, and item 25 filled the
 assistant pane with a conversation answered by a stub, and item 33 fixed
 what first use of the writing surface exposed: `Enter` now breaks a line
-without a gap, and the markers of formatted text show at the caret. The
-remaining keyboard shortcuts (26) complete it.
+without a gap, and the markers of formatted text show at the caret. Item 26
+completed it with the navigator's remaining shortcuts, `F6` between the
+panes, a shortcut reference, and keyboard-only browser tests.
 
 The pair-writing agent follows the workspace. Item 10 records the agent
 decision before item 12 creates `service/prompts/` and `service/evals/`.

@@ -143,6 +143,7 @@ describe("workspace shell", () => {
     const buttons = within(header).getAllByRole("button");
     expect(buttons.map((button) => button.getAttribute("aria-label"))).toEqual([
       "Navigator",
+      "Keyboard shortcuts",
       "Assistant",
       "Profile",
     ]);

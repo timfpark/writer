@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
-import { PanelLeft, PanelRight, type LucideIcon } from "lucide-react";
+import { Keyboard, PanelLeft, PanelRight, type LucideIcon } from "lucide-react";
 import { useEffect, useRef, useState, type KeyboardEvent } from "react";
 import {
   Button,
@@ -16,17 +16,18 @@ import styles from "./Header.module.css";
 import { paneId } from "./Pane";
 import { ProfileMenu } from "./ProfileMenu";
 import { SaveIndicator } from "./SaveIndicator";
-import { ariaShortcut, shortcutLabel } from "./shortcuts";
+import { ariaKeys, keyLabel, paneKeys, referenceKeys } from "./shortcuts";
 import type { PaneState } from "./usePane";
 
 interface HeaderProps {
   navigator: PaneState;
   assistant: PaneState;
+  onShowShortcuts: () => void;
 }
 
 // Lays out over the same columns as the region below, so the title centers
 // over the writing column whichever side panes are docked open.
-export function Header({ navigator, assistant }: HeaderProps) {
+export function Header({ navigator, assistant, onShowShortcuts }: HeaderProps) {
   return (
     <header
       className={styles.header}
@@ -42,6 +43,19 @@ export function Header({ navigator, assistant }: HeaderProps) {
         <div className={styles.endPane} />
       </div>
       <div className={styles.end}>
+        <TooltipTrigger delay={600}>
+          <Button
+            className={controls.iconButton}
+            aria-label="Keyboard shortcuts"
+            aria-keyshortcuts={ariaKeys(referenceKeys)}
+            onPress={onShowShortcuts}
+          >
+            <Keyboard aria-hidden size={18} />
+          </Button>
+          <Tooltip className={controls.tooltip} offset={6}>
+            {`Keyboard shortcuts (${keyLabel(referenceKeys)})`}
+          </Tooltip>
+        </TooltipTrigger>
         <PaneToggle pane={assistant} label="Assistant" icon={PanelRight} />
         <ProfileMenu />
       </div>
@@ -192,7 +206,7 @@ function PaneToggle({ pane, label, icon: Icon }: PaneToggleProps) {
       <ToggleButton
         className={controls.iconButton}
         aria-label={label}
-        aria-keyshortcuts={ariaShortcut(pane.name)}
+        aria-keyshortcuts={ariaKeys(paneKeys[pane.name])}
         {...(pane.docked ? { "aria-controls": paneId(pane) } : {})}
         isSelected={pane.open}
         onChange={pane.toggle}
@@ -200,7 +214,7 @@ function PaneToggle({ pane, label, icon: Icon }: PaneToggleProps) {
         <Icon aria-hidden size={18} />
       </ToggleButton>
       <Tooltip className={controls.tooltip} offset={6}>
-        {`${pane.open ? "Hide" : "Show"} ${label.toLowerCase()} (${shortcutLabel(pane.name)})`}
+        {`${pane.open ? "Hide" : "Show"} ${label.toLowerCase()} (${keyLabel(paneKeys[pane.name])})`}
       </Tooltip>
     </TooltipTrigger>
   );
