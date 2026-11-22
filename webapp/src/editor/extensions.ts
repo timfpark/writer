@@ -5,10 +5,14 @@ import {
   Node,
   type AnyExtension,
 } from "@tiptap/core";
+import { Bold } from "@tiptap/extension-bold";
 import { Code } from "@tiptap/extension-code";
 import { Heading } from "@tiptap/extension-heading";
+import { Italic } from "@tiptap/extension-italic";
 import type { Schema } from "@tiptap/pm/model";
 import { StarterKit } from "@tiptap/starter-kit";
+import { FormattingMarkers } from "./formattingMarkers";
+import { CaretAfterTyping, LineBreaks } from "./lineBreaks";
 
 export const TOP_LEVEL_BLOCKS = [
   "paragraph",
@@ -120,6 +124,8 @@ const BridgeAttributes = Extension.create({
 export function editorExtensions(): AnyExtension[] {
   return [
     StarterKit.configure({
+      bold: false,
+      italic: false,
       strike: false,
       underline: false,
       code: false,
@@ -132,13 +138,20 @@ export function editorExtensions(): AnyExtension[] {
       },
       undoRedo: { depth: 500, newGroupDelay: 500 },
     }),
-    Code.extend({ excludes: "" }),
+    // Formatting never carries onto a new line or into a new paragraph, and
+    // the formatting markers replace Tiptap's exit from a code span.
+    Bold.extend({ keepOnSplit: false }),
+    Italic.extend({ keepOnSplit: false }),
+    Code.extend({ excludes: "", keepOnSplit: false, exitable: false }),
     Heading.extend({ content: "(text | rawInline)*" }).configure({
       levels: [1, 2, 3, 4, 5, 6],
     }),
     RawBlock,
     RawInline,
     BridgeAttributes,
+    LineBreaks,
+    CaretAfterTyping,
+    FormattingMarkers,
   ];
 }
 

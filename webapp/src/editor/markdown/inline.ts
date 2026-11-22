@@ -131,12 +131,17 @@ function runEnds(u: Units, mark: Active): number[] {
   return ends;
 }
 
-export function codeSpan(text: string): string {
+// A backtick fence longer than any backtick run in the text.
+export function codeFence(text: string): string {
   let longest = 0;
   for (const run of text.match(/`+/g) ?? []) {
     longest = Math.max(longest, run.length);
   }
-  const fence = "`".repeat(longest + 1);
+  return "`".repeat(longest + 1);
+}
+
+export function codeSpan(text: string): string {
+  const fence = codeFence(text);
   const pad =
     text.startsWith("`") ||
     text.endsWith("`") ||

@@ -123,6 +123,19 @@
   border-block-start: 1px solid var(--color-border);
 }
 
+/*
+ * The Markdown markers of the formatted run at the caret, shown in the
+ * writing face and never in the formatting they delimit.
+ */
+.content :global([data-marker]) {
+  color: var(--color-ink-muted);
+  font-family: var(--font-writing);
+  font-style: normal;
+  font-weight: normal;
+  text-decoration: none;
+  user-select: none;
+}
+
 .content :global(.ProseMirror-selectednode) {
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;

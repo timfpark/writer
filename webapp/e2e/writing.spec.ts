@@ -359,7 +359,7 @@ test("creates, edits, and removes a link from the keyboard", async ({
     .poll(() => storedContent(page, documentId))
     .toBe("See the [chart](https://example.com/chart).\n");
 
-  // Into the linked word, past the period after it.
+  // Back past the period, then inside the link's closing marker.
   await page.keyboard.press("ArrowLeft");
   await page.keyboard.press("ArrowLeft");
   await page.keyboard.press("ControlOrMeta+k");
@@ -385,6 +385,131 @@ test("creates, edits, and removes a link from the keyboard", async ({
   await expect
     .poll(() => storedContent(page, documentId))
     .toBe("See the chart.\n");
+});
+
+// The distance between the tops of the first two lines of a paragraph, and
+// the paragraph's line height, in CSS pixels.
+async function lineSpacing(paragraph: Locator) {
+  return paragraph.evaluate((element) => {
+    const texts = [...element.childNodes].filter(
+      (node) => node.nodeType === Node.TEXT_NODE,
+    );
+    const top = (node: ChildNode | undefined) => {
+      if (!node) throw new Error("line missing");
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return range.getBoundingClientRect().top;
+    };
+    return {
+      gap: top(texts[1]) - top(texts[0]),
+      lineHeight: Number.parseFloat(getComputedStyle(element).lineHeight),
+    };
+  });
+}
+
+test("puts lines directly under each other on Enter, and starts a paragraph on Enter twice", async ({
+  page,
+  hasTouch,
+}) => {
+  const title = unique("Dialogue");
+  const documentId = await createDocument(page, title);
+  const editor = await openDocument(page, documentId, title);
+  await press(editor, hasTouch);
+  await type(page, "¿Vienes mañana?");
+  await page.keyboard.press("Enter");
+  await type(page, "Are you coming tomorrow?");
+  const spacing = await lineSpacing(editor.locator("p").first());
+  expect(Math.abs(spacing.gap - spacing.lineHeight)).toBeLessThanOrEqual(1);
+
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Enter");
+  await type(page, "Mañana no.");
+  await expect(editor.locator("p")).toHaveCount(2);
+  await expect
+    .poll(() => storedContent(page, documentId))
+    .toBe("¿Vienes mañana?\\\nAre you coming tomorrow?\n\nMañana no.\n");
+});
+
+test("ends formatting at its closing marker and at line breaks, showing the markers at the caret", async ({
+  page,
+  hasTouch,
+}) => {
+  const title = unique("Shore");
+  const documentId = await createDocument(
+    page,
+    title,
+    "See the [chart](https://example.com/chart)\n",
+  );
+  const editor = await openDocument(page, documentId, title);
+  const markers = editor.locator("[data-marker]");
+  await press(editor, hasTouch);
+  await moveCaret(page, "ControlOrMeta+End");
+  await expect(markers).toHaveText(["[", "](https://example.com/chart)"]);
+  await type(page, "!");
+  await page.keyboard.press("Enter");
+  await type(page, "The *tide*");
+  await expect(markers).toHaveText(["*", "*"]);
+  await expectAccessible(page);
+  await type(page, " rose");
+  await expect(markers).toHaveCount(0);
+  await page.keyboard.press("Enter");
+  await type(page, "Gulls **cried**");
+  await page.keyboard.press("Enter");
+  await type(page, "Foam `hissed`");
+  await page.keyboard.press("Enter");
+  await page.keyboard.press("Enter");
+  await type(page, "Calm.");
+  await expect
+    .poll(() => storedContent(page, documentId))
+    .toBe(
+      "See the [chart](https://example.com/chart)!\\\nThe *tide* rose\\\nGulls **cried**\\\nFoam `hissed`\n\nCalm.\n",
+    );
+});
+
+test("steps across a marker one stop at a time, and removes formatting by deleting its marker", async ({
+  page,
+  hasTouch,
+}) => {
+  const title = unique("Current");
+  const markdown = "Plain *soft* text.\n";
+  const documentId = await createDocument(page, title, markdown);
+  const editor = await openDocument(page, documentId, title);
+  const markers = editor.locator("[data-marker]");
+  await press(editor, hasTouch);
+  await moveCaret(page, "ControlOrMeta+Home");
+  await expect(markers).toHaveCount(0);
+  for (let index = 0; index < "Plain ".length; index++) {
+    await moveCaret(page, "ArrowRight");
+  }
+  await expect(markers).toHaveText(["*", "*"]);
+  await moveCaret(page, "ControlOrMeta+End");
+  await expect(markers).toHaveCount(0);
+  await page.keyboard.press("ControlOrMeta+s");
+  expect(await storedContent(page, documentId)).toBe(markdown);
+
+  // From the end, back to the run's closing marker: outside it, then inside.
+  for (let index = 0; index < " text.".length; index++) {
+    await moveCaret(page, "ArrowLeft");
+  }
+  await moveCaret(page, "ArrowLeft");
+  await type(page, "er");
+  await moveCaret(page, "ArrowRight");
+  await type(page, ",");
+  await expect
+    .poll(() => storedContent(page, documentId))
+    .toBe("Plain *softer*, text.\n");
+
+  await moveCaret(page, "ArrowLeft");
+  await page.keyboard.press("Backspace");
+  await expect(markers).toHaveCount(0);
+  await expect(editor.locator("em")).toHaveCount(0);
+  await expect
+    .poll(() => storedContent(page, documentId))
+    .toBe("Plain softer, text.\n");
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect
+    .poll(() => storedContent(page, documentId))
+    .toBe("Plain *softer*, text.\n");
 });
 
 test("renames the document from the header, and the navigator follows", async ({
@@ -465,6 +590,7 @@ test("keeps text through an unreachable service and a reload, then saves it", as
   );
   await press(editor, hasTouch);
   await moveCaret(page, "ControlOrMeta+End");
+  await page.keyboard.press("Enter");
   await page.keyboard.press("Enter");
   await type(page, "Fog rolled over the breakwater.");
   await expect(saveStatus(page, "Retrying…")).toBeVisible();

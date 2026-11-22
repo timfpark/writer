@@ -2,7 +2,7 @@
 title: "ADR 0008: Editor, Markdown subset, round trip, and autosave timing"
 description: Selects Tiptap 3 on ProseMirror with a Writer-owned Markdown bridge on micromark, defines the supported Markdown subset and its canonical form, keeps Markdown outside the subset as raw source, guarantees identical bytes for unedited documents and blocks, and sets input rules, undo history, autosave timing and flush events, document styles, the bundle budget, responsiveness targets, and the path to anchored pair-writer suggestions
 author: Tim Park
-ms.date: 2026-11-20
+ms.date: 2026-11-21
 ms.topic: reference
 status: Accepted
 subsystems:
@@ -24,6 +24,14 @@ estimated_reading_time: 18
 ## Status
 
 Accepted on 2026-11-20.
+
+Amended on 2026-11-21, when backlog 33 found that `Enter` always left a
+paragraph gap and that hidden markers left writers unable to see or end
+formatting. `Enter` now breaks the line in a paragraph, and twice starts a
+new one. Formatting never carries onto a new line or into a new paragraph,
+and the Markdown markers of the formatted run at the caret show as
+decorations, with a caret stop on each side. The Markdown subset, its
+canonical form, and the round trip do not change.
 
 This record settles the editor decisions that
 [ADR 0005](./0005-workspace-model.md#follow-up-decisions) left open: the
@@ -47,6 +55,10 @@ styles for document content.
   paragraph, `*` and `**`, `-` bullets, `N.` numbers, backtick fences, `---`
   rules, LF line endings, one blank line between blocks, and one final
   newline.
+* Break the line on `Enter` in a paragraph and start a new paragraph on
+  `Enter` twice. Never carry formatting onto a new line or into a new
+  paragraph, and show the Markdown markers of the formatted run at the caret
+  as decorations, with a caret stop inside and outside each.
 * Never drop Markdown outside the subset. A top-level block that holds any of
   it becomes a raw block, shown and edited as source, and an image, inline
   HTML, strikethrough, or footnote reference inside a paragraph becomes a raw
@@ -249,6 +261,7 @@ dependency change, not a new decision.
 | `@tiptap/starter-kit`                                                     | 3.34.0           | Nodes, marks, input rules, shortcuts, and undo history | MIT     |
 | `@tiptap/extension-code`                                                  | 3.34.0           | Code spans that combine with other marks               | MIT     |
 | `@tiptap/extension-heading`                                               | 3.34.0           | Headings that cannot hold a hard break                 | MIT     |
+| `@tiptap/extension-bold`, `@tiptap/extension-italic`                      | 3.34.0           | Emphasis that ends at a line or paragraph break        | MIT     |
 | `mdast-util-from-markdown`                                                | 2.1.0            | CommonMark parsing with source positions               | MIT     |
 | `micromark-extension-gfm-table`, `mdast-util-gfm-table`                   | 2.1.2, 2.0.1     | Recognizing tables, kept as raw blocks                 | MIT     |
 | `micromark-extension-gfm-strikethrough`, `mdast-util-gfm-strikethrough`   | 2.1.0, 2.0.1     | Recognizing strikethrough, kept as raw inline atoms    | MIT     |
@@ -270,11 +283,15 @@ Dependabot's cooldown from ADR 0007 apply.
 * Build the editor in `webapp/src/editor/` (planned) with `useEditor` and
   `EditorContent` from `@tiptap/react`, and the bridge beside it in
   `webapp/src/editor/markdown/` (planned).
-* Configure StarterKit with `strike`, `underline`, `code`, and `heading`
-  turned off, and Link with `openOnClick` and `autolink` off. Add the code
-  mark through `Code.extend({ excludes: "" })`, because Tiptap's code mark
-  excludes every other mark by default and Markdown allows a code span inside
-  a link or emphasis. Add headings through `Heading.extend` with content
+* Configure StarterKit with `bold`, `italic`, `strike`, `underline`, `code`,
+  and `heading` turned off, and Link with `openOnClick` and `autolink` off.
+  Add bold and italic through `Bold.extend` and `Italic.extend` with
+  `keepOnSplit: false`, so emphasis ends at a split. Add the code mark through
+  `Code.extend({ excludes: "", keepOnSplit: false, exitable: false })`,
+  because Tiptap's code mark excludes every other mark by default and
+  Markdown allows a code span inside a link or emphasis, and because the
+  formatting markers replace Tiptap's exit from a code span, which typed a
+  space. Add headings through `Heading.extend` with content
   `(text | rawInline)*`, because a Markdown heading is one line and cannot
   hold a hard break.
 * Add a `rawBlock` node, a code-like block holding source text, and a
@@ -297,20 +314,20 @@ Dependabot's cooldown from ADR 0007 apply.
 
 In the table, `Mod` is `Cmd` on macOS and iPadOS and `Ctrl` elsewhere.
 
-| Construct       | Reads                                  | Writes                                                                                        | Typed as                                                         | Shortcut                       |
-|-----------------|----------------------------------------|-----------------------------------------------------------------------------------------------|------------------------------------------------------------------|--------------------------------|
-| Paragraph       | Any paragraph                          | One line                                                                                      | Any text                                                         | `Mod+Alt+0`                    |
-| Heading         | ATX and setext, levels 1 to 6          | One to six `#`, a space, and the text                                                         | One to six `#` and a space                                       | `Mod+Alt+1` to `Mod+Alt+6`     |
-| Emphasis        | `*` or `_`                             | `*text*`                                                                                      | `*text*` or `_text_`                                             | `Mod+I`                        |
-| Strong emphasis | `**` or `__`                           | `**text**`                                                                                    | `**text**` or `__text__`                                         | `Mod+B`                        |
-| Code span       | Any backtick fence                     | A backtick fence longer than any backtick run inside                                          | Text between two backticks                                       | `Mod+E`                        |
-| Link            | Inline, reference, and angle autolinks | `[text](destination "title")`, angle brackets around a destination with spaces or parentheses | `[text](url)`                                                    | `Mod+K`, which backlog 23 adds |
-| Hard line break | A backslash or two spaces at line end  | A backslash at line end                                                                       | `Shift+Enter` or `Mod+Enter`, except in a heading                | None                           |
-| Block quote     | `>`                                    | `>` and a space on every line, `>` alone on blank lines                                       | `>` and a space                                                  | `Mod+Shift+B`                  |
-| Bullet list     | `-`, `*`, or `+`                       | `-` and a space                                                                               | `-`, `*`, or `+` and a space                                     | `Mod+Shift+8`                  |
-| Ordered list    | `1.` or `1)`, from any start           | `N.` and a space, counting from the start                                                     | A number, `.`, and a space                                       | `Mod+Shift+7`                  |
-| Code block      | Fenced, or indented by four spaces     | A backtick fence longer than any run inside, with the language                                | Three backticks or tildes, a language if any, and space or Enter | `Mod+Alt+C`                    |
-| Thematic break  | `---`, `***`, or `___`                 | `---`                                                                                         | `---`, or `***` or `___` and a space                             | None                           |
+| Construct       | Reads                                  | Writes                                                                                        | Typed as                                                                    | Shortcut                       |
+|-----------------|----------------------------------------|-----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------|--------------------------------|
+| Paragraph       | Any paragraph                          | One line                                                                                      | Any text, ended by `Enter` twice                                            | `Mod+Alt+0`                    |
+| Heading         | ATX and setext, levels 1 to 6          | One to six `#`, a space, and the text                                                         | One to six `#` and a space                                                  | `Mod+Alt+1` to `Mod+Alt+6`     |
+| Emphasis        | `*` or `_`                             | `*text*`                                                                                      | `*text*` or `_text_`                                                        | `Mod+I`                        |
+| Strong emphasis | `**` or `__`                           | `**text**`                                                                                    | `**text**` or `__text__`                                                    | `Mod+B`                        |
+| Code span       | Any backtick fence                     | A backtick fence longer than any backtick run inside                                          | Text between two backticks                                                  | `Mod+E`                        |
+| Link            | Inline, reference, and angle autolinks | `[text](destination "title")`, angle brackets around a destination with spaces or parentheses | `[text](url)`                                                               | `Mod+K`, which backlog 23 adds |
+| Hard line break | A backslash or two spaces at line end  | A backslash at line end                                                                       | `Enter` in a paragraph, or `Shift+Enter` or `Mod+Enter` except in a heading | None                           |
+| Block quote     | `>`                                    | `>` and a space on every line, `>` alone on blank lines                                       | `>` and a space                                                             | `Mod+Shift+B`                  |
+| Bullet list     | `-`, `*`, or `+`                       | `-` and a space                                                                               | `-`, `*`, or `+` and a space                                                | `Mod+Shift+8`                  |
+| Ordered list    | `1.` or `1)`, from any start           | `N.` and a space, counting from the start                                                     | A number, `.`, and a space                                                  | `Mod+Shift+7`                  |
+| Code block      | Fenced, or indented by four spaces     | A backtick fence longer than any run inside, with the language                                | Three backticks or tildes, a language if any, and space or Enter            | `Mod+Alt+C`                    |
+| Thematic break  | `---`, `***`, or `___`                 | `---`                                                                                         | `---`, or `***` or `___` and a space                                        | None                           |
 
 Headings 1 to 3 take ADR 0007's 2, 1.5, and 1.25 rem; 4 to 6 are set at the
 body size. The document title is not a heading, as ADR 0005 decides, and the
@@ -490,6 +507,14 @@ input rule and shortcut, which are StarterKit's defaults. In addition:
 * `Mod+S` saves at once instead of opening the browser's dialog.
 * `Backspace` directly after an input rule fires reverts it, leaving the
   characters typed.
+* In a paragraph, including one in a block quote, `Enter` inserts a hard line
+  break. On an empty line of a paragraph that holds other text, `Enter`
+  removes the line and starts a new paragraph, so `Enter`
+  twice separates paragraphs, and `Backspace` directly after puts the line
+  break back. List items, headings, code blocks, and empty paragraphs keep
+  StarterKit's `Enter`.
+* Emphasis, strong emphasis, code spans, and links never carry onto a new
+  line or into a new paragraph, whichever key starts it.
 * In a list, `Tab` and `Shift+Tab` nest and unnest the item. Everywhere else,
   including code blocks, `Tab` moves focus out of the writing surface, so the
   keyboard is never trapped.
@@ -497,6 +522,29 @@ input rule and shortcut, which are StarterKit's defaults. In addition:
   formatting.
 * [Backlog 26](../backlog/0026-keyboard-accessibility.md) verifies the
   shortcuts and the focus path with a keyboard and a screen reader.
+
+While the writing surface has focus and the caret is inside or at the edge
+of a run of emphasis, strong emphasis, a code span, or a link, the run's
+Markdown markers show at its edges, as Typora does, and hide again when the
+caret leaves. They are `*`, `**`, a backtick fence as the serializer would
+write it, and a link's `[` and `](destination "title")`, the last read-only;
+the link dialog still edits the destination. Like
+[pair-writer suggestions](#pair-writer-suggestions-later), they are
+ProseMirror widget decorations, so they never enter the document, its
+Markdown, or copied text, and they are hidden from assistive technology.
+
+* Each marker at the caret adds a caret stop, so an edge has one inside the
+  marker and one outside. Text typed at a stop takes the formatting that
+  stop is inside, which the caret's stored marks record, and the caret shows
+  on the matching side of the marker.
+* `ArrowLeft` and `ArrowRight` step across a marker one stop at a time, and
+  arrive at an edge on its nearest stop. Arriving another way, such as by
+  clicking, uses ProseMirror's marks at the position: inside emphasis, strong
+  emphasis, and code spans, and outside links.
+* After an input rule formats a run, the caret sits outside its closing
+  marker.
+* `Backspace` or `Delete` into a marker removes that formatting from the
+  whole run, keeping the text, as an undo step of its own.
 
 ### Undo history
 
@@ -543,16 +591,17 @@ input rule and shortcut, which are StarterKit's defaults. In addition:
 Document content builds on ADR 0007's tokens. Backlog 23 may tune values
 within them:
 
-| Element         | Treatment                                                                                      |
-|-----------------|------------------------------------------------------------------------------------------------|
-| Body text       | Newsreader at `--writing-size` and `--writing-leading` in `--color-ink`, blocks 1 em apart     |
-| Headings        | Levels 1 to 3 at 2, 1.5, and 1.25 rem and levels 4 to 6 at `--writing-size`, all at weight 600 |
-| Block quotes    | Indented 1.5 em with a 2 px `--color-border` rule at the left, text in `--color-ink-muted`     |
-| Lists           | Indented 1.5 em per level                                                                      |
-| Links           | `--color-accent`, underlined                                                                   |
-| Code            | `--font-mono` at 0.9 em; code blocks on `--color-chrome` with `--radius-sm` corners            |
-| Raw Markdown    | `--font-mono` at 0.9 em in `--color-ink-muted`, framed by a 1 px dashed `--color-border` line  |
-| Thematic breaks | A 1 px `--color-border` line across the middle third of the measure                            |
+| Element            | Treatment                                                                                       |
+|--------------------|-------------------------------------------------------------------------------------------------|
+| Body text          | Newsreader at `--writing-size` and `--writing-leading` in `--color-ink`, blocks 1 em apart      |
+| Headings           | Levels 1 to 3 at 2, 1.5, and 1.25 rem and levels 4 to 6 at `--writing-size`, all at weight 600  |
+| Block quotes       | Indented 1.5 em with a 2 px `--color-border` rule at the left, text in `--color-ink-muted`      |
+| Lists              | Indented 1.5 em per level                                                                       |
+| Links              | `--color-accent`, underlined                                                                    |
+| Code               | `--font-mono` at 0.9 em; code blocks on `--color-chrome` with `--radius-sm` corners             |
+| Raw Markdown       | `--font-mono` at 0.9 em in `--color-ink-muted`, framed by a 1 px dashed `--color-border` line   |
+| Thematic breaks    | A 1 px `--color-border` line across the middle third of the measure                             |
+| Formatting markers | Shown only at the caret, in the writing face at regular weight, upright, in `--color-ink-muted` |
 
 `--color-ink` on `--color-chrome` measures 14.90:1 in the light theme and
 14.25:1 in the dark, and backlog 23 adds the pair to ADR 0007's contrast test
@@ -652,6 +701,12 @@ Trade-offs and risks:
   paragraph becomes one line, and `*` bullets become `-` in an edited list.
 * Empty paragraphs and extra blank lines disappear when the document next
   opens, and so does a hard break at the end of a paragraph.
+* Revealed markers widen the line around the caret while it is in a formatted
+  run, so the text there shifts by their width.
+* Two browser workarounds keep typing in place: Chrome misreports the caret
+  after a paragraph break that follows a hard break, and WebKit's own
+  `Enter`, which ProseMirror uses on iPadOS, does nothing beside markers that
+  just hid. The browser tests in `webapp/e2e/writing.spec.ts` guard both.
 * Text added after a raw block that never ends, such as an HTML comment
   without `-->`, joins that block as source when the document next opens.
 * In the rare block that only the last-resort form can write, the saved
