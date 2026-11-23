@@ -57,7 +57,8 @@ same pull request.
 
 ## Acceptance criteria
 
-* [ ] Following the walkthrough with provider settings returns findings of
+* [ ] Following the walkthrough with the
+  [model ADR](./0039-pair-writing-model-adr.md)'s models returns findings of
   each shipped kind for a synthetic document written to contain them, and
   each anchor resolves to the passage it names.
 * [ ] The evaluation cases run as the agent ADR decides and include coherent

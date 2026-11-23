@@ -1,6 +1,6 @@
 ---
 title: Record the pair-writing experience ADR
-description: Decide end to end how writers work with the pair writer, in conversation and in background review, tested with a throwaway prototype and real-model prompt trials before any implementation is chosen.
+description: Decide end to end how writers work with the pair writer, in conversation and in background review, tested with a throwaway prototype and grounded in what local and cloud models showed they can do.
 author: Tim Park
 ms.date: 2026-11-22
 ms.topic: reference
@@ -13,10 +13,10 @@ estimated_reading_time: 3
 ## Story
 
 As a contributor or coding agent, I want the writer's experience of the pair
-writer decided end to end, and tested with a prototype and real prompts,
-before its implementation is chosen so that where the agent runs, how it is
-built, and how its conversations are stored serve that experience rather
-than constrain it.
+writer decided end to end, tested with a prototype, and grounded in what the
+models can do, before its implementation is chosen so that where the agent
+runs, how it is built, and how its conversations are stored serve that
+experience rather than constrain it.
 
 ## Context
 
@@ -49,8 +49,12 @@ foundation the experience builds on, and
 pair writer's suggestions are shown and accepted.
 
 The largest risk is not how the agent is built but whether its unprompted
-findings help more than they distract. The prompt trials test that before
-any code is written for it.
+findings help more than they distract, on a model the writer can run. The
+[model ADR](./0039-pair-writing-model-adr.md) measures that first with local
+models served by Ollama, falling back to cloud models only where local ones
+fall short. Its results set what this experience can promise: which kinds of
+finding are good enough to ship, how quickly replies arrive, and whether
+text ever leaves the writer's machine.
 
 ## Scope
 
@@ -84,18 +88,19 @@ any code is written for it.
   or deleted.
 * Decide whether suggestions stay advice, or whether a writer can accept a
   proposed rewrite into the document, and how that meets undo.
-* Decide the default for background review and what the writer is told
-  about text leaving their machine for a model provider.
+* Decide the default for background review, and what the writer is told and
+  asked before any text leaves their machine for a cloud model under the
+  model ADR's fallback.
 * Set targets the implementation must meet, such as how soon a reply starts
-  to appear, how often reviews may run, a cost ceiling, and no measurable
-  effect on typing in [responsiveness.spec.ts](../../webapp/e2e/responsiveness.spec.ts).
+  to appear, how often reviews may run, limits on memory, battery, and any
+  cloud cost, and no measurable effect on typing in
+  [responsiveness.spec.ts](../../webapp/e2e/responsiveness.spec.ts). Ground
+  each target in the model ADR's measurements.
 * Build a throwaway, clickable prototype of the journeys with scripted
   responses, keep it out of the repository, try the journeys with it, and
   record in the ADR what the prototype changed in the design.
-* Trial prompts with a real model on synthetic documents written to contain
-  weak passages, open threads, and disconnects, along with coherent documents
-  that should produce none. Record how useful and how noisy each kind of
-  finding was, and cut or defer any kind that does not earn its place.
+* Decide which kinds of finding ship first from the model ADR's results, and
+  cut or defer any kind that does not earn its place.
 * Resolve how suggestions are shown and accepted from ADR 0008's follow-up
   decision, and link to this ADR from it.
 * State what the experience requires of the agent architecture and
@@ -109,16 +114,15 @@ any code is written for it.
 * [ ] The ADR is accepted and listed in the ADR index.
 * [ ] The ADR describes every journey in scope end to end, including the
   no-provider, offline, and failure states.
-* [ ] The ADR records what the prototype and the prompt trials showed, and
-  which kinds of finding ship first, which are deferred, and why.
+* [ ] The ADR records what the prototype showed, and which kinds of finding
+  ship first, which are deferred, and why, citing the model ADR's results.
 * [ ] The ADR states the targets and requirements that backlog 10 and backlog
   37 must meet, and those stories reflect them.
 * [ ] ADR 0008's follow-up decision on showing and accepting suggestions links
   to the ADR.
-* [ ] No prototype, credential, or real manuscript is committed, and the
-  trial documents quoted in the ADR are synthetic.
+* [ ] No prototype, credential, or real manuscript is committed.
 * [ ] `tools/check` exits 0.
 
 ## Prerequisites
 
-None.
+* [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)

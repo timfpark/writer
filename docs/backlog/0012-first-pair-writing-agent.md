@@ -57,22 +57,24 @@ the agent ADR, amend it in the same pull request.
   return the reply, streamed or whole as the agent ADR decides. Store
   conversations as the conversations ADR decides, and regenerate
   `service/openapi.json`.
-* Start the service without provider settings, and answer conversation
+* Start the service without a reachable model, and answer conversation
   requests then with the problem details response the agent ADR names.
-* Add the provider settings to `service/.env.example` with placeholders only.
-* Update `service/README.md` with a walkthrough that asks each of the three
-  requests about a synthetic passage, and update `service/AGENTS.md` with the
-  new crate, folders, settings, and commands.
+* Add the model settings, such as Ollama's address and the chosen models, to
+  `service/.env.example`, with placeholders only for any cloud credentials.
+* Update `service/README.md` with how to install Ollama and pull the
+  [model ADR](./0039-pair-writing-model-adr.md)'s models, and a walkthrough
+  that asks each of the three requests about a synthetic passage. Update
+  `service/AGENTS.md` with the new crate, folders, settings, and commands.
 
 ## Acceptance criteria
 
-* [ ] With provider settings supplied at run time, following
+* [ ] With the model ADR's local model running in Ollama, following
   `service/README.md` returns an answer to each of the three requests about a
   synthetic passage, on a host and in the development container.
-* [ ] Without provider settings, the service starts and the conversation
+* [ ] Without a reachable model, the service starts and the conversation
   endpoint returns the documented problem details response.
-* [ ] `tools/check` exits 0 without provider credentials or network access to
-  model providers.
+* [ ] `tools/check` exits 0 without Ollama, a model, provider credentials, or
+  network access to model providers.
 * [ ] Changing the endpoint without regenerating the contract makes
   `tools/check` exit 1 with a message naming `service/openapi.json`.
 * [ ] No message or document text appears in a log line or error response,

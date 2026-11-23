@@ -83,12 +83,14 @@ what this ADR decides.
   and recovered after a restart.
 * Within that location, choose whether to adopt an agent framework or call
   model providers directly, and compare at least two options.
-* Choose the first model provider and the async client that calls it, and
-  decide how the service stays open to other providers.
-* Decide how credentials and provider settings reach the service at run time,
-  consistent with ADR 0001's safety rules and a sanitized `.env.example`, and
-  how the service reports a missing provider so the webapp can show the
-  experience ADR's no-provider state.
+* Choose the client that calls the [model ADR](./0039-pair-writing-model-adr.md)'s
+  local models through Ollama and its cloud fallback, and decide how the
+  service stays open to other providers.
+* Decide how Ollama's address, the chosen models, and any cloud credentials
+  reach the service at run time, consistent with ADR 0001's safety rules and
+  a sanitized `.env.example`, and how the service reports a missing or
+  unreachable model so the webapp can show the experience ADR's no-provider
+  state.
 * Decide how prompts in `service/prompts/` are stored, versioned, and loaded:
   embedded at build time or read at run time, and how the experience ADR's
   trial prompts become the first versions.
@@ -132,8 +134,8 @@ what this ADR decides.
 * [ ] If the agent leaves the Rust service, ADR 0001 and ADR 0002 are
   amended in the same pull request, and backlog 12 and backlog 35 describe
   the new location.
-* [ ] The ADR names the framework or direct-client approach, the first model
-  provider and client, and the alternatives weighed against them.
+* [ ] The ADR names the framework or direct-client approach, the client for
+  Ollama and the cloud fallback, and the alternatives weighed against them.
 * [ ] The ADR states how prompts load and how evaluations run, and confirms
   `tools/check` needs no credentials or network access to model providers.
 * [ ] The ADR shows how the implementation meets each of the experience
@@ -144,3 +146,4 @@ what this ADR decides.
 ## Prerequisites
 
 * [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)
+* [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)

@@ -36,8 +36,9 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                                | Subsystems          | Outcome                                                                                | Prerequisite |
 |----|------------------------------------------------------------------------------------------|---------------------|----------------------------------------------------------------------------------------|--------------|
-| 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)          | `service`, `webapp` | An accepted ADR fixes the writer's experience of the agent, tested end to end.         | None         |
-| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)       | `service`, `webapp` | An accepted ADR fixes where the agent runs and how it is built.                        | 38           |
+| 39 | [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)                    | `service`           | An accepted ADR picks local Ollama models measured on a laptop, with a cloud fallback. | None         |
+| 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)          | `service`, `webapp` | An accepted ADR fixes the writer's experience of the agent, tested end to end.         | 39           |
+| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)       | `service`, `webapp` | An accepted ADR fixes where the agent runs and how it is built.                        | 38, 39       |
 | 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                  | `service`, `webapp` | An accepted ADR fixes how conversations are stored, versioned, and audited.            | 38           |
 | 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md) | `service`           | The service answers the writer about the open document, backed by prompts and evals.   | 10, 37       |
 | 34 | [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)          | `webapp`            | The assistant pane streams the pair writer's answers about the open document.          | 12           |
@@ -83,9 +84,11 @@ panes, a shortcut reference, and keyboard-only browser tests.
 
 The pair-writing agent follows the workspace. It answers the writer in the
 assistant pane and reviews their text in the background, offering
-suggestions, questions, and disconnects between passages. Item 38 decides
-that experience end to end first, tested with a throwaway prototype and
-real-model prompt trials, so the decisions that follow serve it. Item 10 then
+suggestions, questions, and disconnects between passages. Item 39 first
+measures which local models served by Ollama can do this on a high-end
+laptop, and where a cloud model must stand in. Item 38 then decides the
+experience end to end, tested with a throwaway prototype and grounded in
+those results, so the decisions that follow serve it. Item 10 then
 decides where the agent runs and how it is built, and item 37 decides how its
 conversations are stored, tied to versions of the text, and audited. Item 12
 creates `service/prompts/` and `service/evals/` with the conversation
