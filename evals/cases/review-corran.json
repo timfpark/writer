@@ -1,0 +1,20 @@
+{
+  "id": "review-corran",
+  "task": "review",
+  "split": "holdout",
+  "length": "scene",
+  "documents": [
+    "corran-station"
+  ],
+  "expected": [
+    {
+      "id": "lise-age",
+      "kind": "disconnect",
+      "passages": [
+        "Lise, who was seven and asleep",
+        "who would be twelve in June"
+      ],
+      "note": "Lise is seven, then will be twelve in June."
+    }
+  ]
+}

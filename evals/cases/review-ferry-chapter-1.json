@@ -1,0 +1,23 @@
+{
+  "id": "review-ferry-chapter-1",
+  "task": "review",
+  "split": "holdout",
+  "length": "chapter",
+  "documents": [
+    "ferry-chapter-1"
+  ],
+  "expected": [
+    {
+      "id": "purple-lake",
+      "kind": "suggestion",
+      "passages": [
+        "The lake was a vast, shimmering, glimmering mirror of silvery liquid glass"
+      ],
+      "note": "Overwritten paragraph."
+    }
+  ],
+  "expectNone": [
+    "disconnect"
+  ],
+  "note": "Chapter one alone is coherent: any disconnect is a false alarm."
+}

@@ -1,0 +1,21 @@
+{
+  "id": "review-saltworks",
+  "task": "review",
+  "split": "tune",
+  "length": "manuscript",
+  "documents": [
+    "saltworks"
+  ],
+  "expected": [
+    {
+      "id": "mill-fire",
+      "kind": "disconnect",
+      "passages": [
+        "Every autumn since 1890 it had ground the island's oats",
+        "roofless since the fire of 1931"
+      ],
+      "note": "Chapter 2 has the mill grinding every autumn since 1890; chapter 7 says it has been a roofless shell since 1931."
+    }
+  ],
+  "note": "Chapters drafted by a local model from a written outline; the mill disconnect was planted by hand."
+}

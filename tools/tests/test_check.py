@@ -44,6 +44,11 @@ class CheckGateTest(unittest.TestCase):
             "README.md",
             "---\ntitle: Test\ndescription: Synthetic workspace\n---\n\n## Overview\n\nClean paragraph.\n",
         )
+        self.write("evals/tests/__init__.py", "")
+        self.write(
+            "evals/tests/test_smoke.py",
+            "import unittest\nclass Smoke(unittest.TestCase):\n    def test_ok(self): pass\n",
+        )
         (self.root / "service").mkdir()
         self.cargo_log = self.add_cargo_stub()
         self.write("webapp/package.json", '{"engines": {"node": "26.13.1"}}\n')
@@ -229,6 +234,22 @@ if sys.argv[1:2] == [{fail_subcommand!r}]:
         self.assertIn("cargo fmt simulated failure", res.stderr)
         self.assertIn("FAILED phases: service", res.stderr)
         self.assertEqual(len(self.cargo_log.read_text(encoding="utf-8").splitlines()), 4)
+
+    def test_evals_phase_runs_harness_tests_after_service_and_fails_with_exit_1(self):
+        self.add_node_stub()
+        self.add_npm_stub()
+        res = self.run_check()
+        self.assertEqual(res.returncode, 0, res.stderr)
+        self.assertLess(res.stdout.index("<== service: passed"), res.stdout.index("<== evals: passed"))
+        self.assertLess(res.stdout.index("<== evals: passed"), res.stdout.index("<== webapp: passed"))
+        self.write(
+            "evals/tests/test_smoke.py",
+            "import unittest\nclass Smoke(unittest.TestCase):\n    def test_bad(self): self.fail('broken harness')\n",
+        )
+        res = self.run_check()
+        self.assertEqual(res.returncode, 1)
+        self.assertIn("broken harness", res.stderr)
+        self.assertIn("FAILED phases: evals", res.stderr)
 
     def test_webapp_phase_installs_then_runs_every_check_in_webapp_after_service(self):
         self.add_node_stub()
