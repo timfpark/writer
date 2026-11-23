@@ -150,6 +150,9 @@ Consult these when changing architecture, dependencies, or conventions:
 * [ADR 0006](../docs/adrs/0006-storage-architecture.md): the
   `WorkspaceStore` interface and conformance suite, the filesystem backend,
   content-hash revisions, `WRITER_DATA_DIR`, and the SQLx path
+* [ADR 0010](../docs/adrs/0010-pair-writing-models.md): the local models the
+  pair writer runs, their memory and latency, and reaching Ollama through
+  `OLLAMA_HOST`
 
 ## Commands
 
