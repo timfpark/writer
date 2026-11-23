@@ -1,12 +1,13 @@
 ---
 title: Record the pair-writing model ADR
-description: Evaluate local models served by Ollama on a high-end laptop for pair writing and choose the models Writer runs, with no cloud model.
+description: Build a committed evaluation subsystem, measure local models served by Ollama on a high-end laptop for pair writing, and choose the models Writer runs, with no cloud model.
 author: Tim Park
 ms.date: 2026-11-22
 ms.topic: reference
 subsystems:
+  - repository
   - service
-estimated_reading_time: 4
+estimated_reading_time: 5
 ---
 
 ## Story
@@ -73,6 +74,28 @@ Muse-Glimmer-30B at BF16 beside Gemma 4 26B-A4B at 8-bit, or Mistral Medium
 3.5 beside Qwen3.6-35B-A3B. Hemmingway-1.5's noncommercial license may rule
 it out whatever its quality.
 
+Models improve quickly, so this measurement is the first of many rather
+than a one-off. The harness, the synthetic cases, and a summary of each run
+are committed so that a new model, runtime, or prompt can be scored against
+the same cases and compared with earlier results. They live in a new
+top-level `evals/` subsystem (planned) rather than in `service/evals/`,
+where [ADR 0001](../adrs/0001-monorepo-structure.md#artifact-locations)
+placed evaluation cases:
+
+* Comparing models and testing the product's prompts are one activity: the
+  first varies the model with the prompts fixed, the second varies the
+  prompts with the model fixed. One harness and one set of cases serve both.
+* The harness compares runtimes and, under the
+  [cloud fallback ADR](./0040-cloud-model-fallback-adr.md), cloud providers,
+  none of which the service ships. It reaches Writer's own pair writer only
+  through the service's HTTP API, so it survives wherever the
+  [agent architecture ADR](./0010-agent-architecture-adr.md) places the
+  agent.
+* Its results inform decisions about the webapp's experience as much as the
+  service's.
+* It runs by hand on machines with a capable GPU, never in `tools/check`'s
+  gate, on a cadence of its own.
+
 This decision covers local models only. Writer ships its first pair writer
 on them, and a [cloud fallback](./0040-cloud-model-fallback-adr.md) is
 considered only after writers have used it. Where a local model falls short
@@ -101,8 +124,34 @@ client that calls the models.
   silicon. Where a candidate performs materially better under another local
   runtime, such as MLX, measure both and record whether Writer should support
   that runtime instead of or beside Ollama.
+* Create the `evals/` subsystem with this measurement as its first
+  deliverable, following ADR 0001's
+  [Adding a subsystem](../adrs/0001-monorepo-structure.md#adding-a-subsystem)
+  checklist:
+  * A runner in standard-library Python that scores a named configuration of
+    runtime, model, quantization, prompt, and mode against the cases. It
+    reaches runtimes through adapters, starting with Ollama, so later stories
+    add the service's HTTP API and cloud providers without rewriting it.
+  * Synthetic cases under `evals/cases/`, the scoring rubric, and the
+    procedure for blind scoring, including who or what scored each run.
+    Hold back some cases from prompt tuning so that scores do not overstate
+    quality.
+  * One committed summary per run under `evals/results/`, recording the
+    machine, runtime and version, model digest and quantization, prompt and
+    case versions, scores, timings, and resource measurements. Raw model
+    outputs stay in `.local/`.
+  * Unit tests for the runner against a fake runtime, run by a new `evals`
+    phase of `tools/check` that needs neither Ollama, a model, nor network
+    access.
+* Amend ADR 0001 for the new subsystem: its layout, its boundaries (it may
+  call model runtimes and the service's HTTP API, never imports service
+  source, and ships nothing to writers), the artifact locations for
+  evaluation cases and results, and why `service/evals/` was not used. Add
+  `evals` to the subsystems that
+  [check_docs.py](../../tools/check_docs.py) allows, and replace mentions of
+  `service/evals/` in the root and service `AGENTS.md` files.
 * Write synthetic documents of increasing length, such as a short scene, a
-  chapter, and a long manuscript, some containing weak passages, open
+  chapter, and a long manuscript, as `evals/` cases, some containing weak passages, open
   threads, and disconnects within and across documents, and some coherent
   documents that should produce none of them.
 * Measure each candidate on the three example requests and on each kind of
@@ -129,14 +178,17 @@ client that calls the models.
 * Decide how the service reaches Ollama on a host and from the development
   container, which has no access to the Mac's GPU. Confirm that `tools/check`
   needs neither Ollama nor a model.
-* Keep the evaluation harness and its outputs out of the repository, but
-  keep them reusable so the cloud fallback story can score cloud models
-  against the same documents. Quote only synthetic text in the ADR.
+* Quote only synthetic text in the ADR and in `evals/`, and cite the
+  committed result summaries rather than copying every measurement.
 * Add the ADR to the ADR index with `service` in its `subsystems` field.
 
 ## Acceptance criteria
 
-* [ ] The ADR is accepted and listed in the ADR index.
+* [ ] The ADR is accepted and listed in the ADR index, and ADR 0001 is
+  amended for the `evals/` subsystem in the same pull request.
+* [ ] Following `evals/README.md` on the reference machine reruns a
+  configuration and writes a result summary comparable with the committed
+  one.
 * [ ] The ADR names the candidates measured on the reference machine, with
   their quality, latency, memory, and battery results for each mode and kind
   of finding.
@@ -145,7 +197,8 @@ client that calls the models.
   smallest machine they serve.
 * [ ] The ADR states how the service reaches Ollama on a host and from the
   development container.
-* [ ] `tools/check` exits 0.
+* [ ] `tools/check` runs the `evals` phase and exits 0 without Ollama, a
+  model, or network access to model providers.
 
 ## Prerequisites
 

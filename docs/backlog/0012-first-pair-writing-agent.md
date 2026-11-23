@@ -1,6 +1,6 @@
 ---
 title: Answer the writer in conversation from the service
-description: Add the agent crate, versioned prompts, synthetic evaluation cases, and a conversation endpoint that answers the writer about the open document.
+description: Add the agent crate, versioned prompts, a conversation endpoint that answers the writer about the open document, and its evaluation cases.
 author: Tim Park
 ms.date: 2026-11-22
 ms.topic: reference
@@ -16,13 +16,15 @@ on, such as how to improve this text, how to develop it further, or what
 other ideas to explore, and get an answer grounded in that text so that the
 product's core behavior exists behind the API contract, with prompts and
 evaluations in the places
-[ADR 0001](../adrs/0001-monorepo-structure.md#artifact-locations) set out.
+[ADR 0001](../adrs/0001-monorepo-structure.md#artifact-locations) and the
+[model ADR](./0039-pair-writing-model-adr.md) set out.
 
 ## Context
 
-ADR 0001 places agent prompts in `service/prompts/` and evaluation cases in
-`service/evals/`. Backlog 6, the service foundation, left both folders to
-this story rather than creating them empty. The agent ADR from
+ADR 0001 places agent prompts in `service/prompts/`, and backlog 6, the
+service foundation, left that folder to this story rather than creating it
+empty. The model ADR creates the top-level `evals/` subsystem, whose harness
+scores models and prompts against synthetic cases. The agent ADR from
 [backlog 10](./0010-agent-architecture-adr.md) chooses the framework, model
 provider, prompt loading, and evaluation running. It also decides what
 context a conversation request carries and how tests run without a model
@@ -47,9 +49,10 @@ the agent ADR, amend it in the same pull request.
 * Add the agent crate below `writer-api`, following the agent ADR and ADR
   0002's dependency direction.
 * Create `service/prompts/` with the conversation prompt.
-* Create `service/evals/` with synthetic evaluation cases for at least three
-  requests about a passage: ideas to improve it, ideas to develop it further,
-  and other ideas to explore. Run them the way the agent ADR decides.
+* Add synthetic evaluation cases to `evals/` for at least three requests
+  about a passage: ideas to improve it, ideas to develop it further, and
+  other ideas to explore. Run them against the conversation endpoint the way
+  the agent ADR decides, and commit the result summary.
 * Add the fake provider the agent ADR chooses for tests that run without a
   model provider.
 * Add the conversation endpoints the conversations ADR defines, which take

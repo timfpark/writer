@@ -28,8 +28,8 @@ The [conversations ADR](./0037-agent-conversations-adr.md) decides whether
 each review is stored as a conversation of its own and how it points to the
 version of the text it read.
 [Backlog 12](./0012-first-pair-writing-agent.md) builds the agent crate,
-`service/prompts/`, `service/evals/`, and the fake provider this story
-extends. [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint
+`service/prompts/`, the conversation cases in `evals/`, and the fake
+provider this story extends. [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint
 conventions. If building reveals a flaw in the agent ADR, amend it in the
 same pull request.
 
@@ -37,8 +37,8 @@ same pull request.
 
 * Add the background review prompts to `service/prompts/`, starting from the
   experience ADR's trial prompts.
-* Add synthetic evaluation cases for each kind of finding the experience ADR
-  ships, such as suggestions grounded in the passage, questions that open a
+* Add synthetic evaluation cases to `evals/` for each kind of finding the
+  experience ADR ships, such as suggestions grounded in the passage, questions that open a
   direction the text has not taken, and disconnects between passages.
   Include coherent documents that should produce no finding of a kind, so
   the cases catch false alarms as well as misses.

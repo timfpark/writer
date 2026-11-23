@@ -27,9 +27,11 @@ when reviews run, and the targets for latency, review frequency, memory, and bat
 This decision chooses an implementation that meets them.
 
 [ADR 0001](../adrs/0001-monorepo-structure.md#coding-agents-and-the-product-agent)
-makes the agent service behavior. It places prompts in `service/prompts/`,
-model integrations in service code, and evaluation cases in
-`service/evals/`. [ADR 0002](../adrs/0002-service-architecture.md) lists
+makes the agent service behavior. It places prompts in `service/prompts/`
+and model integrations in service code, and the
+[model ADR](./0039-pair-writing-model-adr.md) moves evaluation cases, their
+harness, and their results into the top-level `evals/` subsystem.
+[ADR 0002](../adrs/0002-service-architecture.md) lists
 "Agent framework, model providers, prompt loading, and evaluation running" as
 a follow-up decision. It already requires outbound model calls on the Tokio
 runtime through an async client, streaming over SSE, and an agent crate below
@@ -95,9 +97,9 @@ what this ADR decides.
 * Decide how prompts in `service/prompts/` are stored, versioned, and loaded:
   embedded at build time or read at run time, and how the experience ADR's
   trial prompts become the first versions.
-* Decide how evaluation cases in `service/evals/` are written and run, with
-  cases for each conversation request and each kind of finding the
-  experience ADR ships, and which parts run in `tools/check` without
+* Decide how the `evals/` harness runs the agent's cases against the
+  service, such as through its HTTP API, with cases for each conversation
+  request and each kind of finding the experience ADR ships, and which parts run in `tools/check` without
   credentials or network access.
 * Decide how service tests and browser tests exercise the agent without a
   model provider, such as a deterministic fake provider chosen by

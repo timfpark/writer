@@ -38,9 +38,11 @@ network dependency to the service the
   recorded gaps and from use of the delivered conversation and background
   review, and decide whether any justify a cloud model. If none do, record
   that and close the decision.
-* Score at least one leading cloud model against the chosen local models on
-  the model ADR's synthetic documents, blind where practical, for each mode
-  and kind of finding.
+* Add a cloud provider adapter to the `evals/` harness the model ADR
+  creates, with placeholders only in its `.env.example`. Score at least one
+  leading cloud model against the chosen local models on the same cases,
+  blind where practical, for each mode and kind of finding, and commit the
+  result summaries.
 * Decide which journeys, modes, and kinds of finding may use a cloud model,
   and what writers on machines below the model ADR's smallest machine get.
 * Decide how the writer is told and asked before any text leaves their
