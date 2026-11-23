@@ -51,6 +51,13 @@ class ScoringTest(unittest.TestCase):
         self.assertEqual((one_side["planted"], both["planted"]), ({"m": False}, {"m": True}))
         self.assertEqual((both["anchors"], both["anchorsResolved"], both["findingsFullyAnchored"]), (2, 2, 1))
 
+    def test_disconnect_with_several_conflicting_passages_counts_any_two(self):
+        three = case(expected=[Expected("m", "disconnect", [
+            "Mara had left Calloway three springs ago", "Mara, who had never once left Calloway",
+            "wrote a postcard"])])
+        scores = score_review(three, reply(("disconnect", ["Mara, who had never once left Calloway, wrote a postcard"])))
+        self.assertEqual(scores["planted"], {"m": True})
+
     def test_false_alarms_and_unresolved_anchors_are_counted(self):
         coherent = case(expect_none=["disconnect"])
         scores = score_review(coherent, reply(("disconnect", ["a passage that is not there at all"]),
@@ -58,13 +65,20 @@ class ScoringTest(unittest.TestCase):
         self.assertEqual(scores["falseAlarms"], {"disconnect": 1})
         self.assertEqual((scores["anchors"], scores["anchorsResolved"]), (2, 1))
 
-    def test_invalid_review_is_scored_invalid(self):
-        self.assertEqual(score_review(case(), "Here are my thoughts")["valid"], False)
+    def test_invalid_review_misses_every_planted_issue(self):
+        planted = case(expected=[Expected("m", "disconnect", ["Mara had left Calloway three springs ago"])])
+        scores = score_review(planted, "Here are my thoughts")
+        self.assertEqual((scores["valid"], scores["planted"]), (False, {"m": False}))
 
     def test_conversation_grounding_counts_quotes_found_in_the_text(self):
         scores = score_conversation(case(task="conversation"),
                                     'Cut \u201cMara had left Calloway three springs ago\u201d and "a line that is invented here".')
         self.assertEqual((scores["quotes"], scores["quotesGrounded"]), (2, 1))
+
+    def test_a_short_quote_does_not_misalign_the_quotes_after_it(self):
+        scores = score_conversation(case(task="conversation"),
+                                    'Keep "bags" in the sentence because "Mara had left Calloway three springs ago" works.')
+        self.assertEqual((scores["quotes"], scores["quotesGrounded"]), (1, 1))
 
 
 class CasesTest(unittest.TestCase):

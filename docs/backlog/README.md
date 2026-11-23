@@ -26,7 +26,7 @@ Every subsystem shares one backlog of delivery stories and open decisions.
   views, together with their prerequisites, before new capabilities.
 * Item numbers are stable identities. Give a new item the next unused number.
 * A work item's `subsystems` frontmatter lists the folders it changes or the
-  decision it governs (`service`, `webapp`, or `repository` for
+  decision it governs (`service`, `webapp`, `evals`, or `repository` for
   repository-wide tooling and process), and the Subsystems column repeats that
   list.
 * When a work item is finished, delete its row and its document, update the

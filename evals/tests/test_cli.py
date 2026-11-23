@@ -69,6 +69,8 @@ class CliTest(unittest.TestCase):
         rows = (sheet / "scores.csv").read_text().splitlines()
         (sheet / "scores.csv").write_text("\n".join([rows[0]] + [r.replace(",,,,", ",5,4,3,") for r in rows[1:]]) + "\n")
         self.assertEqual(self.cli("ingest", "--sheet", str(sheet), "--scorer", "tester"), 0)
+        self.assertEqual(self.cli("rescore", *paths), 0)
+        self.assertIn("rescored 2 outputs", self.lines[-1])
         self.assertEqual(self.cli("report"), 0)
         self.assertIn("| fake-a ", self.lines[-1])
         self.assertIn("| 4.0 ", self.lines[-1])

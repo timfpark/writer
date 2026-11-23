@@ -74,6 +74,24 @@ def memory_used_bytes() -> Optional[int]:
     return used * page
 
 
+def runner_bytes() -> Optional[int]:
+    """Resident memory of the processes `ollama serve` starts to run models.
+
+    Ollama's own /api/ps undercounts memory-mapped weights, so this reads the
+    runners' resident set from `ps` instead.
+    """
+    out = _run(["ps", "-axo", "pid=,ppid=,rss=,command="])
+    rows = []
+    for line in out.splitlines():
+        parts = line.split(None, 3)
+        if len(parts) == 4 and parts[0].isdigit() and parts[1].isdigit() and parts[2].isdigit():
+            rows.append((int(parts[0]), int(parts[1]), int(parts[2]), parts[3]))
+    servers = {pid for pid, _, _, cmd in rows if cmd.rstrip().endswith("ollama serve")}
+    if not servers:
+        return None
+    return sum(rss for _, ppid, rss, _ in rows if ppid in servers) * 1024
+
+
 class Sampler:
     """Samples power, thermal state, and memory on a background thread."""
 
@@ -86,7 +104,8 @@ class Sampler:
 
     @staticmethod
     def _read() -> Dict:
-        sample = {"t": time.monotonic(), "watts": power_watts(), "memoryUsed": memory_used_bytes()}
+        sample = {"t": time.monotonic(), "watts": power_watts(), "memoryUsed": memory_used_bytes(),
+                  "runner": runner_bytes()}
         sample.update(thermal())
         return sample
 
@@ -111,10 +130,12 @@ class Sampler:
         memory = [s["memoryUsed"] for s in self.samples if s.get("memoryUsed") is not None]
         speeds = [s["speedLimit"] for s in self.samples if s.get("speedLimit") is not None]
         levels = [s["warningLevel"] for s in self.samples if s.get("warningLevel") is not None]
+        runner = [s["runner"] for s in self.samples if s.get("runner") is not None]
         return {
             "meanWatts": round(sum(watts) / len(watts), 1) if watts else None,
             "maxWatts": round(max(watts), 1) if watts else None,
             "maxMemoryUsedGb": round(max(memory) / 2**30, 1) if memory else None,
+            "maxRunnerGb": round(max(runner) / 2**30, 1) if runner else None,
             "minCpuSpeedLimit": min(speeds) if speeds else None,
             "maxThermalWarning": max(levels) if levels else None,
         }

@@ -39,7 +39,7 @@ def summarize_run(result: Dict) -> Dict[str, object]:
     scored = [i["scores"] for i in review]
     valid = [s for s in scored if s.get("valid")]
     planted_total = sum(len(s.get("planted", {})) for s in scored)
-    planted_hits = sum(sum(1 for v in s.get("planted", {}).values() if v) for s in valid)
+    planted_hits = sum(sum(1 for v in s.get("planted", {}).values() if v) for s in scored)
     false_alarms = sum(sum(s.get("falseAlarms", {}).values()) for s in valid)
     anchors = sum(s.get("anchors", 0) for s in valid)
     resolved = sum(s.get("anchorsResolved", 0) for s in valid)
@@ -57,7 +57,7 @@ def summarize_run(result: Dict) -> Dict[str, object]:
         "config": result["config"]["name"],
         "quant": model.get("quantization") or model.get("runner") or "",
         "load": result.get("coldLoadSeconds"),
-        "gpuGb": max((i.get("gpuGb") or 0 for i in items), default=None) or None,
+        "runnerGb": max(((i.get("resources") or {}).get("maxRunnerGb") or 0 for i in items), default=None) or None,
         "ttft": _median(i.get("ttftSeconds") for i in conv),
         "tps": _median(i.get("tokensPerSecond") for i in items),
         "scene": by_length("scene"), "chapter": by_length("chapter"), "manuscript": by_length("manuscript"),
@@ -85,7 +85,7 @@ def report(paths: List[Path]) -> str:
         for result in runs:
             s = summarize_run(result)
             rows.append([
-                str(s["config"]), str(s["quant"]), _fmt(s["load"]), _fmt(s["gpuGb"]), _fmt(s["ttft"]),
+                str(s["config"]), str(s["quant"]), _fmt(s["load"]), _fmt(s["runnerGb"]), _fmt(s["ttft"]),
                 _fmt(s["tps"]), _fmt(s["scene"], 0), _fmt(s["chapter"], 0), _fmt(s["manuscript"], 0),
                 str(s["valid"]), _fmt(s["anchored"] * 100 if s["anchored"] is not None else None, 0),
                 str(s["planted"]), str(s["falseAlarms"]),
@@ -93,7 +93,7 @@ def report(paths: List[Path]) -> str:
                 _fmt(s["judgeConv"]), _fmt(s["judgeReview"]), _fmt(s["human"]), _fmt(s["watts"], 0),
             ])
         sections.append(_table(
-            ["Config", "Quant", "Load s", "GPU GB", "TTFT s", "Tok/s", "Scene s", "Chapter s",
+            ["Config", "Quant", "Load s", "Peak GB", "TTFT s", "Tok/s", "Scene s", "Chapter s",
              "Manuscript s", "Valid", "Anchored %", "Planted", "False alarms", "Quotes grounded %",
              "Judge chat", "Judge review", "People", "Watts"], rows))
     if pairs:
@@ -104,12 +104,13 @@ def report(paths: List[Path]) -> str:
             reviews = [i for i in result["items"] if i.get("phase") == "review" and "error" not in i]
             rows.append([
                 result["config"]["chat"]["name"], result["config"]["reviewer"]["name"],
-                "yes" if result.get("bothLoaded") else "no", _fmt(result.get("loadedGb")),
+                "yes" if result.get("bothLoaded") else "no",
+                _fmt(max(((i.get("resources") or {}).get("maxRunnerGb") or 0 for i in result["items"]), default=None) or None),
                 _fmt(_median(i.get("ttftSeconds") for i in idle)), _fmt(_median(i.get("ttftSeconds") for i in busy)),
                 _fmt(_median(i.get("tokensPerSecond") for i in idle)), _fmt(_median(i.get("tokensPerSecond") for i in busy)),
                 str(len(reviews)),
             ])
-        sections.append(_table(["Chat model", "Reviewer", "Both loaded", "Loaded GB", "TTFT idle s",
+        sections.append(_table(["Chat model", "Reviewer", "Both loaded", "Peak GB", "TTFT idle s",
                                 "TTFT during review s", "Tok/s idle", "Tok/s during review", "Reviews"], rows))
     if sustained:
         rows = []

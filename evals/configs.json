@@ -63,7 +63,7 @@
       "name": "muse-glimmer-30b-mlx",
       "runtime": "ollama",
       "model": "muse-glimmer:30b-mlx",
-      "hypothesis": "Ollama's MLX runner against its GGUF runner"
+      "hypothesis": "Ollama's MLX runner, which includes the speculative drafter, against its GGUF runner"
     },
     {
       "name": "qwen3.8-27b-q4",
@@ -84,6 +84,18 @@
       }
     },
     {
+      "name": "qwen3.8-27b-q4-nothink",
+      "runtime": "ollama",
+      "model": "qwen3.8:27b-q4_K_M",
+      "hypothesis": "Thinking off: faster replies, if the model honors it",
+      "conversation": {
+        "think": false
+      },
+      "review": {
+        "think": false
+      }
+    },
+    {
       "name": "qwen3.8-27b-q8",
       "runtime": "ollama",
       "model": "qwen3.8:27b-q8_0",
@@ -94,6 +106,12 @@
       "runtime": "ollama",
       "model": "gemma4:31b-it-q4_K_M",
       "hypothesis": "Dense, natural dialogue and literary voice"
+    },
+    {
+      "name": "gemma4-31b-mlx",
+      "runtime": "ollama",
+      "model": "gemma4:31b-mlx",
+      "hypothesis": "Ollama's MLX runner against its GGUF runner"
     },
     {
       "name": "gemma4-31b-q8",
@@ -124,6 +142,18 @@
       "runtime": "ollama",
       "model": "mistral-medium-3.5:128b-q4_K_M",
       "hypothesis": "Heavy dense model for slow, deep background review"
+    },
+    {
+      "name": "gemma4-12b-q4",
+      "runtime": "ollama",
+      "model": "gemma4:12b-it-q4_K_M",
+      "hypothesis": "Small dense model for machines with 16 to 24 GB"
+    },
+    {
+      "name": "qwen3.5-9b-q4",
+      "runtime": "ollama",
+      "model": "qwen3.5:9b-q4_K_M",
+      "hypothesis": "Small dense model for machines with 16 GB"
     },
     {
       "name": "gpt-oss-120b",

@@ -141,7 +141,7 @@ def load_cases(cases_dir: Path) -> List[Case]:
 def tree_digest(folder: Path) -> str:
     """A short digest of every file under a folder, so results name the exact cases used."""
     digest = hashlib.sha256()
-    for path in sorted(p for p in folder.rglob("*") if p.is_file()):
+    for path in sorted(p for p in folder.rglob("*") if p.is_file() and "__pycache__" not in p.parts):
         digest.update(str(path.relative_to(folder)).encode("utf-8") + b"\0")
         digest.update(path.read_bytes() + b"\0")
     return digest.hexdigest()[:12]

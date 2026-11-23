@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from . import cases as cases_mod
-from .judge import judge_results
+from .judge import judge_results, rescore
 from .prompts import PromptError, load_templates
 from .report import report
 from .runner import ConfigError, Environment, load_configs, run_config, run_pair, run_sustained
@@ -60,6 +60,9 @@ def _parser() -> argparse.ArgumentParser:
     ingest.add_argument("--sheet", type=Path, default=REPO / ".local" / "evals" / "sheet")
     ingest.add_argument("--scorer", required=True)
 
+    resc = sub.add_parser("rescore", help="recompute automatic scores from raw output")
+    resc.add_argument("results", nargs="+", type=Path)
+
     rep = sub.add_parser("report", help="summarize result files as Markdown tables")
     rep.add_argument("results", nargs="*", type=Path)
     return p
@@ -103,6 +106,12 @@ def main(argv: Optional[List[str]] = None, runtime=None, out=None, err=None) -> 
             err(f"writer_evals: {error}")
             return 2
         out(f"ingested {count} scored outputs")
+        return 0
+    if args.command == "rescore":
+        env = Environment(runtime=None, templates=templates,
+                          cases_digest=cases_mod.tree_digest(args.cases_dir), results_dir=args.results_dir,
+                          raw_dir=args.raw_dir, repo_root=REPO, log=out)
+        out(f"rescored {rescore(env, args.results, by_id)} outputs")
         return 0
     if args.command == "sheet":
         count = build_sheet(args.results, by_id, args.raw_dir, args.out, args.case_ids)

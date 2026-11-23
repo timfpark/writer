@@ -96,7 +96,8 @@ The harness scores what a machine can check:
 * Whether a review returns valid findings, and the share of quoted passages
   that appear in the documents
 * Whether a review finds each planted issue: a finding of the right kind that
-  quotes the planted passage, and for a disconnect, both sides of it
+  quotes a planted passage, and for a disconnect, two of the passages that
+  conflict. A case lists every passage involved in a contradiction.
 * False alarms: findings of a kind the case lists in `expectNone`
 * For conversation, the share of quoted passages that appear in the text
 

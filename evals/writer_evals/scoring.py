@@ -12,7 +12,8 @@ from typing import Dict, List, Optional, Tuple
 
 from .cases import KINDS, Case
 
-QUOTE_SPAN = re.compile(r"[\"\u201c]([^\"\u201c\u201d]{12,400})[\"\u201d]")
+# Every quoted span, short ones included, so pairs of quote marks stay aligned.
+QUOTE_SPAN = re.compile(r'"([^"]*)"')
 MIN_SHARED_WORDS = 5
 TRANSLATE = str.maketrans({
     "\u2018": "'", "\u2019": "'", "\u201c": '"', "\u201d": '"',
@@ -101,7 +102,8 @@ def parse_findings(text: str) -> Tuple[Optional[List[dict]], str]:
 def score_review(case: Case, text: str) -> Dict[str, object]:
     findings, note = parse_findings(text)
     if findings is None:
-        return {"valid": False, "error": note, "findings": 0}
+        return {"valid": False, "error": note, "findings": 0,
+                "planted": {e.id: False for e in case.expected}}
     docs = {d.id: d.text for d in case.documents}
     all_text = "\n".join(docs.values())
     anchors = resolved = 0
@@ -139,13 +141,18 @@ def score_review(case: Case, text: str) -> Dict[str, object]:
 
 
 def _covers_all(finding: dict, passages: List[str]) -> bool:
-    """A disconnect counts only when it cites both sides of the conflict."""
-    return all(any(overlaps(p["quote"], e) for p in finding["passages"]) for e in passages)
+    """A disconnect counts only when it cites two of the passages that conflict.
+
+    A case lists every passage involved in a contradiction, so citing any two
+    of them, for example both sides of a two-way conflict, finds it.
+    """
+    cited = sum(1 for e in passages if any(overlaps(p["quote"], e) for p in finding["passages"]))
+    return cited >= min(2, len(passages))
 
 
 def score_conversation(case: Case, text: str) -> Dict[str, object]:
     all_text = "\n".join(d.text for d in case.documents)
     quotes = [q.strip() for q in QUOTE_SPAN.findall(text.translate(TRANSLATE))
-              if len(q.split()) >= 3]
+              if len(q.split()) >= 3 and len(q) <= 400]
     grounded = sum(1 for q in quotes if resolves(q, all_text))
     return {"words": len(text.split()), "quotes": len(quotes), "quotesGrounded": grounded}

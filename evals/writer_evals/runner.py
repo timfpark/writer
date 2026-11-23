@@ -19,7 +19,7 @@ from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 from . import monitor
-from .cases import Case
+from .cases import Case, tree_digest
 from .prompts import REVIEW_SCHEMA, Template, case_values
 from .scoring import score_conversation, score_review
 
@@ -112,7 +112,7 @@ def git_commit(root: Path) -> str:
     try:
         head = subprocess.run(["git", "rev-parse", "--short=12", "HEAD"], cwd=root,
                               capture_output=True, text=True, check=True).stdout.strip()
-        dirty = subprocess.run(["git", "status", "--porcelain", "--", "evals"], cwd=root,
+        dirty = subprocess.run(["git", "status", "--porcelain", "--", "evals", ":!evals/results"], cwd=root,
                                capture_output=True, text=True, check=True).stdout.strip()
         return head + ("-dirty" if dirty else "")
     except (OSError, subprocess.CalledProcessError):
@@ -151,7 +151,8 @@ def _header(env: Environment, kind: str, slug: str) -> Dict[str, Any]:
         "started": now_iso(),
         "machine": env.machine(),
         "runtime": {"name": env.runtime.name, "version": env.runtime.version()},
-        "harness": {"commit": git_commit(env.repo_root)},
+        "harness": {"commit": git_commit(env.repo_root),
+                    "digest": tree_digest(Path(__file__).resolve().parent)},
         "cases": {"digest": env.cases_digest},
         "prompts": {name: t.digest for name, t in sorted(env.templates.items())},
     }
@@ -180,7 +181,10 @@ def generate(env: Environment, config: Config, case: Case, info: Any,
             item["error"] = str(err)[:300]
             env.log(f"  {case.id}: FAILED {item['error']}")
             return item
-    loaded = next((m for m in env.runtime.loaded() if m.name == config.model), None)
+    # A speculative-decoding drafter loads as a second model, so count every
+    # loaded model: run_config unloads all others first, and in a pair run
+    # the total is both models together.
+    own = env.runtime.loaded()
     item.update({
         "ttftSeconds": _round(gen.ttft_s),
         "firstTokenSeconds": _round(gen.first_token_s),
@@ -192,8 +196,9 @@ def generate(env: Environment, config: Config, case: Case, info: Any,
         "tokensPerSecond": _round(gen.tokens_per_s, 1),
         "thinkingWords": len(gen.thinking.split()),
         "doneReason": gen.done_reason,
-        "modelGb": _round(loaded.size_bytes / 2**30, 1) if loaded else None,
-        "gpuGb": _round(loaded.vram_bytes / 2**30, 1) if loaded else None,
+        "modelGb": _round(sum(m.size_bytes for m in own) / 2**30, 1) if own else None,
+        "gpuGb": _round(sum(m.vram_bytes for m in own) / 2**30, 1) if own else None,
+        "loadedModels": sorted(m.name for m in own),
         "resources": sampler.summary(),
         "outputDigest": hashlib.sha256(gen.text.encode("utf-8")).hexdigest()[:12],
     })
