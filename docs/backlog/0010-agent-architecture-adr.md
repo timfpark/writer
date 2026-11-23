@@ -23,7 +23,7 @@ one after the fact.
 The [pair-writing experience ADR](./0038-pair-writing-experience-adr.md)
 describes how writers work with the agent, in conversation and in background
 review. It defines the kinds of finding, what the agent pays attention to,
-when reviews run, and the targets for latency, review frequency, and cost.
+when reviews run, and the targets for latency, review frequency, memory, and battery.
 This decision chooses an implementation that meets them.
 
 [ADR 0001](../adrs/0001-monorepo-structure.md#coding-agents-and-the-product-agent)
@@ -84,10 +84,11 @@ what this ADR decides.
 * Within that location, choose whether to adopt an agent framework or call
   model providers directly, and compare at least two options.
 * Choose the client that calls the [model ADR](./0039-pair-writing-model-adr.md)'s
-  local models through Ollama and its cloud fallback, and decide how the
-  service stays open to other providers.
-* Decide how Ollama's address, the chosen models, and any cloud credentials
-  reach the service at run time, consistent with ADR 0001's safety rules and
+  local models through Ollama, and decide how the service stays open to
+  other providers, such as a cloud model the
+  [cloud fallback ADR](./0040-cloud-model-fallback-adr.md) may add later.
+* Decide how Ollama's address and the chosen models reach the service at run
+  time, consistent with ADR 0001's safety rules and
   a sanitized `.env.example`, and how the service reports a missing or
   unreachable model so the webapp can show the experience ADR's no-provider
   state.
@@ -111,7 +112,7 @@ what this ADR decides.
   ADR's behavior for edited and deleted passages.
 * Decide how reviews start on the experience ADR's triggers, whether the
   webapp or the service starts them, how they skip unchanged text and cancel
-  when the text changes, and how they stay within its frequency and cost
+  when the text changes, and how they stay within its frequency and resource
   targets.
 * Decide how findings reach the webapp under
   [ADR 0004](../adrs/0004-api-conventions.md): returned per request, polled,
@@ -135,11 +136,11 @@ what this ADR decides.
   amended in the same pull request, and backlog 12 and backlog 35 describe
   the new location.
 * [ ] The ADR names the framework or direct-client approach, the client for
-  Ollama and the cloud fallback, and the alternatives weighed against them.
+  Ollama, and the alternatives weighed against them.
 * [ ] The ADR states how prompts load and how evaluations run, and confirms
   `tools/check` needs no credentials or network access to model providers.
 * [ ] The ADR shows how the implementation meets each of the experience
-  ADR's targets for latency, review frequency, and cost.
+  ADR's targets for latency, review frequency, memory, and battery.
 * [ ] ADR 0008's follow-up decision on naming passages links to the ADR.
 * [ ] `tools/check` exits 0.
 

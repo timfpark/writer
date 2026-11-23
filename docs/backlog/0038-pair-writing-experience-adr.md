@@ -1,6 +1,6 @@
 ---
 title: Record the pair-writing experience ADR
-description: Decide end to end how writers work with the pair writer, in conversation and in background review, tested with a throwaway prototype and grounded in what local and cloud models showed they can do.
+description: Decide end to end how writers work with the pair writer, in conversation and in background review, tested with a throwaway prototype and grounded in what local models showed they can do.
 author: Tim Park
 ms.date: 2026-11-22
 ms.topic: reference
@@ -51,10 +51,11 @@ pair writer's suggestions are shown and accepted.
 The largest risk is not how the agent is built but whether its unprompted
 findings help more than they distract, on a model the writer can run. The
 [model ADR](./0039-pair-writing-model-adr.md) measures that first with local
-models served by Ollama, falling back to cloud models only where local ones
-fall short. Its results set what this experience can promise: which kinds of
-finding are good enough to ship, how quickly replies arrive, and whether
-text ever leaves the writer's machine.
+models served by Ollama. Its results set what this experience can promise:
+which kinds of finding are good enough to ship and how quickly replies
+arrive. Text never leaves the writer's machine; the
+[cloud fallback ADR](./0040-cloud-model-fallback-adr.md) revisits that only
+after writers have used the local pair writer.
 
 ## Scope
 
@@ -88,12 +89,10 @@ text ever leaves the writer's machine.
   or deleted.
 * Decide whether suggestions stay advice, or whether a writer can accept a
   proposed rewrite into the document, and how that meets undo.
-* Decide the default for background review, and what the writer is told and
-  asked before any text leaves their machine for a cloud model under the
-  model ADR's fallback.
+* Decide the default for background review.
 * Set targets the implementation must meet, such as how soon a reply starts
-  to appear, how often reviews may run, limits on memory, battery, and any
-  cloud cost, and no measurable effect on typing in
+  to appear, how often reviews may run, limits on memory and battery, and no
+  measurable effect on typing in
   [responsiveness.spec.ts](../../webapp/e2e/responsiveness.spec.ts). Ground
   each target in the model ADR's measurements.
 * Build a throwaway, clickable prototype of the journeys with scripted

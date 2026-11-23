@@ -60,7 +60,7 @@ the agent ADR, amend it in the same pull request.
 * Start the service without a reachable model, and answer conversation
   requests then with the problem details response the agent ADR names.
 * Add the model settings, such as Ollama's address and the chosen models, to
-  `service/.env.example`, with placeholders only for any cloud credentials.
+  `service/.env.example`.
 * Update `service/README.md` with how to install Ollama and pull the
   [model ADR](./0039-pair-writing-model-adr.md)'s models, and a walkthrough
   that asks each of the three requests about a synthetic passage. Update

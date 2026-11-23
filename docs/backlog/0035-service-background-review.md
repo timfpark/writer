@@ -20,7 +20,7 @@ not think to ask for.
 
 The [experience ADR](./0038-pair-writing-experience-adr.md) defines the kinds
 of finding that ship first, from suggestions, questions, and disconnects,
-and the targets for review frequency and cost. The
+and the targets for review frequency, memory, and battery. The
 [agent ADR](./0010-agent-architecture-adr.md) decides how findings anchor to
 passages, how reviews start, skip unchanged text, and stay within those
 targets, and how findings reach the webapp.
@@ -45,7 +45,7 @@ same pull request.
 * Add the review endpoint or stream the agent ADR decides, returning findings
   with their kind, text, and passage anchors, and regenerate
   `service/openapi.json`.
-* Enforce the experience ADR's frequency and cost targets in the service as
+* Enforce the experience ADR's frequency and resource targets in the service as
   the agent ADR decides: skip text already reviewed, and cap reviews per
   document and per period.
 * Record each review and its findings as the conversations ADR decides,
