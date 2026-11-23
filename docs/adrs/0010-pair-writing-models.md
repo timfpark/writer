@@ -25,12 +25,14 @@ Proposed on 2026-11-23, for [backlog 39](../backlog/0039-pair-writing-model-adr.
 The measurements ran unattended overnight on the reference machine. Two
 checks need a person before this record is accepted:
 
-* Blind scoring of the shortlisted outputs, which decides between the
-  provisional choices below where the judge model and the automatic scores
+* Blind scoring of 36 shortlisted outputs from six configurations, which
+  confirms the provisional model where the judge and the automatic scores
   disagree. The [evaluations guide](../../evals/README.md#scoring) describes
-  the sheet.
-* A battery run: the measurements ran on AC power, so battery drain is
-  estimated from measured power draw rather than measured.
+  the sheet; the outputs stay on the machine that produced them.
+* A battery run on the chosen model with the charger unplugged, and a check
+  that typing in a browser on the host stays smooth while it runs. The
+  measurements ran on AC power, so battery drain is estimated from power
+  draw, and the typing test ran without the host's GPU.
 
 This record amends [ADR 0001](./0001-monorepo-structure.md) by adding the
 `evals/` subsystem, which replaces the planned `service/evals/`.
@@ -48,17 +50,17 @@ This record amends [ADR 0001](./0001-monorepo-structure.md) by adding the
 * Let the blind scoring confirm the model. Its challenger for background
   review is Muse Glimmer 30B with its speculative drafter, which found the
   most planted issues but raised more, weaker findings.
-* Treat disconnects as the gap. Every model finds suggestions and questions
-  in a short scene; no model reliably finds contradictions within a chapter
-  or across chapters, so the experience ADR should ship disconnects behind
-  the other kinds or not at first.
+* Treat disconnects as the gap. Every model finds weak passages, and most
+  find open threads; no model reliably finds contradictions within a
+  chapter or across chapters, so the experience ADR should ship disconnects
+  behind the other kinds or not at first.
 * Require a 32 GB machine for the chosen model. Run Gemma 4 12B
   (`gemma4:12b-it-q4_K_M`, about 14 GB) on 24 GB machines and Qwen 3.5 9B
   (`qwen3.5:9b-q4_K_M`, about 9 GB) on 16 GB machines, which find fewer
   issues and, for Qwen 3.5 9B, ground fewer quotes.
-* Expect a review to slow conversation: sharing the GPU cut a conversation
-  model's throughput by half or more while a review ran, whether one model
-  or two served them.
+* Expect a review to slow conversation: with two models loaded, sharing the
+  GPU cut the conversation model's throughput by half or more while a review
+  ran. One model serving both modes was not measured under that load.
 * Run each model at 4-bit with its own sampling defaults, and at the lowest
   thinking level it offers that still reasons. Higher precision and deeper
   thinking did not pay for their cost.
@@ -127,29 +129,29 @@ license (CC BY-NC 4.0), so it was not measured. No Gemma 4 StyleTune variant
 is in the library either; the measured Gemma 4 31B is the instruction-tuned
 release.
 
-| Configuration                | Ollama model                     | Hypothesis                                                                           | Result                 |
-|------------------------------|----------------------------------|--------------------------------------------------------------------------------------|------------------------|
-| `muse-glimmer-30b-q4`        | `muse-glimmer:30b-q4_K_M`        | Permissive dense all-round writer and editor at 4-bit                                | Measured               |
-| `muse-glimmer-30b-q4-dflash` | `muse-glimmer:30b-q4_K_M-dflash` | Same model with its speculative drafter: faster, identical quality                   | Measured               |
-| `muse-glimmer-30b-q4-think`  | `muse-glimmer:30b-q4_K_M`        | Reasoning on for review                                                              | Measured               |
-| `muse-glimmer-30b-q8`        | `muse-glimmer:30b-q8_0`          | 8-bit keeps subtler word choice than 4-bit                                           | Measured               |
-| `muse-glimmer-30b-q8-dflash` | `muse-glimmer:30b-q8_0-dflash`   | 8-bit with the speculative drafter                                                   | Not downloaded in time |
-| `muse-glimmer-30b-bf16`      | `muse-glimmer:30b-bf16`          | Full precision: the ceiling for this model                                           | Not downloaded in time |
-| `muse-glimmer-30b-mlx`       | `muse-glimmer:30b-mlx`           | Ollama's MLX runner, which includes the speculative drafter, against its GGUF runner | Measured               |
-| `qwen3.8-27b-q4`             | `qwen3.8:27b-q4_K_M`             | Dense, low slop, thinking off for drafting                                           | Measured               |
-| `qwen3.8-27b-q4-think`       | `qwen3.8:27b-q4_K_M`             | Thinking on for structural review and continuity                                     | Measured               |
-| `qwen3.8-27b-q4-nothink`     | `qwen3.8:27b-q4_K_M`             | Thinking off: faster replies, if the model honors it                                 | Measured               |
-| `qwen3.8-27b-q8`             | `qwen3.8:27b-q8_0`               | 8-bit dense prose model                                                              | Measured               |
-| `gemma4-31b-q4`              | `gemma4:31b-it-q4_K_M`           | Dense, natural dialogue and literary voice                                           | Measured               |
-| `gemma4-31b-mlx`             | `gemma4:31b-mlx`                 | Ollama's MLX runner against its GGUF runner                                          | Measured               |
-| `gemma4-31b-q8`              | `gemma4:31b-it-q8_0`             | 8-bit dense prose model                                                              | Measured               |
-| `gemma4-26b-a4b-q4`          | `gemma4:26b-a4b-it-q4_K_M`       | Mixture of experts, 4B active: fast conversation                                     | Measured               |
-| `qwen3.6-35b-a3b-q4`         | `qwen3.6:35b-a3b-q4_K_M`         | Mixture of experts, 3B active: fastest conversation                                  | Measured               |
-| `qwen3.5-122b-a10b-q4`       | `qwen3.5:122b-a10b-q4_K_M`       | Heavy MoE for structural and consistency review                                      | Measured               |
-| `mistral-medium-3.5-q4`      | `mistral-medium-3.5:128b-q4_K_M` | Heavy dense model for slow, deep background review                                   | Not downloaded in time |
-| `gemma4-12b-q4`              | `gemma4:12b-it-q4_K_M`           | Small dense model for machines with 16 to 24 GB                                      | Measured               |
-| `qwen3.5-9b-q4`              | `qwen3.5:9b-q4_K_M`              | Small dense model for machines with 16 GB                                            | Measured               |
-| `gpt-oss-120b`               | `gpt-oss:120b`                   | Control: large model tuned for tools rather than prose                               | Not downloaded in time |
+| Configuration                | Ollama model                     | Hypothesis                                                                           | Result   |
+|------------------------------|----------------------------------|--------------------------------------------------------------------------------------|----------|
+| `muse-glimmer-30b-q4`        | `muse-glimmer:30b-q4_K_M`        | Permissive dense all-round writer and editor at 4-bit                                | Measured |
+| `muse-glimmer-30b-q4-dflash` | `muse-glimmer:30b-q4_K_M-dflash` | Same model with its speculative drafter: faster, identical quality                   | Measured |
+| `muse-glimmer-30b-q4-think`  | `muse-glimmer:30b-q4_K_M`        | Reasoning on for review                                                              | Measured |
+| `muse-glimmer-30b-q8`        | `muse-glimmer:30b-q8_0`          | 8-bit keeps subtler word choice than 4-bit                                           | Measured |
+| `muse-glimmer-30b-q8-dflash` | `muse-glimmer:30b-q8_0-dflash`   | 8-bit with the speculative drafter                                                   | Measured |
+| `muse-glimmer-30b-bf16`      | `muse-glimmer:30b-bf16`          | Full precision: the ceiling for this model                                           | Measured |
+| `muse-glimmer-30b-mlx`       | `muse-glimmer:30b-mlx`           | Ollama's MLX runner, which includes the speculative drafter, against its GGUF runner | Measured |
+| `qwen3.8-27b-q4`             | `qwen3.8:27b-q4_K_M`             | Dense, low slop, thinking off for drafting                                           | Measured |
+| `qwen3.8-27b-q4-think`       | `qwen3.8:27b-q4_K_M`             | Thinking on for structural review and continuity                                     | Measured |
+| `qwen3.8-27b-q4-nothink`     | `qwen3.8:27b-q4_K_M`             | Thinking off: faster replies, if the model honors it                                 | Measured |
+| `qwen3.8-27b-q8`             | `qwen3.8:27b-q8_0`               | 8-bit dense prose model                                                              | Measured |
+| `gemma4-31b-q4`              | `gemma4:31b-it-q4_K_M`           | Dense, natural dialogue and literary voice                                           | Measured |
+| `gemma4-31b-mlx`             | `gemma4:31b-mlx`                 | Ollama's MLX runner against its GGUF runner                                          | Measured |
+| `gemma4-31b-q8`              | `gemma4:31b-it-q8_0`             | 8-bit dense prose model                                                              | Measured |
+| `gemma4-26b-a4b-q4`          | `gemma4:26b-a4b-it-q4_K_M`       | Mixture of experts, 4B active: fast conversation                                     | Measured |
+| `qwen3.6-35b-a3b-q4`         | `qwen3.6:35b-a3b-q4_K_M`         | Mixture of experts, 3B active: fastest conversation                                  | Measured |
+| `qwen3.5-122b-a10b-q4`       | `qwen3.5:122b-a10b-q4_K_M`       | Heavy MoE for structural and consistency review                                      | Measured |
+| `mistral-medium-3.5-q4`      | `mistral-medium-3.5:128b-q4_K_M` | Heavy dense model for slow, deep background review                                   | Measured |
+| `gemma4-12b-q4`              | `gemma4:12b-it-q4_K_M`           | Small dense model for machines with 16 to 24 GB                                      | Measured |
+| `qwen3.5-9b-q4`              | `qwen3.5:9b-q4_K_M`              | Small dense model for machines with 16 GB                                            | Measured |
+| `gpt-oss-120b`               | `gpt-oss:120b`                   | Control: large model tuned for tools rather than prose                               | Measured |
 
 ### Runtimes and settings
 
@@ -202,8 +204,8 @@ Limits of this measurement:
   already contradicted itself in places, such as the supply boat's name.
   Models that reported those found real inconsistencies; only the planted
   mill contradiction is scored.
-* Bandwidth limited downloads to about 10 to 17 MB/s, so BF16 and some
-  variants were not measured; the results name what ran.
+* Bandwidth limited downloads to about 10 to 17 MB/s, so only Muse Glimmer
+  ran at BF16, and only the two leading families ran in MLX builds.
 * Load times start from unloaded models whose files the operating system may
   still cache, not from a cold disk.
 
@@ -221,11 +223,15 @@ harness, prompt, and case digests it ran with.
 | gemma4-31b-mlx             | nvfp4  | 18.3    | 2.0    | 38    | 3       | 8         | 75           | 6/6   | 7/9     | 0            | 95                | 4.7        | 4.1          |
 | gemma4-31b-q4              | Q4_K_M | 31.1    | 3.0    | 22    | 6       | 13        | 122          | 6/6   | 5/9     | 0            | 98                | 4.6        | 3.9          |
 | gemma4-31b-q8              | Q8_0   | 43.6    | 3.0    | 11    | 11      | 38        | 160          | 6/6   | 8/9     | 1            | 93                | 4.2        | 3.7          |
+| gpt-oss-120b               | MXFP4  | 63.5    | 0.6    | 77    | 13      | 14        | 48           | 6/6   | 6/9     | 0            | 58                | 3.0        | 2.2          |
+| mistral-medium-3.5-q4      | Q4_K_M | 96.5    | 1.3    | 4     | 98      | 157       | 592          | 6/6   | 4/9     | 1            | 71                | 3.7        | 2.6          |
+| muse-glimmer-30b-bf16      | BF16   | 54.9    | 30.9   | 9     | 61      | 78        | 229          | 6/6   | 8/9     | 0            | 97                | 4.6        | 3.2          |
 | muse-glimmer-30b-mlx       | nvfp4  | 17.3    | 7.5    | 44    | 17      | 17        | 92           | 6/6   | 6/9     | 0            | 99                | 4.7        | 3.3          |
 | muse-glimmer-30b-q4        | Q4_K_M | 18.6    | 17.0   | 18    | 43      | 44        | 121          | 6/6   | 7/9     | 0            | 97                | 4.4        | 2.9          |
 | muse-glimmer-30b-q4-dflash | Q4_K_M | 20.6    | 14.0   | 24    | 35      | 42        | 118          | 6/6   | 8/9     | 0            | 96                | 4.8        | 3.3          |
 | muse-glimmer-30b-q4-think  | Q4_K_M | n/a     | n/a    | 18    | 172     | 197       | 328          | 6/6   | 5/9     | 1            | n/a               | n/a        | 3.5          |
 | muse-glimmer-30b-q8        | Q8_0   | 30.6    | 21.4   | 14    | 34      | 56        | 146          | 6/6   | 8/9     | 0            | 97                | 4.5        | 3.3          |
+| muse-glimmer-30b-q8-dflash | Q8_0   | 32.3    | 14.2   | 20    | 28      | 41        | 112          | 6/6   | 8/9     | 0            | 94                | 4.3        | 3.7          |
 | qwen3.5-122b-a10b-q4       | Q4_K_M | 78.9    | 1.4    | 45    | 8       | 12        | 85           | 6/6   | 5/9     | 1            | 96                | 4.0        | 3.0          |
 | qwen3.5-9b-q4              | Q4_K_M | 8.8     | 0.6    | 75    | 5       | 7         | 38           | 6/6   | 5/9     | 1            | 79                | 3.6        | 2.5          |
 | qwen3.6-35b-a3b-q4         | Q4_K_M | 24.5    | 0.3    | 109   | 5       | 6         | 25           | 6/6   | 3/9     | 3            | 81                | 4.2        | 2.3          |
@@ -249,11 +255,15 @@ scores are means of usefulness, grounding, and restraint.
 | gemma4-31b-mlx             | yes    | yes    | yes                 | yes                | yes | yes      | no          | no                | yes  |
 | gemma4-31b-q4              | yes    | no     | yes                 | yes                | yes | yes      | no          | no                | no   |
 | gemma4-31b-q8              | yes    | yes    | yes                 | yes                | yes | yes      | no          | yes               | yes  |
+| gpt-oss-120b               | yes    | yes    | yes                 | yes                | yes | no       | yes         | no                | no   |
+| mistral-medium-3.5-q4      | yes    | yes    | yes                 | yes                | no  | no       | no          | no                | no   |
+| muse-glimmer-30b-bf16      | yes    | yes    | yes                 | yes                | yes | yes      | yes         | no                | yes  |
 | muse-glimmer-30b-mlx       | yes    | yes    | yes                 | yes                | no  | yes      | no          | no                | yes  |
 | muse-glimmer-30b-q4        | yes    | yes    | yes                 | yes                | yes | yes      | no          | no                | yes  |
 | muse-glimmer-30b-q4-dflash | yes    | yes    | yes                 | yes                | yes | yes      | yes         | no                | yes  |
 | muse-glimmer-30b-q4-think  | no     | yes    | yes                 | yes                | yes | yes      | no          | no                | no   |
 | muse-glimmer-30b-q8        | yes    | yes    | yes                 | yes                | yes | yes      | yes         | no                | yes  |
+| muse-glimmer-30b-q8-dflash | yes    | yes    | yes                 | yes                | yes | yes      | yes         | no                | yes  |
 | qwen3.5-122b-a10b-q4       | yes    | no     | yes                 | yes                | no  | yes      | no          | yes               | no   |
 | qwen3.5-9b-q4              | yes    | yes    | yes                 | yes                | no  | no       | yes         | no                | no   |
 | qwen3.6-35b-a3b-q4         | yes    | no     | yes                 | yes                | no  | no       | no          | no                | no   |
@@ -264,8 +274,9 @@ scores are means of usefulness, grounding, and restraint.
 
 ### Findings
 
-* Suggestions and questions are reliable. Every model found the clichéd
-  paragraph or the overwritten one, and most found the unopened letter.
+* Suggestions are reliable and questions mostly so. Every model found the
+  clichéd paragraph or the overwritten one, and most found the unopened
+  letter or the brass key.
 * Disconnects are not. The age slip in a short scene was found by most
   configurations. Across chapters and at length, few succeeded: the mill's
   contradictory history in the manuscript was found by five of thirteen, the
@@ -281,8 +292,9 @@ scores are means of usefulness, grounding, and restraint.
   false disconnects on coherent text.
 * 8-bit did not reliably beat 4-bit. Gemma 4 31B at 8-bit found more planted
   issues but raised a false alarm and scored lower with the judge, at half
-  the speed and 40% more memory; Muse Glimmer at 8-bit matched its 4-bit
-  drafter-assisted run.
+  the speed and 40% more memory. Muse Glimmer found the same eight planted
+  issues at 4-bit with its drafter, at 8-bit, and at full BF16 precision,
+  which needed 55 GB and ran at 9 tokens a second.
 * Deeper thinking cost more than it returned. At their highest levels, Qwen
   3.8 and Muse Glimmer took three to seven minutes per review, and Qwen 3.8
   twice spent its whole 12,000-token budget thinking and returned nothing.
@@ -300,6 +312,12 @@ scores are means of usefulness, grounding, and restraint.
   alarm and grounded a fifth of its quotes in nothing.
 * Bigger was not better. Qwen 3.5 122B-A10B needed 79 GB and found five
   planted issues with a false alarm, and judged below the 31B models.
+  Mistral Medium 3.5, a dense 128B model, needed 97 GB, generated 4 tokens a
+  second, took ten minutes to review the manuscript, and found four planted
+  issues with a false alarm.
+* gpt-oss 120B, the control tuned for tools, was fast and found six planted
+  issues, but only 58% of its conversation quotes appear in the text, and
+  the judge scored it lowest of the large models in both modes.
 * A long document dominates latency. Reading the 25,000-token manuscript
   takes 15 to 100 seconds before the first token, depending on the model, so
   conversation about a whole manuscript and review of one need the agent ADR
@@ -318,20 +336,25 @@ model's throughput fell by half to two thirds, because both share the GPU.
 The pair test repeats the same conversation prompts after the idle phase, so
 Ollama's prompt cache makes the first tokens during review look faster than
 they are; compare throughput, not first tokens. The MLX pair peaked at 36 GB,
-so two models fit a 48 GB machine, but one model serving both modes avoids
-the second load and slows conversation just the same.
+so two models fit a 48 GB machine. One model serving both modes saves the
+second load; how much a review slows its conversation replies is for the
+agent ADR to measure with the service's scheduling.
 
 ### Sustained review, power, and typing
 
-| Config                     | Minutes | Reviews | Mean W | Max W | Min CPU speed limit | Max thermal warning | Power |
-|----------------------------|---------|---------|--------|-------|---------------------|---------------------|-------|
-| muse-glimmer-30b-q4-dflash | 20      | 26      | 60.0   | 81.4  | n/a                 | n/a                 | AC    |
+| Config                     | Minutes | Reviews | Mean W | Max W | Min CPU speed limit | Max thermal warning | Power | Battery used % |
+|----------------------------|---------|---------|--------|-------|---------------------|---------------------|-------|----------------|
+| muse-glimmer-30b-q4-dflash | 20      | 26      | 60.0   | 81.4  | n/a                 | n/a                 | AC    | n/a            |
+| gemma4-31b-mlx             | 15      | 112     | 61.7   | 69.1  | n/a                 | n/a                 | AC    | n/a            |
 
-Twenty minutes of back-to-back reviews drew 60 W on average and 81 W at
-peak, against about 15 W idle, with no thermal or performance warning from
-macOS. On the machine's 72 Wh battery that is about 1.2 hours of continuous
-review; real background review runs only after pauses in writing, so its
-drain depends on the frequency the experience ADR sets.
+Back-to-back reviews of the chapter pair drew about 60 W on average with
+either model, against about 15 W idle, with no thermal or performance
+warning from macOS. Gemma 4 31B's MLX build finished a review every 8
+seconds, 112 in 15 minutes, and peaked at 69 W; Muse Glimmer with its drafter
+on the GGUF runner peaked at 81 W. On the machine's 72 Wh battery, 60 W is
+about 1.2 hours of continuous review. Real background review runs only after
+pauses in writing, so its drain depends on the frequency the experience ADR
+sets.
 
 Typing was measured in the development container with the browser test's
 1 MiB manuscript, before and during a sustained review on the host:

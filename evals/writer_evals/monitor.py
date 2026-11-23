@@ -44,6 +44,11 @@ def power_watts() -> Optional[float]:
     return int(match.group(1)) / 1000 if match else None
 
 
+def battery_percent() -> Optional[int]:
+    match = re.search(r"(\d+)%", _run(["pmset", "-g", "batt"]))
+    return int(match.group(1)) if match else None
+
+
 def on_battery() -> Optional[bool]:
     out = _run(["pmset", "-g", "batt"])
     if not out:

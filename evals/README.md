@@ -52,16 +52,17 @@ python3 -m writer_evals judge judge-qwen3.8-flash-next results/2026-11-22-*.json
 python3 -m writer_evals report
 ```
 
-| Command     | What it does                                                                                                |
-|-------------|-------------------------------------------------------------------------------------------------------------|
-| `list`      | Lists the configurations in [configs.json](./configs.json) and the cases in [cases/](./cases/).             |
-| `run`       | Unloads every model, times a load, runs the chosen cases, scores them, and writes one summary per config.   |
-| `pair`      | Loads a conversation model and a reviewer together and times conversation replies while reviews run.        |
-| `sustained` | Reviews one case repeatedly, sampling power and thermal state. Unplug the charger to measure battery drain. |
-| `judge`     | Scores outputs with a judge configuration that sees no model names, and adds the scores to the summaries.   |
-| `sheet`     | Writes a blind scoring sheet for people to `.local/evals/sheet/`.                                           |
-| `ingest`    | Copies the filled sheet's scores into the summaries, with the scorer's name.                                |
-| `report`    | Prints the summaries as Markdown tables for ADRs and pull requests.                                         |
+| Command     | What it does                                                                                              |
+|-------------|-----------------------------------------------------------------------------------------------------------|
+| `list`      | Lists the configurations in [configs.json](./configs.json) and the cases in [cases/](./cases/).           |
+| `run`       | Unloads every model, times a load, runs the chosen cases, scores them, and writes one summary per config. |
+| `pair`      | Loads a conversation model and a reviewer together and times conversation replies while reviews run.      |
+| `sustained` | Reviews one case repeatedly, sampling power and thermal state, and battery level when unplugged.          |
+| `judge`     | Scores outputs with a judge configuration that sees no model names, and adds the scores to the summaries. |
+| `sheet`     | Writes a blind scoring sheet for people to `.local/evals/sheet/`.                                         |
+| `ingest`    | Copies the filled sheet's scores into the summaries, with the scorer's name.                              |
+| `rescore`   | Recomputes the automatic scores from raw output after the scoring rules or case expectations change.      |
+| `report`    | Prints the summaries as Markdown tables for ADRs and pull requests.                                       |
 
 The commands exit 0 on success, 1 when a generation fails, and 2 on a usage
 error, an unknown configuration or case, or a model or runtime that is not

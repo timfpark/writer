@@ -277,6 +277,7 @@ def run_sustained(env: Environment, config: Config, case: Case, minutes: float) 
     result = _header(env, "sustained", config.name)
     result["config"] = {"name": config.name, "model": asdict(info)}
     result["onBattery"] = monitor.on_battery()
+    result["batteryStart"] = monitor.battery_percent()
     env.runtime.load(config.model)
     deadline = time.monotonic() + minutes * 60
     items = []
@@ -284,6 +285,7 @@ def run_sustained(env: Environment, config: Config, case: Case, minutes: float) 
         while time.monotonic() < deadline:
             items.append(generate(env, config, case, info, result["id"]))
     result["minutes"] = minutes
+    result["batteryEnd"] = monitor.battery_percent()
     result["resources"] = sampler.summary()
     result["items"] = items
     result["finished"] = now_iso()

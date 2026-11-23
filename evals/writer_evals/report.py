@@ -121,7 +121,10 @@ def report(paths: List[Path]) -> str:
                 _fmt(res.get("meanWatts")), _fmt(res.get("maxWatts")),
                 _fmt(res.get("minCpuSpeedLimit"), 0), _fmt(res.get("maxThermalWarning"), 0),
                 "battery" if result.get("onBattery") else "AC",
+                _fmt((result["batteryStart"] - result["batteryEnd"]) if result.get("onBattery")
+                     and result.get("batteryStart") is not None and result.get("batteryEnd") is not None
+                     else None, 0),
             ])
         sections.append(_table(["Config", "Minutes", "Reviews", "Mean W", "Max W", "Min CPU speed limit",
-                                "Max thermal warning", "Power"], rows))
+                                "Max thermal warning", "Power", "Battery used %"], rows))
     return "\n\n".join(sections) + "\n"

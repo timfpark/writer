@@ -18,7 +18,8 @@
     "digest": "1e0feb3ef46d"
   },
   "cases": {
-    "digest": "784897864cf7"
+    "digest": "784897864cf7",
+    "scoredWith": "784897864cf7"
   },
   "prompts": {
     "conversation": "48035782578d",
@@ -106,9 +107,9 @@
       },
       "outputDigest": "89981eb83eb3",
       "scores": {
-        "words": 306,
+        "words": 282,
         "quotes": 7,
-        "quotesGrounded": 7
+        "quotesGrounded": 6
       },
       "phase": "idle"
     },
@@ -146,9 +147,9 @@
       },
       "outputDigest": "967948c1c269",
       "scores": {
-        "words": 253,
-        "quotes": 7,
-        "quotesGrounded": 7
+        "words": 210,
+        "quotes": 9,
+        "quotesGrounded": 9
       },
       "phase": "idle"
     },
@@ -186,9 +187,9 @@
       },
       "outputDigest": "4fa672a45e54",
       "scores": {
-        "words": 281,
-        "quotes": 14,
-        "quotesGrounded": 14
+        "words": 261,
+        "quotes": 11,
+        "quotesGrounded": 11
       },
       "phase": "idle"
     },
@@ -226,9 +227,9 @@
       },
       "outputDigest": "89924bb6fa13",
       "scores": {
-        "words": 271,
-        "quotes": 10,
-        "quotesGrounded": 10
+        "words": 264,
+        "quotes": 11,
+        "quotesGrounded": 11
       },
       "phase": "idle"
     },
@@ -266,9 +267,9 @@
       },
       "outputDigest": "4f0dc5d081d2",
       "scores": {
-        "words": 463,
-        "quotes": 6,
-        "quotesGrounded": 5
+        "words": 416,
+        "quotes": 7,
+        "quotesGrounded": 7
       },
       "phase": "idle"
     },
@@ -508,15 +509,15 @@
       "scores": {
         "valid": true,
         "strayText": false,
-        "findings": 6,
+        "findings": 5,
         "byKind": {
-          "suggestion": 3,
+          "suggestion": 2,
           "question": 2,
           "disconnect": 1
         },
         "anchors": 7,
         "anchorsResolved": 7,
-        "findingsFullyAnchored": 6,
+        "findingsFullyAnchored": 5,
         "planted": {
           "mara-left": true,
           "dawn-afternoon": false,
@@ -569,8 +570,8 @@
           "question": 2,
           "disconnect": 1
         },
-        "anchors": 6,
-        "anchorsResolved": 6,
+        "anchors": 7,
+        "anchorsResolved": 7,
         "findingsFullyAnchored": 5,
         "planted": {
           "mara-left": true,
@@ -624,11 +625,11 @@
           "question": 2,
           "disconnect": 1
         },
-        "anchors": 6,
-        "anchorsResolved": 6,
+        "anchors": 7,
+        "anchorsResolved": 7,
         "findingsFullyAnchored": 5,
         "planted": {
-          "mara-left": false,
+          "mara-left": true,
           "dawn-afternoon": false,
           "purple-lake": true,
           "brass-key": true
