@@ -472,6 +472,8 @@ Trade-offs and risks:
 * Ollama changes how it runs a model, such as an MLX runner or speculative
   decoding for the chosen model: rerun it on the new runtime.
 * A writer on a 32 GB or 16 GB machine finds the smaller model unhelpful.
+* Writer supports a language other than English: measure the models on
+  cases in that language, as backlog 42 does for Spanish.
 
 ## Follow-ups
 
@@ -484,6 +486,9 @@ Trade-offs and risks:
   harness against the service's HTTP API.
 * [Backlog 40](../backlog/0040-cloud-model-fallback-adr.md): score cloud
   models on the same cases with a cloud adapter in `evals/`.
+* [Backlog 42](../backlog/0042-spanish-pair-writing-evals.md): measure the
+  models on Spanish cases before Spanish documents get a pair writer. This
+  record's choices hold for English only.
 
 ## References
 
