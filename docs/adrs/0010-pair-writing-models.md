@@ -484,8 +484,10 @@ Trade-offs and risks:
   context for long documents, size the context to the document, call Ollama
   through `OLLAMA_HOST`, and run the agent's cases through the `evals/`
   harness against the service's HTTP API.
-* [Backlog 40](../backlog/0040-cloud-model-fallback-adr.md): score cloud
-  models on the same cases with a cloud adapter in `evals/`.
+* [Backlog 43](../backlog/0043-cloud-model-evals.md): measure inexpensive
+  and frontier cloud models on the same cases, for quality and price per
+  task, ahead of the
+  [cloud fallback decision](../backlog/0040-cloud-model-fallback-adr.md).
 * [Backlog 42](../backlog/0042-spanish-pair-writing-evals.md): measure the
   models on Spanish cases before Spanish documents get a pair writer. This
   record's choices hold for English only.

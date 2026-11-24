@@ -34,24 +34,27 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 ## Backlog
 
-| #  | Work item                                                                                | Subsystems                       | Outcome                                                                                | Prerequisite |
-|----|------------------------------------------------------------------------------------------|----------------------------------|----------------------------------------------------------------------------------------|--------------|
-| 39 | [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)                    | `repository`, `service`, `evals` | In progress: ADR 0010 is proposed; blind scoring and a battery run remain.             | None         |
-| 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)          | `service`, `webapp`              | An accepted ADR fixes the writer's experience of the agent, tested end to end.         | 39           |
-| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)       | `service`, `webapp`              | An accepted ADR fixes where the agent runs and how it is built.                        | 38, 39       |
-| 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                  | `service`, `webapp`              | An accepted ADR fixes how conversations are stored, versioned, and audited.            | 38           |
-| 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md) | `service`                        | The service answers the writer about the open document, backed by prompts and evals.   | 10, 37       |
-| 34 | [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)          | `webapp`                         | The assistant pane streams the pair writer's answers about the open document.          | 12           |
-| 35 | [Review documents in the background in the service](./0035-service-background-review.md) | `service`                        | The service returns suggestions, questions, and disconnects anchored to passages.      | 12           |
-| 36 | [Show background findings in the webapp](./0036-background-findings-view.md)             | `webapp`                         | Findings appear beside the text while writing, linked to their passages.               | 34, 35       |
-| 40 | [Record the cloud model fallback ADR](./0040-cloud-model-fallback-adr.md)                | `service`, `webapp`              | An accepted ADR decides whether and where a cloud model backs up the local one.        | 34, 36       |
-| 27 | [Record the change control ADR](./0027-change-control-adr.md)                            | `service`, `webapp`              | An accepted ADR fixes the commit model, commit timing, restore, and progress measures. | None         |
-| 28 | [Build the SQLite backend and copy command](./0028-sqlite-backend.md)                    | `service`                        | The workspace persists in SQLite and copies between backends intact.                   | None         |
-| 29 | [Record and restore commits in the service](./0029-service-history.md)                   | `service`                        | The contract records commits, reads earlier versions, and restores them.               | 27           |
-| 30 | [Browse, compare, and restore history in the webapp](./0030-history-view.md)             | `webapp`                         | Writers commit, browse history, compare versions, and roll back.                       | 29           |
-| 31 | [Show writing progress over time](./0031-writing-progress.md)                            | `service`, `webapp`              | Writers see words added and removed per document and folder over time.                 | 29, 30       |
-| 41 | [Set the language of a document](./0041-document-language.md)                            | `service`, `webapp`              | Writers pick each document's language, stored in the workspace and set on the editor.  | None         |
-| 42 | [Measure the pair writer in Spanish](./0042-spanish-pair-writing-evals.md)               | `evals`, `service`               | Spanish cases measure the local models, and the model ADR names Spanish models.        | 39, 41       |
+| #  | Work item                                                                                   | Subsystems                       | Outcome                                                                                      | Prerequisite |
+|----|---------------------------------------------------------------------------------------------|----------------------------------|----------------------------------------------------------------------------------------------|--------------|
+| 39 | [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)                       | `repository`, `service`, `evals` | In progress: ADR 0010 is proposed; blind scoring and a battery run remain.                   | None         |
+| 44 | [Record the cloud model proxy ADR](./0044-cloud-model-proxy-adr.md)                         | `repository`, `evals`, `service` | An accepted ADR picks a local proxy to Azure AI Foundry with keyless auth and spending caps. | 39           |
+| 45 | [Run the cloud model proxy with a first set of Foundry models](./0045-cloud-model-proxy.md) | `repository`, `evals`            | The proxy runs with cheap and frontier Foundry models, and the harness calls it.             | 44           |
+| 43 | [Measure cloud models for pair writing](./0043-cloud-model-evals.md)                        | `evals`                          | Cheap and frontier cloud models are measured beside local ones for quality and price.        | 39, 45       |
+| 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)             | `service`, `webapp`              | An accepted ADR fixes the writer's experience of the agent, tested end to end.               | 39           |
+| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)          | `service`, `webapp`              | An accepted ADR fixes where the agent runs and how it is built.                              | 38, 39       |
+| 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                     | `service`, `webapp`              | An accepted ADR fixes how conversations are stored, versioned, and audited.                  | 38           |
+| 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md)    | `service`                        | The service answers the writer about the open document, backed by prompts and evals.         | 10, 37       |
+| 34 | [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)             | `webapp`                         | The assistant pane streams the pair writer's answers about the open document.                | 12           |
+| 35 | [Review documents in the background in the service](./0035-service-background-review.md)    | `service`                        | The service returns suggestions, questions, and disconnects anchored to passages.            | 12           |
+| 36 | [Show background findings in the webapp](./0036-background-findings-view.md)                | `webapp`                         | Findings appear beside the text while writing, linked to their passages.                     | 34, 35       |
+| 40 | [Record the cloud model fallback ADR](./0040-cloud-model-fallback-adr.md)                   | `service`, `webapp`              | An accepted ADR decides whether and where a cloud model backs up the local one.              | 34, 36, 43   |
+| 27 | [Record the change control ADR](./0027-change-control-adr.md)                               | `service`, `webapp`              | An accepted ADR fixes the commit model, commit timing, restore, and progress measures.       | None         |
+| 28 | [Build the SQLite backend and copy command](./0028-sqlite-backend.md)                       | `service`                        | The workspace persists in SQLite and copies between backends intact.                         | None         |
+| 29 | [Record and restore commits in the service](./0029-service-history.md)                      | `service`                        | The contract records commits, reads earlier versions, and restores them.                     | 27           |
+| 30 | [Browse, compare, and restore history in the webapp](./0030-history-view.md)                | `webapp`                         | Writers commit, browse history, compare versions, and roll back.                             | 29           |
+| 31 | [Show writing progress over time](./0031-writing-progress.md)                               | `service`, `webapp`              | Writers see words added and removed per document and folder over time.                       | 29, 30       |
+| 41 | [Set the language of a document](./0041-document-language.md)                               | `service`, `webapp`              | Writers pick each document's language, stored in the workspace and set on the editor.        | None         |
+| 42 | [Measure the pair writer in Spanish](./0042-spanish-pair-writing-evals.md)                  | `evals`, `service`               | Spanish cases measure the local models, and the model ADR names Spanish models.              | 39, 41       |
 
 [ADR 0002](../adrs/0002-service-architecture.md),
 [ADR 0003](../adrs/0003-webapp-architecture.md), and
@@ -91,7 +94,12 @@ suggestions, questions, and disconnects between passages. Item 39 first
 measures which local models served by Ollama can do this on a high-end
 laptop, with no cloud model, and creates the top-level `evals/` subsystem
 whose committed harness, cases, and results let later models be scored
-against the same baseline. Item 38 then decides the
+against the same baseline. Cloud models are hosted in Azure AI Foundry and reached only
+through a local proxy that holds the credentials and caps spending: item 44
+chooses it, and item 45 runs it with a first set of models. Item 43 then
+measures inexpensive and frontier cloud models through it on the same
+synthetic cases, so the quality gap and its price are known; no writer's
+text leaves the machine. Item 38 then decides the
 experience end to end, tested with a throwaway prototype and grounded in
 those results, so the decisions that follow serve it. Item 10 then
 decides where the agent runs and how it is built, and item 37 decides how its
@@ -100,8 +108,9 @@ creates `service/prompts/` and the conversation endpoint, with its cases in
 `evals/`. Item 34 connects the assistant pane to that endpoint, so writers
 can use the agent for the first time. Item 35 adds background review to the
 service, and item 36 shows its findings beside the text. Only after writers
-have used the local pair writer does item 40 decide whether a cloud model
-should stand in where local models fall short, and how writers consent
+have used the local pair writer does item 40 decide, from item 43's
+measurements and the gaps writers felt, whether a cloud model should stand
+in where local models fall short, and how writers consent
 before their text leaves the machine.
 
 Change control, the later release the
