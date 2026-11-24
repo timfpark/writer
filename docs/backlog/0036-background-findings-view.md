@@ -21,6 +21,8 @@ they concern.
 [Backlog 35](./0035-service-background-review.md) returns findings anchored
 to passages, and [backlog 34](./0034-assistant-pane-agent.md) connects the
 assistant pane to the service. The
+[background tasks ADR](./0047-background-tasks-ux-adr.md) decides which
+findings ship and where each appears, and the
 [experience ADR](./0038-pair-writing-experience-adr.md) decides when reviews
 run as the writer sees it, where findings appear, how they are dismissed,
 what happens to a finding whose passage changed, and the default for

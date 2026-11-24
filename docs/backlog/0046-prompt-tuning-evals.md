@@ -1,6 +1,6 @@
 ---
 title: Tune the pair-writing prompts with the evaluation harness
-description: Sweep prompt variants for conversation and for each kind of finding across the leading local models, score them on tuning cases and report holdout cases, and choose the prompts the pair writer starts from.
+description: Sweep prompt variants for conversation and for each background task the background tasks ADR ships across the leading local models, score them on tuning cases and report holdout cases, and choose the prompts the pair writer starts from.
 author: Tim Park
 ms.date: 2026-11-24
 ms.topic: reference
@@ -31,6 +31,12 @@ splits cases into `tune` and `holdout`, so prompt work can be measured
 without overstating it. Its configurations choose a model and its settings,
 but not yet a prompt.
 
+The [background tasks ADR](./0047-background-tasks-ux-adr.md) decides which
+background tasks ship, and [backlog 48](./0048-background-task-evals.md)
+writes a first prompt for each and measures whether local models can do it.
+This story tunes those prompts as well as the conversation prompt and the
+original review prompt.
+
 The [experience ADR](./0038-pair-writing-experience-adr.md) decides which
 kinds of finding ship from these results, and
 [backlog 12](./0012-first-pair-writing-agent.md) and
@@ -47,7 +53,8 @@ prompts from the prompts this story chooses.
   that should produce none. Leave the holdout cases unseen until the final
   run, and add new holdout cases written without looking at any variant's
   output.
-* Write prompt variants and give the reason for each, at least:
+* Write prompt variants for conversation and for each task backlog 48
+  found feasible, and give the reason for each, at least:
   * Separate passes per kind of finding instead of one combined pass
   * A disconnect pass that first lists facts such as names, ages, dates,
     places, and objects, then compares them across passages and documents
@@ -85,3 +92,4 @@ prompts from the prompts this story chooses.
 ## Prerequisites
 
 * [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)
+* [Measure the background tasks with the evaluation harness](./0048-background-task-evals.md)

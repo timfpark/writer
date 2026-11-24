@@ -477,6 +477,11 @@ Trade-offs and risks:
 
 ## Follow-ups
 
+* [Backlog 47](../backlog/0047-background-tasks-ux-adr.md) and
+  [backlog 48](../backlog/0048-background-task-evals.md): choose the
+  background tasks beyond these three kinds of finding, and test whether a
+  story bible extracted chapter by chapter closes the disconnect gap this
+  record found.
 * [Backlog 46](../backlog/0046-prompt-tuning-evals.md): sweep prompt
   variants across this record's leading models, including a separate pass
   for disconnects, before the experience ADR decides which kinds of finding
