@@ -19,9 +19,9 @@ myself.
 
 ## Context
 
-The [background tasks ADR](./0047-background-tasks-ux-adr.md) decides the
+The [background agents ADR](./0047-background-agents-ux-adr.md) decides the
 story bible's, timeline's, and continuity check's shapes, triggers, and
-surfaces, and [backlog 48](./0048-background-task-evals.md) measures whether
+surfaces, and [backlog 48](./0048-background-agent-evals.md) measures whether
 local models can produce them and with which prompts. The service's
 background review from [backlog 35](./0035-service-background-review.md) and
 the findings view from [backlog 36](./0036-background-findings-view.md)
@@ -31,7 +31,7 @@ conversations ADRs decide where living artifacts are stored.
 ## Scope
 
 * Extract story bible entries and timeline events from each document on the
-  background tasks ADR's trigger, each citing the passages it came from, and
+  background agents ADR's trigger, each citing the passages it came from, and
   update only what changed.
 * Store the story bible and timeline as the agent and conversations ADRs
   decide, and expose them through the API under
@@ -57,4 +57,3 @@ conversations ADRs decide where living artifacts are stored.
 
 * [Review documents in the background in the service](./0035-service-background-review.md)
 * [Show background findings in the webapp](./0036-background-findings-view.md)
-* [Turn background agents on and off across the workspace tree](./0054-agent-settings-tree.md)

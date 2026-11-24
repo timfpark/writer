@@ -17,9 +17,9 @@ paid off so that I can shape the structure of my work without rereading it.
 
 ## Context
 
-The [background tasks ADR](./0047-background-tasks-ux-adr.md) decides the
+The [background agents ADR](./0047-background-agents-ux-adr.md) decides the
 shapes, triggers, and surfaces of open threads and the reverse outline, and
-[backlog 48](./0048-background-task-evals.md) measures them. They are living
+[backlog 48](./0048-background-agent-evals.md) measures them. They are living
 artifacts like the story bible from
 [backlog 49](./0049-story-bible-continuity.md), and reuse its storage,
 incremental updates, and corrections.

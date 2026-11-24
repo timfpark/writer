@@ -42,12 +42,12 @@ out of scope.
 
 ## Scope
 
-* Amend ADR 0005 with a document `language` field: a BCP 47 tag, starting
-  with `en` and `es`, its default, and whether a folder or the workspace sets
-  a default that new documents inherit. If a folder can set it, use one
-  mechanism for settings that inherit down the tree with
-  [backlog 54](./0054-agent-settings-tree.md), whichever lands first. Decide whether the API accepts any
-  well-formed tag or only the languages Writer supports.
+* Amend ADR 0005 with a document `language` field: a BCP 47 tag, starting with
+  `en` and `es`, its default, and whether a folder or the workspace sets a
+  default that new documents inherit. If a folder can set it, use one
+  mechanism for settings that inherit down the tree with [backlog
+  54](./0054-agent-settings-tree.md), whichever lands first. Decide whether
+  the API accepts any well-formed tag or only the languages Writer supports.
 * Amend ADR 0006 for how the filesystem backend stores the language in the
   workspace index, and what a document created outside Writer gets.
 * Return the language with each document in the workspace tree, accept it

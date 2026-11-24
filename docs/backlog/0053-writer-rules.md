@@ -19,18 +19,18 @@ rather than a generic one.
 
 ## Context
 
-The [background tasks ADR](./0047-background-tasks-ux-adr.md) decides how
-rules are written and how their findings appear; rules attach to the
-workspace, a folder, or a document and inherit as
-[backlog 54](./0054-agent-settings-tree.md) does for agents, and
-[backlog 48](./0048-background-task-evals.md) measures how reliably local
+The [background agents ADR](./0047-background-agents-ux-adr.md) decides how
+rules are written and how their findings appear. Rules apply to the whole
+workspace at first; scoping them to folders and documents comes with
+[backlog 54](./0054-agent-settings-tree.md), and
+[backlog 48](./0048-background-agent-evals.md) measures how reliably local
 models follow them. Background review from
 [backlog 35](./0035-service-background-review.md) runs the checks, and
 [backlog 36](./0036-background-findings-view.md) shows the findings.
 
 ## Scope
 
-* Store the writer's rules as the background tasks ADR decides, and expose
+* Store the writer's rules as the background agents ADR decides, and expose
   them through the API under [ADR 0004](../adrs/0004-api-conventions.md).
 * Add a keyboard-operable, accessible place to write, edit, and remove
   rules.
@@ -50,4 +50,3 @@ models follow them. Background review from
 
 * [Review documents in the background in the service](./0035-service-background-review.md)
 * [Show background findings in the webapp](./0036-background-findings-view.md)
-* [Turn background agents on and off across the workspace tree](./0054-agent-settings-tree.md)

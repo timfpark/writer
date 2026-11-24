@@ -18,9 +18,9 @@ thread quickly.
 
 ## Context
 
-The [background tasks ADR](./0047-background-tasks-ux-adr.md) decides what
+The [background agents ADR](./0047-background-agents-ux-adr.md) decides what
 the recap holds, when it appears, and how the writer dismisses or turns it
-off, and [backlog 48](./0048-background-task-evals.md) measures it. Knowing
+off, and [backlog 48](./0048-background-agent-evals.md) measures it. Knowing
 what changed needs a record of the last session: the change control work
 from [backlog 29](./0029-service-history.md) provides history if it has
 landed, and otherwise the recap uses what the service already knows, such as
@@ -30,7 +30,7 @@ uses.
 
 ## Scope
 
-* Record what a session changed, as the background tasks ADR decides,
+* Record what a session changed, as the background agents ADR decides,
   without storing more text than the workspace already holds.
 * Prepare the recap in the background before the writer returns, so opening
   Writer is not delayed.
@@ -50,4 +50,3 @@ uses.
 ## Prerequisites
 
 * [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)
-* [Turn background agents on and off across the workspace tree](./0054-agent-settings-tree.md)

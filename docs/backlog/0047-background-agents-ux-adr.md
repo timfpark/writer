@@ -1,6 +1,6 @@
 ---
-title: Record the background tasks UX ADR
-description: Decide which background agents the pair writer offers, from continuity and story bibles to prose, structure, and nonfiction checks, how each looks to the writer, and how writers turn agents on and off for parts of the workspace tree, tested with a throwaway prototype.
+title: Record the background agents UX ADR
+description: Decide which background agents the pair writer runs, from continuity and story bibles to prose, structure, and nonfiction checks, and how each looks to the writer, with every shipping agent on from the start, tested with a throwaway prototype.
 author: Tim Park
 ms.date: 2026-11-24
 ms.topic: reference
@@ -12,9 +12,9 @@ estimated_reading_time: 3
 
 ## Story
 
-As a writer, I want the pair writer's background work chosen for what helps
-me most, shown in a way that fits how I write, and switched on only where it
-suits the work, so that it supports my writing instead of interrupting it.
+As a writer, I want the pair writer's background agents chosen for what
+helps me most, and shown in a way that fits how I write, so that they support
+my writing instead of interrupting it.
 
 ## Context
 
@@ -32,26 +32,26 @@ Background work takes two shapes:
   writer works, such as a story bible, a timeline, or a list of open
   threads, which the writer consults and can correct.
 
-Each task runs as an agent the writer can turn on or off. What helps depends
-on the work: a fantasy novel wants a story bible and continuity checks, and a
-computer science book wants consistent terminology, concepts defined before
-they are used, and checked code examples. A workspace may hold both, so the
-set of agents in effect belongs to a place in the workspace tree. A folder's
-setting applies to everything under it, and a subfolder or document can turn
-an agent on or off for itself, so the agents in effect for any document, and
-where each setting comes from, can always be worked out.
+What helps depends on the work: a fantasy novel wants a story bible and
+continuity checks, and a computer science book wants consistent terminology,
+concepts defined before they are used, and checked code examples. Every
+shipping agent starts on for every document. Turning agents on and off for
+parts of the workspace tree comes later, in
+[backlog 54](./0054-agent-settings-tree.md), so until then each agent must
+stay quiet on work it does not apply to, such as a code example check on a
+novel.
 
 The shapes interact. Local models found contradictions across a manuscript
 poorly, but extracting facts from one chapter at a time and comparing the
 extracted facts may succeed where reading the whole manuscript failed.
 
-The model ADR's measurements bound each task's cost on the reference
+The model ADR's measurements bound each agent's cost on the reference
 machine: a paragraph check takes seconds, a chapter review about 8 seconds,
 and a manuscript review over a minute, at about 60 W while running.
 
-The candidate tasks are:
+The candidate agents are:
 
-| #  | Task                     | What the writer gets                                                    |
+| #  | Agent                    | What the writer gets                                                    |
 |----|--------------------------|-------------------------------------------------------------------------|
 | 1  | Story bible              | Characters, places, objects, and relationships, with where each appears |
 | 2  | Continuity check         | Contradictions in names, ages, appearance, and facts                    |
@@ -80,52 +80,42 @@ synopses, stays on request in conversation and is out of scope here.
 
 ## Scope
 
-* For each candidate task, decide whether it ships, is deferred, or is cut,
+* For each candidate agent, decide whether it ships, is deferred, or is cut,
   and give the reason from the writer's point of view.
-* For each task that ships, decide its shape, its scope (paragraph, scene,
+* For each agent that ships, decide its shape, its scope (paragraph, scene,
   chapter, or manuscript), its trigger (a pause in typing, a save, a chapter
   settling, opening Writer, or idle time), where it appears (beside the
   passage, in the assistant pane, in a view of its own, or on opening), how
-  much it may interrupt, and whether it is on by default.
+  much it may interrupt.
 * Decide how the writer reads, corrects, and trusts living artifacts, such as
-  fixing a wrong age in the story bible, and how corrections feed the tasks
+  fixing a wrong age in the story bible, and how corrections feed the agents
   that use them.
-* Decide how tasks share work, such as continuity checks reading the story
+* Decide how agents share work, such as continuity checks reading the story
   bible rather than the manuscript, so their cost fits the model ADR's
   measurements.
-* Decide how agents are turned on and off across the workspace tree: where a
-  setting can be made (the workspace, a folder, or a document), how a
-  setting inherits to everything below it, how a lower setting overrides a
-  higher one, and how the writer sees the agents in effect for a document and
-  where each setting comes from.
-* Decide whether presets bundle agents for a kind of work, such as fiction or
-  technical nonfiction, what each preset holds, and whether a preset is
-  applied once or stays linked.
-* Decide how settings an agent has beyond on and off, such as the writer's
-  own rules, are scoped, and whether they inherit the same way.
-* Decide how the writer sees what is running and limits background work on
-  battery.
+* Decide how each agent recognizes work it does not apply to and stays
+  quiet, since every shipping agent runs on every document.
+* Decide how the writer sees what is running and how background work slows
+  on battery, without turning agents off.
 * Build a throwaway, clickable prototype with scripted outputs for the
-  shipping tasks, keep it out of the repository, try it while writing, and
+  shipping agents, keep it out of the repository, try it while writing, and
   record what it changed. Include a workspace that holds both a novel and a
   technical book.
-* Rank the shipping tasks by value to the writer, so the feasibility
+* Rank the shipping agents by value to the writer, so the feasibility
   measurements and delivery stories take them in order.
-* State what the tasks require of the experience, agent architecture, and
+* State what the agents require of the experience, agent architecture, and
   conversations ADRs, such as storing living artifacts, and revise backlog
-  38, 10, 37, 35, 36, and 49 to 54 where the decision departs from them.
+  38, 10, 37, 35, 36, and 49 to 53 where the decision departs from them.
 * Add the ADR to the ADR index with `service` and `webapp` in its
   `subsystems` field.
 
 ## Acceptance criteria
 
 * [ ] The ADR is accepted and listed in the ADR index.
-* [ ] The ADR states for every candidate task whether it ships, is deferred,
+* [ ] The ADR states for every candidate agent whether it ships, is deferred,
   or is cut, and why.
-* [ ] For every shipping task, the ADR states its shape, scope, trigger,
-  surface, interruption, and default, and ranks the tasks.
-* [ ] The ADR states how agents are turned on and off across the workspace
-  tree, how settings inherit and override, and any presets.
+* [ ] For every shipping agent, the ADR states its shape, scope, trigger,
+  surface, and interruption, and ranks the agents.
 * [ ] The ADR records what the prototype showed.
 * [ ] The backlog stories that depend on it reflect the decision.
 * [ ] No prototype or real manuscript is committed, and `tools/check` exits

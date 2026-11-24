@@ -18,7 +18,7 @@ not think to ask for.
 
 ## Context
 
-The [background tasks ADR](./0047-background-tasks-ux-adr.md) decides which
+The [background agents ADR](./0047-background-agents-ux-adr.md) decides which
 paragraph- and scene-level findings ship first, such as weak prose,
 repetition, point of view and tense, clarity, and open questions, and the
 [experience ADR](./0038-pair-writing-experience-adr.md) builds on it, setting
@@ -32,7 +32,7 @@ read. [Backlog 12](./0012-first-pair-writing-agent.md) builds the agent crate,
 `service/prompts/`, the conversation cases in `evals/`, and the fake provider
 this story extends. [ADR 0004](../adrs/0004-api-conventions.md) sets the
 endpoint conventions. Living artifacts such as the story bible, and
-chapter-level and session tasks, follow in backlog 49 to 53 on this plumbing.
+chapter-level and session agents, follow in backlog 49 to 53 on this plumbing.
 If building reveals a flaw in the agent ADR, amend it in the same pull
 request.
 
@@ -40,8 +40,8 @@ request.
 
 * Add the background review prompts to `service/prompts/`, starting from the
   prompts [backlog 46](./0046-prompt-tuning-evals.md) chose for each kind of
-  finding the background tasks ADR ships.
-* Run the evaluation cases [backlog 48](./0048-background-task-evals.md)
+  finding the background agents ADR ships.
+* Run the evaluation cases [backlog 48](./0048-background-agent-evals.md)
   wrote for each shipping kind of finding against the review endpoint, as
   the agent ADR decides, and add cases for anything the endpoint adds.
   Include coherent documents that should produce no finding of a kind, so

@@ -1,6 +1,6 @@
 ---
 title: Turn background agents on and off across the workspace tree
-description: Store which background agents are on or off at the workspace, folder, and document level, resolve the agents in effect for each document by inheritance, and let writers see and change them.
+description: After writers have used background agents that are always on, decide and build how agents are turned on and off at the workspace, folder, and document level, resolved by inheritance, with presets for kinds of work.
 author: Tim Park
 ms.date: 2026-11-24
 ms.topic: reference
@@ -19,14 +19,14 @@ help that suits it and nothing else.
 
 ## Context
 
-The [background tasks ADR](./0047-background-tasks-ux-adr.md) decides how
-agents are turned on and off across the workspace tree: where settings can
-be made, how they inherit and override, how the writer sees the agents in
-effect and where each setting comes from, and any presets for kinds of work.
-Background review from [backlog 35](./0035-service-background-review.md) runs
-the first agents, and [backlog 36](./0036-background-findings-view.md) shows
-their findings. Backlog 49 to 53 add more agents, each of which this
-mechanism turns on and off.
+The [background agents ADR](./0047-background-agents-ux-adr.md) starts every
+shipping agent on for every document, and asks each agent to stay quiet on
+work it does not apply to. Background review from
+[backlog 35](./0035-service-background-review.md) runs the first agents,
+[backlog 36](./0036-background-findings-view.md) shows their findings, and
+backlog 49 to 53 add more. This story follows them, so the case for turning
+agents off rests on which agents writers found unhelpful for which kinds of
+work.
 
 [ADR 0005](../adrs/0005-workspace-model.md) defines the items in the tree,
 and [ADR 0006](../adrs/0006-storage-architecture.md#workspace-index) keeps
@@ -37,6 +37,13 @@ tree, whichever story lands first.
 
 ## Scope
 
+* Decide, and record as an amendment to the background agents ADR, how
+  agents are turned on and off across the workspace tree: where a setting
+  can be made (the workspace, a folder, or a document), how it inherits to
+  everything below, how a lower setting overrides a higher one, and whether
+  presets bundle agents for a kind of work, such as fiction or technical
+  nonfiction. Decide whether agent options, such as the writer's own rules
+  from backlog 53, are scoped the same way.
 * Amend ADR 0005 with agent settings on the workspace, folders, and
   documents, and the rule that resolves the agents in effect for a document,
   and amend ADR 0006 for how the index stores them. Keep the settings when an
@@ -54,7 +61,7 @@ tree, whichever story lands first.
 * Show the agents in effect for the open document and for a folder, with
   where each setting comes from, and let the writer turn an agent on or off
   at that level or return it to inheriting, keyboard operable and
-  accessible. Apply presets if the ADR decides on them.
+  accessible. Apply presets if the decision includes them.
 * Extend the storage conformance suite, service tests, webapp tests, and
   browser tests.
 
@@ -69,10 +76,13 @@ tree, whichever story lands first.
   loads.
 * [ ] An agent turned off for a document makes no model calls for it, and a
   test proves it with the fake provider.
-* [ ] ADR 0005 and ADR 0006 are amended in the same pull request.
+* [ ] The background agents ADR, ADR 0005, and ADR 0006 are amended in the
+  same pull request.
 * [ ] `tools/check` exits 0.
 
 ## Prerequisites
 
 * [Review documents in the background in the service](./0035-service-background-review.md)
 * [Show background findings in the webapp](./0036-background-findings-view.md)
+* [Keep a story bible and check continuity](./0049-story-bible-continuity.md)
+* [Review finished chapters](./0051-chapter-review.md)

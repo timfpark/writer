@@ -477,9 +477,9 @@ Trade-offs and risks:
 
 ## Follow-ups
 
-* [Backlog 47](../backlog/0047-background-tasks-ux-adr.md) and
-  [backlog 48](../backlog/0048-background-task-evals.md): choose the
-  background tasks beyond these three kinds of finding, and test whether a
+* [Backlog 47](../backlog/0047-background-agents-ux-adr.md) and
+  [backlog 48](../backlog/0048-background-agent-evals.md): choose the
+  background agents beyond these three kinds of finding, and test whether a
   story bible extracted chapter by chapter closes the disconnect gap this
   record found.
 * [Backlog 46](../backlog/0046-prompt-tuning-evals.md): sweep prompt

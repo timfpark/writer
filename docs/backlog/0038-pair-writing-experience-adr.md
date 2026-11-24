@@ -75,8 +75,8 @@ after writers have used the local pair writer.
   * Turning background review off, and deleting conversations
   * Using Writer with no provider configured, offline, or after an agent
     failure
-* Take the background tasks, their shapes, triggers, and surfaces from the
-  [background tasks ADR](./0047-background-tasks-ux-adr.md), and design the
+* Take the background agents, their shapes, triggers, and surfaces from the
+  [background agents ADR](./0047-background-agents-ux-adr.md), and design the
   journeys and the assistant pane around them.
 * Decide what the agent pays attention to from the writer's point of view:
   the open document, the selection, other documents in the folder or
@@ -130,4 +130,4 @@ after writers have used the local pair writer.
 
 * [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)
 * [Tune the pair-writing prompts with the evaluation harness](./0046-prompt-tuning-evals.md)
-* [Record the background tasks UX ADR](./0047-background-tasks-ux-adr.md)
+* [Record the background agents UX ADR](./0047-background-agents-ux-adr.md)
