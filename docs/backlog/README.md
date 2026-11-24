@@ -37,10 +37,11 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | #  | Work item                                                                                   | Subsystems                       | Outcome                                                                                      | Prerequisite |
 |----|---------------------------------------------------------------------------------------------|----------------------------------|----------------------------------------------------------------------------------------------|--------------|
 | 39 | [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)                       | `repository`, `service`, `evals` | In progress: ADR 0010 is proposed; blind scoring and a battery run remain.                   | None         |
+| 46 | [Tune the pair-writing prompts with the evaluation harness](./0046-prompt-tuning-evals.md)  | `evals`, `service`               | Swept prompt variants pick the prompts for conversation and each kind of finding.            | 39           |
 | 44 | [Record the cloud model proxy ADR](./0044-cloud-model-proxy-adr.md)                         | `repository`, `evals`, `service` | An accepted ADR picks a local proxy to Azure AI Foundry with keyless auth and spending caps. | 39           |
 | 45 | [Run the cloud model proxy with a first set of Foundry models](./0045-cloud-model-proxy.md) | `repository`, `evals`            | The proxy runs with cheap and frontier Foundry models, and the harness calls it.             | 44           |
 | 43 | [Measure cloud models for pair writing](./0043-cloud-model-evals.md)                        | `evals`                          | Cheap and frontier cloud models are measured beside local ones for quality and price.        | 39, 45       |
-| 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)             | `service`, `webapp`              | An accepted ADR fixes the writer's experience of the agent, tested end to end.               | 39           |
+| 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)             | `service`, `webapp`              | An accepted ADR fixes the writer's experience of the agent, tested end to end.               | 39, 46       |
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)          | `service`, `webapp`              | An accepted ADR fixes where the agent runs and how it is built.                              | 38, 39       |
 | 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                     | `service`, `webapp`              | An accepted ADR fixes how conversations are stored, versioned, and audited.                  | 38           |
 | 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md)    | `service`                        | The service answers the writer about the open document, backed by prompts and evals.         | 10, 37       |
@@ -99,7 +100,9 @@ through a local proxy that holds the credentials and caps spending: item 44
 chooses it, and item 45 runs it with a first set of models. Item 43 then
 measures inexpensive and frontier cloud models through it on the same
 synthetic cases, so the quality gap and its price are known; no writer's
-text leaves the machine. Item 38 then decides the
+text leaves the machine. Item 46 then sweeps prompt variants across the leading
+models, including a separate pass for disconnects, so the prompts are
+measured rather than written once. Item 38 then decides the
 experience end to end, tested with a throwaway prototype and grounded in
 those results, so the decisions that follow serve it. Item 10 then
 decides where the agent runs and how it is built, and item 37 decides how its

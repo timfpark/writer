@@ -477,6 +477,10 @@ Trade-offs and risks:
 
 ## Follow-ups
 
+* [Backlog 46](../backlog/0046-prompt-tuning-evals.md): sweep prompt
+  variants across this record's leading models, including a separate pass
+  for disconnects, before the experience ADR decides which kinds of finding
+  ship. These results used one untuned prompt per task.
 * [Backlog 38](../backlog/0038-pair-writing-experience-adr.md): set latency
   targets from these measurements, decide how disconnects ship, and decide
   how often reviews run given about 60 W while one runs.

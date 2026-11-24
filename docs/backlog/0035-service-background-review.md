@@ -36,7 +36,8 @@ same pull request.
 ## Scope
 
 * Add the background review prompts to `service/prompts/`, starting from the
-  experience ADR's trial prompts.
+  prompts [backlog 46](./0046-prompt-tuning-evals.md) chose for each kind of
+  finding the experience ADR ships.
 * Add synthetic evaluation cases to `evals/` for each kind of finding the
   experience ADR ships, such as suggestions grounded in the passage, questions that open a
   direction the text has not taken, and disconnects between passages.
