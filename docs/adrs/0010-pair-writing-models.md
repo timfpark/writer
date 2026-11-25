@@ -25,7 +25,7 @@ Accepted on 2026-11-23.
 The measurements ran unattended overnight on the reference machine, and the
 maintainer then scored a blind sheet of the leading configurations, which
 changed the reviewer. One check remains as a follow-up, which
-[backlog 47](../backlog/0047-background-agents-ux-adr.md) runs: a battery
+[backlog 59](../backlog/0059-battery-and-typing-check.md) runs: a battery
 run on the chosen models with the charger unplugged, and a check that typing
 in a browser on the host stays smooth while it runs. The measurements ran on
 AC power, so battery drain is estimated from power draw, and the typing test
@@ -536,7 +536,7 @@ Trade-offs and risks:
   that fits the reference machine: run it with the same cases.
 * A prompt change in the agent ADR or later: rerun the chosen configurations.
 * Trials in real use, from backlog 55, favor another model for a mode.
-* The battery check from backlog 47 finds drain or typing well off this
+* The battery check from backlog 59 finds drain or typing well off this
   record's estimates.
 * Ollama changes how it runs a model, such as an MLX runner or speculative
   decoding for the chosen model: rerun it on the new runtime.
@@ -552,9 +552,11 @@ Trade-offs and risks:
   model decision; the harness screens each new release and trials confirm
   it.
 * [Backlog 47](../backlog/0047-background-agents-ux-adr.md): choose the
-  background agents beyond these three kinds of finding, decide how
+  background agents beyond these three kinds of finding, and decide how
   disconnects ship and how often reviews run given about 60 W while one
-  runs, and run the battery and typing check this record left open.
+  runs.
+* [Backlog 59](../backlog/0059-battery-and-typing-check.md): run the
+  unplugged battery and host-browser typing check this record left open.
 * [Backlog 56](../backlog/0056-story-bible-continuity-test.md): test
   whether a story bible extracted chapter by chapter closes the disconnect
   gap this record found, before the agent architecture is chosen.

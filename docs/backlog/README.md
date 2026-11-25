@@ -50,6 +50,7 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | 48 | [Measure the background agents with the evaluation harness](./0048-background-agent-evals.md) | `evals`                          | Each first-wave background agent is measured on local models with a first prompt.            | 47, 56             |
 | 35 | [Review documents in the background in the service](./0035-service-background-review.md)      | `service`, `evals`               | The service returns the first background agents' findings, with tuned prompts.               | 12, 48             |
 | 36 | [Show background findings in the webapp](./0036-background-findings-view.md)                  | `webapp`                         | Findings appear beside the text while writing, linked to their passages.                     | 34, 35             |
+| 59 | [Measure battery drain and host typing during review](./0059-battery-and-typing-check.md)     | `evals`, `webapp`                | ADR 0010 records unplugged battery drain and host-browser typing during review.              | None               |
 | 49 | [Keep a story bible and check continuity](./0049-story-bible-continuity.md)                   | `service`, `webapp`, `evals`     | A story bible and timeline stay current, and contradictions are flagged against them.        | 35, 36             |
 | 50 | [Track open threads and keep a reverse outline](./0050-threads-and-outline.md)                | `service`, `webapp`, `evals`     | Writers see what each scene does and which setups have no payoff.                            | 49                 |
 | 51 | [Review finished chapters](./0051-chapter-review.md)                                          | `service`, `webapp`, `evals`     | Settled chapters get pacing, voice, reader, and anachronism reviews.                         | 35, 36             |
@@ -111,15 +112,14 @@ and the gaps it found, chiefly disconnects across passages.
 Three items start in parallel. Item 47 decides which background agents the
 first wave runs, from a story bible and continuity checks to prose and
 structure checks and session recaps, how each appears, and whether the
-writer can pause them, and runs the battery check ADR 0010 left open; the
-first wave serves fiction. Item 46 tunes the conversation prompt and teaches
-the harness to sweep prompts. Item 56 tests whether checking continuity
-against a story bible, extracted chapter by chapter, closes the disconnect
-gap, because the answer shapes the agent's architecture. Cloud models are
-hosted in Azure AI Foundry and reached only through a local proxy that holds
-the credentials and caps spending: item 44 chooses it, and item 45 runs it
-with a first set of models, which items 56 and 48 use as a ceiling for local
-results.
+writer can pause them; the first wave serves fiction. Item 46 tunes the
+conversation prompt and teaches the harness to sweep prompts. Item 56 tests
+whether checking continuity against a story bible, extracted chapter by
+chapter, closes the disconnect gap, because the answer shapes the agent's
+architecture. Cloud models are hosted in Azure AI Foundry and reached only
+through a local proxy that holds the credentials and caps spending: item 44
+chooses it, and item 45 runs it with a first set of models, which items 56
+and 48 use as a ceiling for local results.
 
 Item 38 then designs the writer's journeys around item 47's agents,
 extending its prototype with conversation. Item 10 decides where the agent
@@ -132,13 +132,16 @@ mode.
 
 Background review follows. Item 48 measures each first-wave agent with a
 first prompt. Item 35 tunes the first agents' prompts and adds background
-review to the service, and item 36 shows its findings beside the text. Items
-49 to 53 add the remaining agents on that plumbing, each tuning its own
-prompts: the story bible and continuity checks, open threads and a reverse
-outline, chapter reviews, the writer's own rules, and a session recap. Item
-54 then lets writers turn each agent on or off for a folder or document,
-inherited down the tree, and item 58 adds the nonfiction agents a technical
-book needs. Item 55 trials candidate models side by side in real use.
+review to the service, and item 36 shows its findings beside the text. Item
+59 runs the unplugged battery and host-browser typing check ADR 0010 left
+open without blocking the first agents, so battery targets can be adjusted
+before the full set runs. Items 49 to 53 add the remaining agents on that
+plumbing, each tuning its own prompts: the story bible and continuity checks,
+open threads and a reverse outline, chapter reviews, the writer's own rules,
+and a session recap. Item 54 then lets writers turn each agent on or off for
+a folder or document, inherited down the tree, and item 58 adds the
+nonfiction agents a technical book needs. Item 55 trials candidate models
+side by side in real use.
 
 Only after writers have used the local pair writer does item 43 measure
 inexpensive and frontier cloud models on the prompts the service ships, and

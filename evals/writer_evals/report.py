@@ -74,6 +74,14 @@ def summarize_run(result: Dict) -> Dict[str, object]:
     }
 
 
+def battery_used_wh(result: Dict) -> Optional[float]:
+    """Charge drawn from the battery during a run, at the pack's mean voltage."""
+    start, end = result.get("chargeStart"), result.get("chargeEnd")
+    if not start or not end:
+        return None
+    return (start["mAh"] - end["mAh"]) * (start["mV"] + end["mV"]) / 2 / 1e6
+
+
 def report(paths: List[Path]) -> str:
     runs, pairs, sustained = [], [], []
     for path in sorted(paths):
@@ -124,7 +132,8 @@ def report(paths: List[Path]) -> str:
                 _fmt((result["batteryStart"] - result["batteryEnd"]) if result.get("onBattery")
                      and result.get("batteryStart") is not None and result.get("batteryEnd") is not None
                      else None, 0),
+                _fmt(battery_used_wh(result) if result.get("onBattery") else None),
             ])
         sections.append(_table(["Config", "Minutes", "Reviews", "Mean W", "Max W", "Min CPU speed limit",
-                                "Max thermal warning", "Power", "Battery used %"], rows))
+                                "Max thermal warning", "Power", "Battery used %", "Battery used Wh"], rows))
     return "\n\n".join(sections) + "\n"
