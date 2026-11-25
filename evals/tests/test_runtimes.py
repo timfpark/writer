@@ -106,3 +106,19 @@ class OllamaUrlTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class BatteryReadingTest(unittest.TestCase):
+    # ioreg's AppleSmartBattery on battery: the charger supplies nothing, so
+    # SystemPowerIn reads zero while SystemLoad still counts the machine's draw.
+    IOREG = ('      "AppleRawCurrentCapacity" = 5980\n      "Voltage" = 12650\n'
+             '      "PowerTelemetryData" = {"SystemLoad"=58312,"SystemPowerIn"=0,"BatteryPower"=58300}\n')
+
+    def test_power_counts_load_on_battery_and_charge_reads_mah(self):
+        from writer_evals import monitor
+        from writer_evals.report import battery_used_wh
+
+        self.assertEqual(monitor.power_watts(self.IOREG), 58.312)
+        self.assertEqual(monitor.battery_charge(self.IOREG), {"mAh": 5980, "mV": 12650})
+        used = battery_used_wh({"chargeStart": {"mAh": 6000, "mV": 12700}, "chargeEnd": {"mAh": 5000, "mV": 12300}})
+        self.assertAlmostEqual(used, 12.5)

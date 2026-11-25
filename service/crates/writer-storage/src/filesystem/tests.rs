@@ -10,7 +10,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 
 use serde_json::Value;
 use tempfile::TempDir;
-use writer_domain::{Conflict, ItemKind, Markdown, NewItem, Placement, Title, WorkspaceItem};
+use writer_domain::{
+    Conflict, ItemKind, Language, Markdown, NewItem, Placement, Title, WorkspaceItem,
+};
 
 use super::FilesystemStore;
 use super::faults::{Action, Faults};
@@ -96,6 +98,7 @@ async fn document(
             title(text),
             placement,
             markdown(content),
+            Language::default(),
         ))
         .await
         .unwrap();
@@ -639,6 +642,14 @@ async fn refuses_an_index_it_cannot_read_and_leaves_it_alone() {
             r#"{"format": 1, "items": [{"id": "c0f0a000-0000-4000-8000-000000000001", "kind": "document", "title": "A", "name": "../A.md"}], "pending": null}"#,
             false,
         ),
+        (
+            r#"{"format": 1, "items": [{"id": "c0f0a000-0000-4000-8000-000000000001", "kind": "document", "title": "A", "name": "A.md", "language": "fr"}], "pending": null}"#,
+            false,
+        ),
+        (
+            r#"{"format": 1, "items": [{"id": "c0f0a000-0000-4000-8000-000000000001", "kind": "folder", "title": "A", "name": "A", "language": "en", "items": []}], "pending": null}"#,
+            false,
+        ),
         (r#"{"format": 0, "items": [], "pending": null}"#, false),
     ] {
         fs::write(&index, contents).unwrap();
@@ -808,6 +819,7 @@ enum Change {
     MoveDocument,
     MoveFolder,
     Reorder,
+    ReplaceLanguage,
     DeleteDocument,
     DeleteFolder,
 }
@@ -829,6 +841,7 @@ async fn apply(store: &FilesystemStore, change: Change) -> Result<(), StoreError
                 title("Prologue"),
                 at(Some(1), Some(2)),
                 markdown("Prologue words.\n"),
+                Language::default(),
             ))
             .await
             .map(drop),
@@ -860,6 +873,7 @@ async fn apply(store: &FilesystemStore, change: Change) -> Result<(), StoreError
             .place(id(6), ItemKind::Document, at(None, Some(1)))
             .await
             .map(drop),
+        Change::ReplaceLanguage => store.replace_language(id(2), Language::Es).await.map(drop),
         Change::DeleteDocument => store.delete(id(2), ItemKind::Document).await,
         Change::DeleteFolder => store.delete(id(1), ItemKind::Folder).await,
     }
@@ -960,6 +974,74 @@ interrupted! {
     an_interrupted_document_move_leaves_the_old_or_new_tree: Change::MoveDocument,
     an_interrupted_folder_move_leaves_the_old_or_new_tree: Change::MoveFolder,
     an_interrupted_reorder_leaves_the_old_or_new_tree: Change::Reorder,
+    an_interrupted_language_change_leaves_the_old_or_new_tree: Change::ReplaceLanguage,
     an_interrupted_document_delete_leaves_the_old_or_new_tree: Change::DeleteDocument,
     an_interrupted_folder_delete_leaves_the_old_or_new_tree: Change::DeleteFolder,
+}
+
+#[tokio::test]
+async fn loads_a_pre_language_workspace_index_with_english_default() {
+    let dir = TempDir::new().unwrap();
+    let data = dir.path().join("data");
+    let root = data.join("workspace");
+    fs::create_dir_all(root.join(".writer")).unwrap();
+    fs::create_dir_all(root.join("Folder")).unwrap();
+    let prose = "The keeper climbed the stairs.\n";
+    fs::write(root.join("Folder/Chapter.md"), prose).unwrap();
+    // Format 1 index written before document language existed.
+    let legacy = r#"{
+  "format": 1,
+  "items": [
+    {
+      "id": "c0f0a000-0000-4000-8000-000000000001",
+      "kind": "folder",
+      "title": "Folder",
+      "name": "Folder",
+      "items": [
+        {
+          "id": "c0f0a000-0000-4000-8000-000000000002",
+          "kind": "document",
+          "title": "Chapter",
+          "name": "Chapter.md"
+        }
+      ]
+    }
+  ],
+  "pending": null
+}"#;
+    fs::write(root.join(".writer/workspace.json"), legacy).unwrap();
+
+    let store = FilesystemStore::open(&data).await.unwrap();
+    let items = store.workspace().await.unwrap();
+    assert_eq!(items.len(), 2);
+    assert_eq!(items[0].language, None);
+    assert_eq!(items[1].language, Some(Language::En));
+    assert_eq!(text(&store, 2).await, prose);
+}
+
+#[tokio::test]
+async fn outside_document_gets_default_language_and_language_change_leaves_markdown_untouched() {
+    let fs_store = Fs::open().await;
+    let store = &fs_store.store;
+    let root = fs_store.root();
+    let spanish = "¿Dónde dejó la lámpara? En el faro, junto al río.\n";
+    let path = root.join("Cartas.md");
+    fs::write(&path, spanish).unwrap();
+
+    let items = store.workspace().await.unwrap();
+    assert_eq!(items.len(), 1);
+    let doc_id = items[0].id.clone();
+    assert_eq!(items[0].language, Some(Language::En));
+
+    #[cfg(unix)]
+    let before_inode = inode(&path);
+    let updated = store
+        .replace_language(doc_id.clone(), Language::Es)
+        .await
+        .unwrap();
+    assert_eq!(updated.language, Language::Es);
+    assert_eq!(fs::read_to_string(&path).unwrap(), spanish);
+    #[cfg(unix)]
+    assert_eq!(inode(&path), before_inode);
+    assert_eq!(index_json(&root)["items"][0]["language"], "es");
 }

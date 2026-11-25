@@ -14,8 +14,8 @@ use std::future::Future;
 use std::sync::Arc;
 
 use writer_domain::{
-    Conflict, Item, ItemId, ItemKind, MAX_CONTENT_BYTES, Markdown, NewItem, Placement, Revision,
-    Title, Violation, WorkspaceItem,
+    Conflict, Item, ItemId, ItemKind, Language, MAX_CONTENT_BYTES, Markdown, NewItem, Placement,
+    Revision, Title, Violation, WorkspaceItem,
 };
 
 use crate::{Created, StoreError, WorkspaceStore, revision_of};
@@ -60,6 +60,7 @@ macro_rules! conformance_tests {
             revisions_change_exactly_when_content_changes,
             deletes_documents_and_folders_with_their_subtrees,
             reopening_finds_the_same_workspace,
+            document_language_defaults_updates_and_survives_changes,
         );
     };
     (@cases $harness:ty; $($case:ident),+ $(,)?) => {
@@ -114,6 +115,7 @@ async fn new_document(
             title(text),
             placement,
             markdown(content),
+            Language::default(),
         ))
         .await
         .expect("the document is created");
@@ -255,6 +257,7 @@ pub async fn a_repeated_create_returns_the_existing_item_unchanged<H: Harness>()
         title("Draft"),
         at(None, None),
         markdown("First words.\n"),
+        Language::Es,
     );
     let created = store.create(replay).await.unwrap();
     let Created::Existing(Item::Document(document)) = created else {
@@ -289,7 +292,8 @@ pub async fn a_create_reusing_an_identifier_of_the_other_kind_conflicts<H: Harne
                 id(1),
                 title("Draft"),
                 at(None, None),
-                markdown("")
+                markdown(""),
+                Language::default(),
             ))
             .await,
         StoreError::Conflict(Conflict::OtherKind)
@@ -475,7 +479,8 @@ pub async fn the_depth_limit_reaches_the_store<H: Harness>() {
                 id(101),
                 title("Too deep"),
                 at(Some(&id(16)), None),
-                markdown("")
+                markdown(""),
+                Language::default(),
             ))
             .await,
         StoreError::Invalid(Violation::DepthLimit)
@@ -527,6 +532,10 @@ pub async fn missing_items_and_the_other_kind_are_not_found<H: Harness>() {
             store
                 .replace_content(id(n), markdown("Other.\n"), base.clone())
                 .await,
+            StoreError::NotFound
+        );
+        assert_err!(
+            store.replace_language(id(n), Language::Es).await,
             StoreError::NotFound
         );
     }
@@ -886,4 +895,96 @@ pub async fn reopening_finds_the_same_workspace<H: Harness>() {
     for (n, content) in contents {
         assert_eq!(store.content(id(n)).await.unwrap(), content);
     }
+}
+
+pub async fn document_language_defaults_updates_and_survives_changes<H: Harness>() {
+    let harness = H::open().await;
+    let store = harness.store();
+    new_folder(&*store, 1, "Relatos", at(None, None)).await;
+
+    let prose = "¿Quién dejó la lámpara encendida? ¡Qué silencio sobre la bahía!\n";
+    let english = new_document(
+        &*store,
+        2,
+        "Harbor",
+        at(None, None),
+        "Dawn over the quay.\n",
+    )
+    .await;
+    assert_eq!(english.language(), Some(Language::En));
+
+    let spanish = store
+        .create(NewItem::document(
+            id(3),
+            title("Capítulo uno"),
+            at(None, None),
+            markdown(prose),
+            Language::Es,
+        ))
+        .await
+        .unwrap()
+        .into_item();
+    assert_eq!(spanish.language(), Some(Language::Es));
+
+    let before_rev = revision(&*store, 2).await;
+    let switched = store.replace_language(id(2), Language::Es).await.unwrap();
+    assert_eq!(switched.id, id(2));
+    assert_eq!(switched.language, Language::Es);
+    assert_eq!(switched.revision, before_rev);
+    assert_eq!(text(&*store, 2).await, "Dawn over the quay.\n");
+
+    // Switching back and forth and repeating the same language is idempotent.
+    let same = store.replace_language(id(2), Language::Es).await.unwrap();
+    assert_eq!(same.language, Language::Es);
+    assert_eq!(same.revision, before_rev);
+
+    // Language survives rename, move, content save, and reopening the store.
+    store
+        .rename(id(2), ItemKind::Document, title("¿Dónde está el faro?"))
+        .await
+        .unwrap();
+    store
+        .place(id(2), ItemKind::Document, at(Some(&id(1)), None))
+        .await
+        .unwrap();
+    let saved = store
+        .replace_content(id(2), markdown(prose), before_rev)
+        .await
+        .unwrap();
+    assert_eq!(saved.language, Language::Es);
+
+    let items = store.workspace().await.unwrap();
+    let languages: Vec<_> = items
+        .iter()
+        .map(|item| (item.id.clone(), item.language))
+        .collect();
+    assert_eq!(
+        languages,
+        vec![
+            (id(1), None),
+            (id(2), Some(Language::Es)),
+            (id(3), Some(Language::Es)),
+        ]
+    );
+
+    drop(store);
+    let harness = harness.reopen().await;
+    let store = harness.store();
+    assert_eq!(
+        store
+            .item(id(2), ItemKind::Document)
+            .await
+            .unwrap()
+            .language(),
+        Some(Language::Es)
+    );
+    assert_eq!(text(&*store, 2).await, prose);
+    assert_eq!(
+        store
+            .item(id(3), ItemKind::Document)
+            .await
+            .unwrap()
+            .language(),
+        Some(Language::Es)
+    );
 }

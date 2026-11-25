@@ -4,6 +4,7 @@ import type { TreeChange } from "../api/workspaceTree";
 const verbs: Record<TreeChange["type"], string> = {
   create: "create",
   rename: "rename",
+  setLanguage: "change the language of",
   move: "move",
   delete: "delete",
 };
@@ -26,6 +27,9 @@ function reason(change: TreeChange, error: unknown): string {
       const pointers = problem.errors.map((field) => field.pointer);
       if (pointers.includes("/title")) {
         return "A title needs 1 to 200 characters, without line breaks or tabs.";
+      }
+      if (pointers.includes("/language")) {
+        return "Writer supports English and Spanish.";
       }
       if (pointers.includes("/parentId")) {
         return "Folders nest at most 16 levels deep.";

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { lazy, Suspense, useEffect, useState } from "react";
+import { defaultLanguage } from "../api/languages";
 import {
   documentContentQueryOptions,
   documentQueryOptions,
@@ -8,6 +9,7 @@ import {
   isNotFound,
 } from "../api/queries";
 import { useQueryFailure } from "../api/useQueryFailure";
+import { useWorkspaceTree } from "../api/workspaceChanges";
 import { useSaveManager, type SaveManager } from "../saving/saveManager";
 import { ServiceUnavailable } from "./ServiceUnavailable";
 import { PageMessage, WritingPage } from "./WritingPage";
@@ -59,7 +61,12 @@ function Loading() {
 export function DocumentView({ documentId }: { documentId: string }) {
   const manager = useSaveManager();
   const recovered = useRecovered(manager, documentId);
+  const { items } = useWorkspaceTree();
   const document = useQuery(documentQueryOptions(documentId));
+  const language =
+    items?.find((item) => item.id === documentId)?.language ??
+    document.data?.language ??
+    defaultLanguage;
   const content = useQuery({
     ...documentContentQueryOptions(documentId),
     enabled: isDocumentId(documentId) && recovered,
@@ -114,6 +121,7 @@ export function DocumentView({ documentId }: { documentId: string }) {
           <DocumentEditor
             key={documentId}
             documentId={documentId}
+            language={language}
             content={content.data}
             manager={manager}
           />

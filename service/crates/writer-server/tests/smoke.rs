@@ -174,3 +174,61 @@ fn resolves_a_relative_data_folder_against_the_working_directory() {
     let (status, stderr) = terminate(&mut server);
     assert_eq!(status.code(), Some(0), "writer-server stderr: {stderr}");
 }
+
+fn http_request(port: u16, method: &str, path: &str, body: Option<&str>) -> String {
+    let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
+    stream
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .unwrap();
+    let payload = body.unwrap_or("");
+    let request = match body {
+        Some(_) => format!(
+            "{method} {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{payload}",
+            payload.len()
+        ),
+        None => format!("{method} {path} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n"),
+    };
+    stream.write_all(request.as_bytes()).unwrap();
+    let mut response = String::new();
+    stream.read_to_string(&mut response).unwrap();
+    response
+}
+
+#[test]
+fn document_language_survives_a_service_restart() {
+    let dir = TempDir::new().unwrap();
+    let data = dir.path().join("data");
+    let doc_id = "c0f0a000-0000-4000-8000-000000000041";
+
+    let port = unused_port();
+    let mut server = Server::start(&port.to_string(), &data);
+    wait_for_health(&mut server, port);
+    let create = http_request(
+        port,
+        "POST",
+        "/api/v1/documents",
+        Some(
+            r#"{"documentId":"c0f0a000-0000-4000-8000-000000000041","parentId":null,"beforeId":null,"title":"Relato","markdown":"¿Dónde está el faro?\n"}"#,
+        ),
+    );
+    assert!(create.starts_with("HTTP/1.1 201 Created\r\n"), "{create}");
+    let update = http_request(
+        port,
+        "PUT",
+        &format!("/api/v1/documents/{doc_id}/language"),
+        Some(r#"{"language":"es"}"#),
+    );
+    assert!(update.starts_with("HTTP/1.1 200 OK\r\n"), "{update}");
+    assert!(update.contains(r#""language":"es""#), "{update}");
+    let (status, stderr) = terminate(&mut server);
+    assert_eq!(status.code(), Some(0), "writer-server stderr: {stderr}");
+
+    let port = unused_port();
+    let mut restarted = Server::start(&port.to_string(), &data);
+    wait_for_health(&mut restarted, port);
+    let after = http_request(port, "GET", &format!("/api/v1/documents/{doc_id}"), None);
+    assert!(after.starts_with("HTTP/1.1 200 OK\r\n"), "{after}");
+    assert!(after.contains(r#""language":"es""#), "{after}");
+    let (status, stderr) = terminate(&mut restarted);
+    assert_eq!(status.code(), Some(0), "writer-server stderr: {stderr}");
+}

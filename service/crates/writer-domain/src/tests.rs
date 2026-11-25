@@ -42,6 +42,7 @@ fn new_document(n: u32, placement: Placement) -> NewItem {
         title("Synthetic document"),
         placement,
         Markdown::default(),
+        Language::default(),
     )
 }
 
@@ -170,6 +171,7 @@ fn violations_point_at_their_fields() {
     assert_eq!(Violation::DepthLimit.pointer(), "/parentId");
     assert_eq!(Violation::Title.pointer(), "/title");
     assert_eq!(Violation::Content.pointer(), "/markdown");
+    assert_eq!(Violation::Language.pointer(), "/language");
     assert_eq!(
         Violation::Identifier(ItemKind::Folder).pointer(),
         "/folderId"
@@ -513,4 +515,41 @@ fn lineage_runs_from_the_top_level_to_the_item() {
     assert!(tree.lineage(&id(99)).is_none());
     assert_eq!(tree.find(&id(3), ItemKind::Folder).unwrap().height(), 1);
     assert_eq!(tree.find(&id(1), ItemKind::Folder).unwrap().height(), 2);
+}
+
+#[test]
+fn languages_accept_only_supported_bcp_47_tags_and_default_to_english() {
+    assert_eq!(Language::default(), Language::En);
+    assert_eq!(Language::parse("en"), Ok(Language::En));
+    assert_eq!(Language::parse("es"), Ok(Language::Es));
+    assert_eq!(Language::En.as_str(), "en");
+    assert_eq!(Language::Es.as_str(), "es");
+    for invalid in ["", "EN", "Es", "en-US", "es-MX", "fr", " en", "es ", "spa"] {
+        assert_eq!(
+            Language::parse(invalid),
+            Err(Violation::Language),
+            "{invalid:?}"
+        );
+    }
+    assert_eq!(Violation::Language.pointer(), "/language");
+}
+
+#[test]
+fn tree_items_report_language_for_documents_and_none_for_folders() {
+    let mut tree = sample();
+    tree.get_mut(&id(2)).unwrap().language = Some(Language::Es);
+    let languages: Vec<_> = tree
+        .items()
+        .into_iter()
+        .map(|item| (item.id, item.language))
+        .collect();
+    assert_eq!(
+        languages,
+        vec![
+            (id(1), None),
+            (id(2), Some(Language::Es)),
+            (id(3), None),
+            (id(4), Some(Language::En)),
+        ]
+    );
 }

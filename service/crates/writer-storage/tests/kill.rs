@@ -11,7 +11,7 @@ use std::process::{Command, Stdio};
 use std::time::Duration;
 
 use tempfile::TempDir;
-use writer_domain::{Item, ItemId, ItemKind, Markdown, NewItem, Placement, Title};
+use writer_domain::{Item, ItemId, ItemKind, Language, Markdown, NewItem, Placement, Title};
 use writer_storage::{FilesystemStore, WorkspaceStore};
 
 const CHILD_DIR: &str = "WRITER_STORAGE_TEST_CHILD_DIR";
@@ -70,8 +70,13 @@ async fn child_writes_until_killed() {
         store.create(folder).await.unwrap();
     }
     for n in 11..=14 {
-        let document =
-            NewItem::document(id(n), title(&format!("Draft {n}")), at(Some(1)), version(0));
+        let document = NewItem::document(
+            id(n),
+            title(&format!("Draft {n}")),
+            at(Some(1)),
+            version(0),
+            Language::default(),
+        );
         store.create(document).await.unwrap();
     }
     println!("{CHILD_READY}");

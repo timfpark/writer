@@ -22,8 +22,8 @@ an English reading of it.
 The [model ADR](../adrs/0010-pair-writing-models.md) chose local models from
 English cases only. Models differ more across languages than their English
 results suggest, and a judge model scores Spanish prose less reliably than
-English. [Backlog 41](./0041-document-language.md) records each document's
-language, which tells the pair writer which language to use.
+English. [ADR 0005](../adrs/0005-workspace-model.md#language) records each
+document's language, which tells the pair writer which language to use.
 
 The `evals/` harness reruns any configuration against new cases, so this
 story adds cases and prompts rather than new tooling. It runs when Spanish
@@ -59,4 +59,4 @@ support is about to ship, so it measures the models available then.
 
 ## Prerequisites
 
-* [Set the language of a document](./0041-document-language.md)
+None.

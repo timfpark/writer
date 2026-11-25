@@ -32,10 +32,10 @@ the same.
 
 [ADR 0005](../adrs/0005-workspace-model.md) defines the items in the tree,
 and [ADR 0006](../adrs/0006-storage-architecture.md#workspace-index) keeps
-their metadata in the workspace index. A document's language, from
-[backlog 41](./0041-document-language.md), may also be set on a folder and
-inherited; both should use one mechanism for settings that inherit down the
-tree, whichever story lands first.
+their metadata in the workspace index. A document's language
+([ADR 0005](../adrs/0005-workspace-model.md#language)) currently lives on
+each document without folder inheritance; if a folder default is added later,
+it will share the tree-inheritance mechanism this story builds.
 
 ## Scope
 

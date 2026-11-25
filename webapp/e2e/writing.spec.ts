@@ -678,3 +678,89 @@ test("keeps both versions when the file changes outside Writer", async ({
   await page.getByRole("main").getByRole("button", { name: "Dismiss" }).click();
   await expect(notice).toBeHidden();
 });
+
+test("sets a document's language with the keyboard and keeps it across reload, rename, and move", async ({
+  page,
+  hasTouch,
+}) => {
+  const folderTitle = unique("Relatos");
+  const title = unique("Bahía");
+  const renamed = unique("¿Dónde está el faro?");
+  const spanish =
+    "¿Dónde quedó la lámpara? ¡Qué silencio sobre la bahía húmeda!\n";
+  const folderId = await createFolder(page, folderTitle);
+  const documentId = await createDocument(page, title, spanish);
+  const editor = await openDocument(page, documentId, title);
+
+  const heading = page.getByRole("heading", { level: 1 });
+  const picker = page
+    .getByRole("banner")
+    .getByRole("button", { name: /Document language/i });
+  await expect(editor).toHaveAttribute("lang", "en");
+  await expect(heading).toHaveAttribute("lang", "en");
+  await expect(picker).toContainText("English");
+  if (hasTouch) {
+    const box = await picker.boundingBox();
+    expect(box?.height).toBeGreaterThanOrEqual(44);
+    expect(box?.width).toBeGreaterThanOrEqual(44);
+  }
+
+  // Operate the language picker with the keyboard alone.
+  await picker.focus();
+  await expect(picker).toBeFocused();
+  await page.keyboard.press("Enter");
+  const listbox = page.getByRole("listbox");
+  await expect(listbox).toBeVisible();
+  await expect(listbox.getByRole("option", { name: "English" })).toBeVisible();
+  await expect(listbox.getByRole("option", { name: "Español" })).toBeVisible();
+  await expectAccessible(page);
+
+  const updated = page.waitForResponse(
+    (response) =>
+      response.request().method() === "PUT" &&
+      response.url().endsWith(`/api/v1/documents/${documentId}/language`),
+  );
+  await page.keyboard.press("ArrowDown");
+  await page.keyboard.press("Enter");
+  expect((await updated).status()).toBe(200);
+
+  await expect(picker).toContainText("Español");
+  await expect(editor).toHaveAttribute("lang", "es");
+  await expect(heading).toHaveAttribute("lang", "es");
+  expect(await storedContent(page, documentId)).toBe(spanish);
+  await expectAccessible(page);
+
+  // Survives a reload.
+  await page.reload();
+  const reloadedEditor = surface(page, title);
+  await expect(reloadedEditor).toHaveAttribute("lang", "es");
+  await expect(heading).toHaveAttribute("lang", "es");
+  await expect(picker).toContainText("Español");
+
+  // Survives a rename, and the title input carries lang="es".
+  await press(heading.getByRole("button", { name: title }), hasTouch);
+  const titleInput = page.getByRole("textbox", { name: "Document title" });
+  await expect(titleInput).toHaveAttribute("lang", "es");
+  const renameSaved = page.waitForResponse(
+    (response) =>
+      response.request().method() === "PUT" &&
+      response.url().endsWith(`/api/v1/documents/${documentId}/title`),
+  );
+  await titleInput.fill(renamed);
+  await titleInput.press("Enter");
+  expect((await renameSaved).status()).toBe(200);
+  await expect(surface(page, renamed)).toHaveAttribute("lang", "es");
+  await expect(picker).toContainText("Español");
+
+  // Survives a move into a folder.
+  const moved = await page.request.put(
+    `/api/v1/documents/${documentId}/position`,
+    { data: { parentId: folderId, beforeId: null } },
+  );
+  expect(moved.status()).toBe(200);
+  await page.reload();
+  await expect(surface(page, renamed)).toHaveAttribute("lang", "es");
+  await expect(heading).toHaveAttribute("lang", "es");
+  await expect(picker).toContainText("Español");
+  expect(await storedContent(page, documentId)).toBe(spanish);
+});

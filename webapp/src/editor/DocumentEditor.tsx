@@ -18,6 +18,7 @@ import {
 
 interface DocumentEditorProps {
   documentId: string;
+  language: string;
   content: DocumentContent;
   manager: SaveManager;
 }
@@ -88,6 +89,7 @@ function toBoundary(editor: Editor, end: boolean, extend: boolean): boolean {
 // Markdown, saved by the document's saver as the writer types.
 export default function DocumentEditor({
   documentId,
+  language,
   content,
   manager,
 }: DocumentEditorProps) {
@@ -162,6 +164,13 @@ export default function DocumentEditor({
     openLinkRef.current = () => setLink(linkTarget(editor));
   }, [editor]);
 
+  // Keep the writing surface's lang attribute in sync with the document's
+  // language without recreating Tiptap's editor options.
+  useLayoutEffect(() => {
+    if (editor.isDestroyed) return;
+    editor.view.dom.setAttribute("lang", language);
+  }, [editor, language]);
+
   // Focus left on the writing region, such as by a pane that closed as this
   // document opened, moves into the document once the editor is ready.
   useEffect(() => {
@@ -217,7 +226,11 @@ export default function DocumentEditor({
 
   return (
     <>
-      <EditorContent editor={editor} className={styles.surface} />
+      <EditorContent
+        editor={editor}
+        className={styles.surface}
+        lang={language}
+      />
       {link ? (
         <LinkDialog
           target={link}

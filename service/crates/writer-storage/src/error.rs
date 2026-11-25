@@ -108,6 +108,7 @@ pub enum Operation {
     Rename,
     Place,
     ReplaceContent,
+    ReplaceLanguage,
     Delete,
 }
 

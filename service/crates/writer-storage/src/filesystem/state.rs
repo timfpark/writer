@@ -7,7 +7,7 @@ use std::path::Path;
 
 use tempfile::NamedTempFile;
 use writer_domain::{
-    Conflict, CreateCheck, Document, DocumentContent, Folder, Item, ItemId, ItemKind,
+    Conflict, CreateCheck, Document, DocumentContent, Folder, Item, ItemId, ItemKind, Language,
     MAX_CONTENT_BYTES, Markdown, NewItem, Node, Placement, Position, Revision, Title, Tree,
     WorkspaceItem,
 };
@@ -112,6 +112,7 @@ impl State {
             .position(id)
             .and_then(|position| position.parent_id);
         let title = node.title.clone();
+        let language = node.language.unwrap_or_default();
         match kind {
             ItemKind::Folder => Lookup::Found(Ok(Item::Folder(Folder {
                 id: id.clone(),
@@ -123,6 +124,7 @@ impl State {
                     id: id.clone(),
                     parent_id,
                     title,
+                    language,
                     revision: revision_of(&bytes),
                 }))),
                 None | Some(Err(ReadFailure::Missing)) => Lookup::Stale,
@@ -299,7 +301,8 @@ impl State {
         let before = self.index.clone();
         let mut target = parent.to_vec();
         target.push(name.clone());
-        let node = Node::new(item.id().clone(), item.kind(), item.title().clone(), name);
+        let node = Node::new(item.id().clone(), item.kind(), item.title().clone(), name)
+            .with_language(item.language());
         if self.index.insert(position, node).is_err() {
             return Err(io::ErrorKind::NotFound.into());
         }
@@ -542,6 +545,7 @@ impl State {
         }
         let node = self.index.find(id, ItemKind::Document)?;
         let title = node.title.clone();
+        let language = node.language.unwrap_or_default();
         let parent_id = self
             .index
             .position(id)
@@ -566,6 +570,7 @@ impl State {
                     id: id.clone(),
                     parent_id,
                     title,
+                    language,
                     revision: current,
                 });
             }
@@ -599,10 +604,37 @@ impl State {
                 id: id.clone(),
                 parent_id,
                 title,
+                language,
                 revision: revision_of(markdown.as_str().as_bytes()),
             });
         }
         Err(StoreError::Conflict(Conflict::StaleRevision))
+    }
+
+    pub fn replace_language(
+        &mut self,
+        id: &ItemId,
+        language: Language,
+    ) -> Result<Document, StoreError> {
+        const OP: Operation = Operation::ReplaceLanguage;
+        self.ensure_clear(OP, id)?;
+        self.reconcile(OP)?;
+        let node = self.index.find(id, ItemKind::Document)?;
+        if node.language != Some(language) {
+            let before = self.index.clone();
+            let Some(node) = self.index.get_mut(id) else {
+                return Err(StoreError::NotFound);
+            };
+            node.language = Some(language);
+            if let Err(error) = self.save_index() {
+                self.index = before;
+                return Err(StoreError::io(OP, Some(id), &error));
+            }
+        }
+        match self.item_now(id, ItemKind::Document, OP)? {
+            Item::Document(document) => Ok(document),
+            Item::Folder(_) => Err(StoreError::NotFound),
+        }
     }
 }
 

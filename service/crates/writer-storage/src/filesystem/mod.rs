@@ -19,8 +19,8 @@ use std::sync::Arc;
 
 use tokio::sync::{RwLock, Semaphore};
 use writer_domain::{
-    Document, DocumentContent, Item, ItemId, ItemKind, Markdown, NewItem, Placement, Revision,
-    Title, WorkspaceItem,
+    Document, DocumentContent, Item, ItemId, ItemKind, Language, Markdown, NewItem, Placement,
+    Revision, Title, WorkspaceItem,
 };
 
 use self::disk::Disk;
@@ -307,6 +307,16 @@ impl WorkspaceStore for FilesystemStore {
             let owned = id.clone();
             self.exclusive(Operation::ReplaceContent, Some(&id), move |state| {
                 state.replace_content(&owned, &markdown, &base)
+            })
+            .await
+        })
+    }
+
+    fn replace_language(&self, id: ItemId, language: Language) -> StoreFuture<'_, Document> {
+        Box::pin(async move {
+            let owned = id.clone();
+            self.exclusive(Operation::ReplaceLanguage, Some(&id), move |state| {
+                state.replace_language(&owned, language)
             })
             .await
         })

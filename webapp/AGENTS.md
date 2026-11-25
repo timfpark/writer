@@ -7,13 +7,12 @@ description: Purpose, boundaries, operational rules, governing decisions, and ex
 
 `webapp/` is a client-rendered React 19 single-page application built with
 Vite 8: Writer's editing workspace. Today it shows the workspace shell, a
-header with the open document's editable title and save status and a keyboard shortcut reference above a
-collapsible navigator holding the workspace tree, the writing region editing
-the open document with autosave, and a collapsible assistant holding an
-in-memory conversation answered by a client-side stub. Browser tests in
-`e2e/` drive it
-against a running service. People start with
-[README.md](./README.md), which maps the source folders.
+header with the open document's editable title, save status, language picker,
+and a keyboard shortcut reference above a collapsible navigator holding the
+workspace tree, the writing region editing the open document with autosave,
+and a collapsible assistant holding an in-memory conversation answered by a
+client-side stub. Browser tests in `e2e/` drive it against a running service.
+People start with [README.md](./README.md), which maps the source folders.
 
 * Reach the service only through its HTTP API, using the client in
   [src/api/client.ts](./src/api/client.ts) and types generated from the

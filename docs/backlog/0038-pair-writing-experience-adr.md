@@ -97,8 +97,9 @@ after writers have used the local pair writer.
 * Set targets the implementation must meet, such as how soon a reply starts
   to appear, limits on memory and battery, and no measurable effect on
   typing in [responsiveness.spec.ts](../../webapp/e2e/responsiveness.spec.ts).
-  Ground each target in ADR 0010's measurements and the battery check the
-  background agents ADR records.
+  Ground each target in ADR 0010's measurements, leaving unplugged battery
+  and host-browser typing adjustments to
+  [backlog 59](./0059-battery-and-typing-check.md).
 * Extend the background agents ADR's throwaway prototype with the
   conversation journeys and scripted replies, keep it out of the repository,
   try the journeys with it, and record in the ADR what it changed in the

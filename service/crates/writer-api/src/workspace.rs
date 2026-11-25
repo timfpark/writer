@@ -36,6 +36,10 @@ pub struct WorkspaceItem {
     #[schema(required = true)]
     pub parent_id: Option<String>,
     pub title: String,
+    /// The document's BCP 47 language tag (`en` or `es`), or `null` for a
+    /// folder.
+    #[schema(required = true)]
+    pub language: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
@@ -70,6 +74,7 @@ impl From<domain::WorkspaceItem> for WorkspaceItem {
             kind: item.kind.into(),
             parent_id: item.parent_id.map(|id| id.to_string()),
             title: item.title.into_string(),
+            language: item.language.map(|language| language.as_str().to_owned()),
         }
     }
 }

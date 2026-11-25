@@ -1,4 +1,5 @@
 import type { ItemKind, WorkspaceItem } from "./client";
+import { defaultLanguage } from "./languages";
 
 // A change the writer makes to the tree. Each one is applied to the cached
 // tree by applyChange while its request is pending, and again when it
@@ -13,8 +14,16 @@ export type TreeChange =
       title: string;
       // A new document's content, which is empty when omitted.
       markdown?: string;
+      // A new document's BCP 47 language tag, defaulting to English.
+      language?: string;
     }
   | { type: "rename"; kind: ItemKind; id: string; title: string }
+  | {
+      type: "setLanguage";
+      kind: "document";
+      id: string;
+      language: string;
+    }
   | {
       type: "move";
       kind: ItemKind;
@@ -83,6 +92,10 @@ export function applyChange(
       kind: change.kind,
       parentId: change.parentId,
       title: change.title,
+      language:
+        change.kind === "document"
+          ? (change.language ?? defaultLanguage)
+          : null,
     };
     return [...items.slice(0, at), created, ...items.slice(at)];
   }
@@ -91,6 +104,19 @@ export function applyChange(
     if (!item || item.title === change.title) return items;
     return items.map((other) =>
       other === item ? { ...item, title: change.title } : other,
+    );
+  }
+  if (change.type === "setLanguage") {
+    const item = items[index];
+    if (
+      !item ||
+      item.kind !== "document" ||
+      item.language === change.language
+    ) {
+      return items;
+    }
+    return items.map((other) =>
+      other === item ? { ...item, language: change.language } : other,
     );
   }
   if (change.type === "move") return move(items, index, change);
@@ -123,7 +149,13 @@ function move(
   ];
 }
 
-const changeTypes = new Set<unknown>(["create", "rename", "move", "delete"]);
+const changeTypes = new Set<unknown>([
+  "create",
+  "rename",
+  "setLanguage",
+  "move",
+  "delete",
+]);
 
 // Whether a mutation's variables are a tree change.
 export function isTreeChange(value: unknown): value is TreeChange {

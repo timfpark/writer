@@ -1,6 +1,7 @@
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
 import { useCallback, useSyncExternalStore } from "react";
 import { client, type Document, type DocumentContent } from "../api/client";
+import { defaultLanguage } from "../api/languages";
 import {
   documentQueryOptions,
   read,
@@ -164,6 +165,7 @@ export class SaveManager {
       pending: null,
       title: place?.title ?? "",
       parentId: place?.parentId ?? null,
+      language: place?.language ?? defaultLanguage,
     });
     return { saver, markdown: content.markdown };
   }
@@ -234,6 +236,7 @@ export class SaveManager {
           pending: record.markdown,
           title: record.title,
           parentId: record.parentId,
+          language: record.language ?? defaultLanguage,
         });
         this.recovering.add(saver);
         saver.flush();
@@ -283,6 +286,7 @@ export class SaveManager {
     return {
       title,
       parentId,
+      language: item?.language ?? metadata?.language ?? defaultLanguage,
       nextId: index === -1 ? null : (siblings[index + 1]?.id ?? null),
       parentExists:
         parentId === null ||
@@ -356,6 +360,7 @@ export class SaveManager {
           pending: to.text,
           title: place?.title ?? "",
           parentId: place?.parentId ?? null,
+          language: place?.language ?? defaultLanguage,
         });
         this.remove(from);
         if (saver.unsettled) saver.flush();

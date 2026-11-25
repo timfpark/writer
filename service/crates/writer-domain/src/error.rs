@@ -77,6 +77,8 @@ pub enum Violation {
     Title,
     /// Content is too large or contains U+0000.
     Content,
+    /// A document language is not a supported BCP 47 tag.
+    Language,
     /// A new item's identifier is not a lowercase hyphenated UUID.
     Identifier(ItemKind),
 }
@@ -89,6 +91,7 @@ impl Violation {
             Self::DepthLimit => "/parentId",
             Self::Title => "/title",
             Self::Content => "/markdown",
+            Self::Language => "/language",
             Self::Identifier(ItemKind::Folder) => "/folderId",
             Self::Identifier(ItemKind::Document) => "/documentId",
         }
@@ -103,6 +106,7 @@ impl Violation {
                 "Must be 1 to 200 characters with no surrounding whitespace or control characters."
             }
             Self::Content => "Must be at most 1048576 bytes of UTF-8 with no U+0000 characters.",
+            Self::Language => "Must be a supported BCP 47 language tag (en or es).",
             Self::Identifier(_) => "Must be a lowercase hyphenated UUID.",
         }
     }

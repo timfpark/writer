@@ -9,6 +9,7 @@ export interface UnsavedRecord {
   markdown: string;
   title: string;
   parentId: string | null;
+  language?: string;
   updatedAt: number;
 }
 

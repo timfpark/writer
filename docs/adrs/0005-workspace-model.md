@@ -2,7 +2,7 @@
 title: "ADR 0005: Workspace model, autosave, and API"
 description: Defines folders and documents with client-generated identifiers and one manual sibling order, bounds the workspace so its tree is read whole, and specifies the workspace API, autosave with revision tokens and conflict recovery, the domain crate, and where version history attaches later
 author: Tim Park
-ms.date: 2026-11-20
+ms.date: 2026-11-25
 ms.topic: reference
 status: Accepted
 subsystems:
@@ -45,12 +45,21 @@ subset and its canonical form, raw source for Markdown outside it, identical
 bytes for content the writer has not changed, and the autosave timing and
 flush events.
 
+Amended on 2026-11-25 to add each document's `language` field: a BCP 47 tag
+limited to Writer's supported languages (`en` and `es`, defaulting to `en`),
+stored per document without folder or workspace inheritance, carried as a
+string in the API so adding languages stays non-breaking, returned on
+`WorkspaceItem` (`null` for folders) and `Document`, optional on
+`createDocument`, and changed with `PUT /api/v1/documents/{documentId}/language`
+without altering Markdown or `revision`.
+
 ## Decision summary
 
 * Model the workspace as one tree of folders and documents. Folders nest up
-  to depth 16, documents are leaves holding UTF-8 Markdown of at most 1 MiB,
-  folders and documents share one manually ordered sequence per parent, and
-  the workspace holds at most 10,000 items.
+  to depth 16, documents are leaves holding UTF-8 Markdown of at most 1 MiB
+  and a BCP 47 `language` tag (`en` or `es`, defaulting to `en`), folders and
+  documents share one manually ordered sequence per parent, and the workspace
+  holds at most 10,000 items.
 * Identify every item by a lowercase UUID the client generates at creation,
   unique across both kinds and unchanged by rename and move. Titles are 1 to
   200 characters with no control characters or surrounding whitespace, and
@@ -59,9 +68,9 @@ flush events.
   `items` list; the item limit bounds it, so it is not paginated.
 * Create with `POST /api/v1/folders` and `POST /api/v1/documents` carrying the
   client's identifier, so a repeated create returns the existing item with
-  200. Change a title, position, or content with `PUT` on the item's `title`,
-  `position`, or `content` sub-resource, never `PATCH`. Deleting a folder
-  permanently deletes its subtree.
+  200. Change a title, language, position, or content with `PUT` on the item's
+  `title`, `language`, `position`, or `content` sub-resource, never `PATCH`.
+  Deleting a folder permanently deletes its subtree.
 * Save a document by sending its whole content with the `baseRevision` the
   edits started from. A stale base returns `409` with code `conflict` and
   leaves the stored content unchanged, unless the content is identical. The
@@ -238,13 +247,14 @@ API.
 The limits bound what the service stores and returns. A request that would
 break one fails with `422 validationFailed`, and nothing changes:
 
-| Rule                     | Limit                                                            | Error pointer                |
-|--------------------------|------------------------------------------------------------------|------------------------------|
-| Items in the workspace   | 10,000                                                           | `""`                         |
-| Depth of any item        | 16                                                               | `/parentId`                  |
-| Title                    | 1 to 200 characters, as [Titles](#titles) defines                | `/title`                     |
-| Document content         | 1 MiB (1,048,576 bytes of UTF-8), as [Content](#content) defines | `/markdown`                  |
-| Identifier of a new item | Lowercase hyphenated UUID                                        | `/folderId` or `/documentId` |
+| Rule                     | Limit                                                                 | Error pointer                |
+|--------------------------|-----------------------------------------------------------------------|------------------------------|
+| Items in the workspace   | 10,000                                                                | `""`                         |
+| Depth of any item        | 16                                                                    | `/parentId`                  |
+| Title                    | 1 to 200 characters, as [Titles](#titles) defines                     | `/title`                     |
+| Document content         | 1 MiB (1,048,576 bytes of UTF-8), as [Content](#content) defines      | `/markdown`                  |
+| Document language        | Supported BCP 47 tag (`en` or `es`), as [Language](#language) defines | `/language`                  |
+| Identifier of a new item | Lowercase hyphenated UUID                                             | `/folderId` or `/documentId` |
 
 How a backend treats content created outside Writer that breaks a limit, such
 as a directory nested 20 levels deep, is the storage ADR's decision, within
@@ -309,6 +319,33 @@ one constraint: the tree the service returns stays within the bounds above.
   default.
 * A new document's content is empty unless its create request supplies some.
 
+### Language
+
+* Every document has a `language`: a BCP 47 language tag naming the language
+  its prose is written in, so browser spellcheck, CSS hyphenation, and the
+  pair writer follow it.
+* Supported tags start with `en` (English) and `es` (Spanish). The default is
+  `en`, applied when a create request omits `language` or when a backend
+  adopts a document created outside Writer.
+* The service accepts only the languages Writer supports rather than any
+  well-formed BCP 47 tag, rejecting any other string with `422`
+  `validationFailed` against `/language`. That keeps typos and unsupported
+  tags out of the workspace index, the picker, and pair-writer prompts.
+* In the OpenAPI contract, `language` is typed as a string rather than a
+  response enum. Adding another language or a regional tag such as `es-MX`
+  later then relaxes validation without breaking ADR 0004's compatibility
+  rules or its camelCase enum rule.
+* Language lives on each document directly; folders and the workspace carry
+  no language default yet. Renaming, moving, or saving content keeps a
+  document's language, and conflict copies and documents recreated after
+  external deletion inherit the original document's language.
+* Changing a document's language is a metadata write with no revision check
+  (last write wins, like titles and positions) and leaves the document's
+  Markdown and `revision` unchanged.
+* If writers later need a folder or workspace default that new documents
+  inherit, it will share the tree-inheritance settings mechanism defined by
+  [backlog 54](../backlog/0054-agent-settings-tree.md).
+
 ### Reading the workspace
 
 `GET /api/v1/workspace` returns the whole tree as a flat list in pre-order:
@@ -317,8 +354,9 @@ appear in their order. A client builds each parent's children in order of
 appearance and finds an item's depth from its ancestors. The list carries no
 content.
 
-Each `WorkspaceItem` holds `id`, `kind`, `parentId`, and `title`. `kind` is
-`folder` or `document`, and `parentId` is `null` at the top level. Under
+Each `WorkspaceItem` holds `id`, `kind`, `parentId`, `title`, and `language`.
+`kind` is `folder` or `document`, `parentId` is `null` at the top level, and
+`language` is the BCP 47 tag for a document or `null` for a folder. Under
 ADR 0004, adding a kind is a breaking change, because `kind` is a response
 enum.
 
@@ -347,33 +385,35 @@ request body also documents 400, 413, 415, and 422.
 | Read a document's content  | `GET /api/v1/documents/{documentId}/content`  | `getDocumentContent`      | None                     | 200 `DocumentContent` | 404, 500                          |
 | Save a document's content  | `PUT /api/v1/documents/{documentId}/content`  | `replaceDocumentContent`  | `ReplaceContentRequest`  | 200 `Document`        | 400, 404, 409, 413, 415, 422, 500 |
 | Rename a document          | `PUT /api/v1/documents/{documentId}/title`    | `replaceDocumentTitle`    | `ReplaceTitleRequest`    | 200 `Document`        | 400, 404, 413, 415, 422, 500      |
+| Set a document's language  | `PUT /api/v1/documents/{documentId}/language` | `replaceDocumentLanguage` | `ReplaceLanguageRequest` | 200 `Document`        | 400, 404, 413, 415, 422, 500      |
 | Move or reorder a document | `PUT /api/v1/documents/{documentId}/position` | `replaceDocumentPosition` | `ReplacePositionRequest` | 200 `Document`        | 400, 404, 409, 413, 415, 422, 500 |
 | Delete a document          | `DELETE /api/v1/documents/{documentId}`       | `deleteDocument`          | None                     | 204                   | 404, 500                          |
 
 The schemas, all named under `components`. Every field is a string unless the
 table says otherwise, and every field is required:
 
-| Schema                   | Fields                                                                                       |
-|--------------------------|----------------------------------------------------------------------------------------------|
-| `Workspace`              | `items` (array of `WorkspaceItem`)                                                           |
-| `WorkspaceItem`          | `id`, `kind` (`ItemKind`), `parentId` (nullable), `title`                                    |
-| `ItemKind`               | Enum: `folder`, `document`                                                                   |
-| `Folder`                 | `id`, `parentId` (nullable), `title`                                                         |
-| `Document`               | `id`, `parentId` (nullable), `title`, `revision`                                             |
-| `DocumentContent`        | `markdown`, `revision`                                                                       |
-| `CreateFolderRequest`    | `folderId`, `parentId` (nullable), `beforeId` (nullable), `title`                            |
-| `CreateDocumentRequest`  | `documentId`, `parentId` (nullable), `beforeId` (nullable), `title`, and optional `markdown` |
-| `ReplaceTitleRequest`    | `title`                                                                                      |
-| `ReplacePositionRequest` | `parentId` (nullable), `beforeId` (nullable)                                                 |
-| `ReplaceContentRequest`  | `markdown`, `baseRevision`                                                                   |
+| Schema                   | Fields                                                                                                         |
+|--------------------------|----------------------------------------------------------------------------------------------------------------|
+| `Workspace`              | `items` (array of `WorkspaceItem`)                                                                             |
+| `WorkspaceItem`          | `id`, `kind` (`ItemKind`), `parentId` (nullable), `title`, `language` (nullable)                               |
+| `ItemKind`               | Enum: `folder`, `document`                                                                                     |
+| `Folder`                 | `id`, `parentId` (nullable), `title`                                                                           |
+| `Document`               | `id`, `parentId` (nullable), `title`, `language`, `revision`                                                   |
+| `DocumentContent`        | `markdown`, `revision`                                                                                         |
+| `CreateFolderRequest`    | `folderId`, `parentId` (nullable), `beforeId` (nullable), `title`                                              |
+| `CreateDocumentRequest`  | `documentId`, `parentId` (nullable), `beforeId` (nullable), `title`, and optional `markdown` and `language`    |
+| `ReplaceTitleRequest`    | `title`                                                                                                        |
+| `ReplaceLanguageRequest` | `language`                                                                                                     |
+| `ReplacePositionRequest` | `parentId` (nullable), `beforeId` (nullable)                                                                   |
+| `ReplaceContentRequest`  | `markdown`, `baseRevision`                                                                                     |
 
 `parentId` and `beforeId` in requests are required and nullable
 (`#[schema(required = true)]`, generating `string | null`), because `null`
 means something: the top level, or the end of the sibling list. The service
 rejects a body that omits either one with 422, so a missing field never
 silently moves an item. Request types reject unknown fields, as ADR 0004
-requires. `markdown` in `CreateDocumentRequest` follows ADR 0004's optional
-request field rule and defaults to empty.
+requires. `markdown` and `language` in `CreateDocumentRequest` follow ADR 0004's
+optional request field rule, defaulting to empty and `en`.
 
 #### Placing an item
 
@@ -550,7 +590,7 @@ GET /api/v1/workspace
 HTTP/1.1 200 OK
 Content-Type: application/json
 
-{"items":[{"id":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","kind":"folder","parentId":null,"title":"The lighthouse"},{"id":"c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a","kind":"document","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Chapter one"},{"id":"8a41d7e2-2c90-4f6b-b1a3-5d6e7f809a1b","kind":"folder","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Drafts"},{"id":"5b9d1f3e-7a2c-4c6e-8b0a-2d4f6e8a0c1b","kind":"document","parentId":null,"title":"Notes"}]}
+{"items":[{"id":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","kind":"folder","parentId":null,"title":"The lighthouse","language":null},{"id":"c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a","kind":"document","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Chapter one","language":"en"},{"id":"8a41d7e2-2c90-4f6b-b1a3-5d6e7f809a1b","kind":"folder","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Drafts","language":null},{"id":"5b9d1f3e-7a2c-4c6e-8b0a-2d4f6e8a0c1b","kind":"document","parentId":null,"title":"Notes","language":"en"}]}
 ```
 
 Creating the `Drafts` folder at the end of `The lighthouse`. Sending the same
@@ -629,7 +669,7 @@ HTTP/1.1 201 Created
 Content-Type: application/json
 Location: /api/v1/documents/c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a
 
-{"id":"c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Chapter one","revision":"q7Kx2mP9"}
+{"id":"c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Chapter one","language":"en","revision":"q7Kx2mP9"}
 ```
 
 Reading the document and its content:
@@ -640,7 +680,7 @@ GET /api/v1/documents/c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a
 HTTP/1.1 200 OK
 Content-Type: application/json
 
-{"id":"c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Chapter one","revision":"q7Kx2mP9"}
+{"id":"c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Chapter one","language":"en","revision":"q7Kx2mP9"}
 ```
 
 ```http
@@ -664,7 +704,7 @@ Content-Type: application/json
 HTTP/1.1 200 OK
 Content-Type: application/json
 
-{"id":"c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Chapter one","revision":"Zr4tB8wN"}
+{"id":"c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Chapter one","language":"en","revision":"Zr4tB8wN"}
 ```
 
 ```http
@@ -677,6 +717,21 @@ HTTP/1.1 409 Conflict
 Content-Type: application/problem+json
 
 {"type":"about:blank","title":"Conflict","status":409,"detail":"The document changed after the base revision.","code":"conflict","errors":[]}
+```
+
+Setting the document's language to Spanish, leaving its content and revision
+unchanged:
+
+```http
+PUT /api/v1/documents/c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a/language
+Content-Type: application/json
+
+{"language":"es"}
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{"id":"c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Chapter one","language":"es","revision":"Zr4tB8wN"}
 ```
 
 Renaming the document with a title that is only whitespace:
@@ -704,7 +759,7 @@ Content-Type: application/json
 HTTP/1.1 200 OK
 Content-Type: application/json
 
-{"id":"5b9d1f3e-7a2c-4c6e-8b0a-2d4f6e8a0c1b","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Notes","revision":"Hc6yW1sD"}
+{"id":"5b9d1f3e-7a2c-4c6e-8b0a-2d4f6e8a0c1b","parentId":"3f2c8a10-6b1e-4d4a-9c55-0e7b2d9a41f3","title":"Notes","language":"en","revision":"Hc6yW1sD"}
 ```
 
 Deleting it, then repeating the request:
@@ -739,9 +794,9 @@ The model's types and rules live in
 [writer-domain](../../service/crates/writer-domain/), the pure domain crate
 ADR 0002 anticipates, which backlog 18, the workspace storage story, built.
 
-* It defines identifiers, item kinds, titles, content, revisions as opaque
-  values, the limits, and a workspace tree that upholds the rules above:
-  one shared sibling order, depth, item count, and no cycles.
+* It defines identifiers, item kinds, titles, document languages, content,
+  revisions as opaque values, the limits, and a workspace tree that upholds
+  the rules above: one shared sibling order, depth, item count, and no cycles.
 * It validates each operation against a tree and returns domain errors that
   say whether the request breaks a field rule or conflicts with the tree,
   which `writer-api` maps to 422 with a pointer or to 409.
@@ -847,6 +902,13 @@ Trade-offs and risks:
   coordinate tabs, for example by letting one tab own a document's saves.
 * The webapp is served from an origin that is not a secure context, where
   `crypto.randomUUID()` is unavailable.
+* Writers keep folders or whole workspaces in another language and tire of
+  setting each new document: add a folder or workspace language default using
+  the same tree-inheritance mechanism as
+  [backlog 54](../backlog/0054-agent-settings-tree.md).
+* Writers need languages beyond English and Spanish, or regional tags such as
+  `es-MX`: relax `Language::parse` in `writer-domain` and add the new options
+  to the picker.
 
 ## Follow-up decisions
 

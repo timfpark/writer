@@ -51,8 +51,9 @@ alongside this decision.
 The model ADR's measurements bound each agent's cost on the reference
 machine: a paragraph check takes seconds, a chapter review about 8 seconds,
 and a manuscript review over a minute, at about 60 W while running. They ran
-on AC power, so battery drain is an estimate this story replaces with a
-measurement.
+on AC power, so battery drain is an estimate;
+[backlog 59](./0059-battery-and-typing-check.md) replaces it with an
+unplugged measurement later without blocking this decision.
 
 The candidate agents are:
 
@@ -103,11 +104,10 @@ synopses, stays on request in conversation and is out of scope here.
   quiet, since every shipping agent runs on every document.
 * Decide how the writer sees what is running, whether the writer can pause
   all background work and what pausing stops, and how background work slows
-  on battery. Turning individual agents on and off waits for backlog 54.
-* Run the check [ADR 0010](../adrs/0010-pair-writing-models.md) left open:
-  the chosen models on battery with the charger unplugged, and typing in a
-  browser on the host while a review runs. Record the results in ADR 0010
-  and ground the battery behavior in them.
+  on battery, grounded in [ADR 0010](../adrs/0010-pair-writing-models.md)'s
+  AC power estimates until [backlog 59](./0059-battery-and-typing-check.md)
+  measures unplugged drain. Turning individual agents on and off waits for
+  backlog 54.
 * Build a throwaway, clickable prototype with scripted outputs for the
   shipping agents, keep it out of the repository, try it while writing, and
   record what it changed. Include a workspace that holds both a novel and a
@@ -133,7 +133,6 @@ synopses, stays on request in conversation and is out of scope here.
   surface, and interruption, and ranks the agents.
 * [ ] The ADR records what the prototype showed, and whether and how the
   writer pauses background work.
-* [ ] ADR 0010 records the battery and typing check.
 * [ ] The backlog stories that depend on it reflect the decision.
 * [ ] No prototype or real manuscript is committed, and `tools/check` exits
   0.

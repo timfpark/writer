@@ -1,7 +1,7 @@
 """Machine facts and resource sampling that need no elevated privileges.
 
-On macOS, system power comes from the battery controller's SystemPowerIn
-reading, thermal state from `pmset -g therm`, and memory from `vm_stat`. On
+On macOS, system power comes from the battery controller's SystemLoad
+reading, which counts the whole machine's draw on AC power or battery, thermal state from `pmset -g therm`, and memory from `vm_stat`. On
 other systems the readings are None, so tests and the development container
 still run.
 """
@@ -38,10 +38,22 @@ def machine() -> Dict[str, object]:
     }
 
 
-def power_watts() -> Optional[float]:
-    out = _run(["ioreg", "-rn", "AppleSmartBattery"])
-    match = re.search(r'"SystemPowerIn"=(\d+)', out)
+def power_watts(out: Optional[str] = None) -> Optional[float]:
+    """System draw in watts. SystemPowerIn counts only what the charger
+    supplies, so it reads zero on battery; SystemLoad counts either source."""
+    out = _run(["ioreg", "-rn", "AppleSmartBattery"]) if out is None else out
+    match = re.search(r'"SystemLoad"=(\d+)', out) or re.search(r'"SystemPowerIn"=(\d+)', out)
     return int(match.group(1)) / 1000 if match else None
+
+
+def battery_charge(out: Optional[str] = None) -> Optional[Dict[str, int]]:
+    """Remaining charge in mAh and pack voltage in mV, finer than a whole percent."""
+    out = _run(["ioreg", "-rn", "AppleSmartBattery"]) if out is None else out
+    mah = re.search(r'"AppleRawCurrentCapacity" = (\d+)', out)
+    mv = re.search(r'"Voltage" = (\d+)', out)
+    if not mah or not mv:
+        return None
+    return {"mAh": int(mah.group(1)), "mV": int(mv.group(1))}
 
 
 def battery_percent() -> Optional[int]:

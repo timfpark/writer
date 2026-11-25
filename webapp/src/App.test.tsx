@@ -53,6 +53,7 @@ function healthyService(request: Request): Promise<Response> {
             kind: "document",
             parentId: null,
             title: "Synthetic Chapter One",
+            language: "en",
           },
         ],
       }),
@@ -64,6 +65,7 @@ function healthyService(request: Request): Promise<Response> {
         id: documentId,
         parentId: null,
         title: "Synthetic Chapter One",
+        language: "en",
         revision: "r1",
       }),
     );
@@ -319,12 +321,21 @@ describe("writing", () => {
           id: documentId,
           parentId: null,
           title,
+          language: "en",
           revision: "r1",
         });
       }
       if (path === "/api/v1/workspace") {
         return Response.json({
-          items: [{ id: documentId, kind: "document", parentId: null, title }],
+          items: [
+            {
+              id: documentId,
+              kind: "document",
+              parentId: null,
+              title,
+              language: "en",
+            },
+          ],
         });
       }
       return healthyService(request);
@@ -373,6 +384,92 @@ describe("writing", () => {
     expect(fetch.mock.calls.some(([request]) => request.method === "PUT")).toBe(
       false,
     );
+  });
+
+  it("marks the writing surface and title with the document's language and lets the writer change it", async () => {
+    let language = "en";
+    const title = "¿Dónde está el faro?";
+    const markdown = "¡Qué silencio sobre la bahía! La lámpara ardía.\n";
+    const fetch = stubFetch(async (request) => {
+      const path = new URL(request.url).pathname;
+      if (
+        request.method === "PUT" &&
+        path === `/api/v1/documents/${documentId}/language`
+      ) {
+        const body: unknown = await request.clone().json();
+        if (typeof body === "object" && body && "language" in body) {
+          language = String(body.language);
+        }
+        return Response.json({
+          id: documentId,
+          parentId: null,
+          title,
+          language,
+          revision: "r1",
+        });
+      }
+      if (path === "/api/v1/workspace") {
+        return Response.json({
+          items: [
+            {
+              id: documentId,
+              kind: "document",
+              parentId: null,
+              title,
+              language,
+            },
+          ],
+        });
+      }
+      if (path === `/api/v1/documents/${documentId}`) {
+        return Response.json({
+          id: documentId,
+          parentId: null,
+          title,
+          language,
+          revision: "r1",
+        });
+      }
+      if (path === `/api/v1/documents/${documentId}/content`) {
+        return Response.json({ markdown, revision: "r1" });
+      }
+      return healthyService(request);
+    });
+    renderApp(`/documents/${documentId}`);
+
+    const surface = await screen.findByRole("textbox", { name: title });
+    expect(surface.getAttribute("lang")).toBe("en");
+    expect(screen.getByRole("heading", { level: 1 }).getAttribute("lang")).toBe(
+      "en",
+    );
+
+    const picker = screen.getByRole("button", { name: /Document language/i });
+    expect(picker.textContent).toContain("English");
+    fireEvent.click(picker);
+    const spanish = await screen.findByRole("option", { name: "Español" });
+    fireEvent.click(spanish);
+
+    await waitFor(() => {
+      expect(surface.getAttribute("lang")).toBe("es");
+    });
+    expect(screen.getByRole("heading", { level: 1 }).getAttribute("lang")).toBe(
+      "es",
+    );
+    expect(picker.textContent).toContain("Español");
+
+    fireEvent.click(screen.getByRole("button", { name: title }));
+    expect(
+      screen
+        .getByRole("textbox", { name: "Document title" })
+        .getAttribute("lang"),
+    ).toBe("es");
+
+    const updates = fetch.mock.calls.filter(
+      ([request]) =>
+        request.method === "PUT" && request.url.endsWith("/language"),
+    );
+    expect(updates).toHaveLength(1);
+    expect(await updates[0]?.[0].json()).toEqual({ language: "es" });
   });
 });
 

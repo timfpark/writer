@@ -40,6 +40,7 @@ describe("SaveManager recovery", () => {
           id: documentId,
           parentId: null,
           title: "Quay",
+          language: "en",
           revision: "r1",
         }),
       ),

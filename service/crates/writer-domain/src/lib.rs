@@ -18,7 +18,7 @@ pub use item::{
     Document, DocumentContent, Folder, Item, ItemKind, NewItem, Placement, WorkspaceItem,
 };
 pub use tree::{CreateCheck, Node, PlaceCheck, Position, Tree};
-pub use values::{InvalidId, ItemId, Markdown, Revision, Title};
+pub use values::{InvalidId, ItemId, Language, Markdown, Revision, Title};
 
 /// The most items the workspace holds.
 pub const MAX_ITEMS: usize = 10_000;
