@@ -2,7 +2,7 @@
 title: Record the pair-writing agent architecture ADR
 description: Decide where the pair-writing agent runs and how it is built, including its framework, model provider, prompts, evaluations, and background execution, to serve the experience ADR.
 author: Tim Park
-ms.date: 2026-11-22
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - service
@@ -22,15 +22,20 @@ one after the fact.
 
 The [pair-writing experience ADR](./0038-pair-writing-experience-adr.md)
 describes how writers work with the agent, in conversation and in background
-review. It defines the kinds of finding, what the agent pays attention to,
-when reviews run, and the targets for latency, review frequency, memory, and battery.
-This decision chooses an implementation that meets them.
+review, what the agent pays attention to, and the targets for latency,
+memory, and battery. The
+[background agents ADR](./0047-background-agents-ux-adr.md) decides which
+agents run, their triggers, and which keep living artifacts, such as a story
+bible, that other agents read. [Backlog 56](./0056-story-bible-continuity-test.md)
+measures whether chaining a story bible into a continuity check works and
+what it costs. This decision chooses an implementation that meets them.
 
 [ADR 0001](../adrs/0001-monorepo-structure.md#coding-agents-and-the-product-agent)
 makes the agent service behavior. It places prompts in `service/prompts/`
-and model integrations in service code, and the
-[model ADR](./0039-pair-writing-model-adr.md) moves evaluation cases, their
-harness, and their results into the top-level `evals/` subsystem.
+and model integrations in service code, and
+[ADR 0010](../adrs/0010-pair-writing-models.md), the model ADR, moves
+evaluation cases, their harness, and their results into the top-level
+`evals/` subsystem.
 [ADR 0002](../adrs/0002-service-architecture.md) lists
 "Agent framework, model providers, prompt loading, and evaluation running" as
 a follow-up decision. It already requires outbound model calls on the Tokio
@@ -83,9 +88,14 @@ what this ADR decides.
 * Decide where background reviews execute, as tasks on the service's Tokio
   runtime or in a separate worker, and how a review is scheduled, cancelled,
   and recovered after a restart.
+* Decide how agents chain, such as a continuity check reading the story
+  bible, and how living artifacts are updated incrementally as documents
+  change, grounded in backlog 56's measurements. Leave how living artifacts
+  are stored to the [agent conversations ADR](./0037-agent-conversations-adr.md),
+  and state what it needs from this decision.
 * Within that location, choose whether to adopt an agent framework or call
   model providers directly, and compare at least two options.
-* Choose the client that calls the [model ADR](./0039-pair-writing-model-adr.md)'s
+* Choose the client that calls ADR 0010's
   local models through Ollama, and decide how the service stays open to
   other providers, such as a cloud model the
   [cloud fallback ADR](./0040-cloud-model-fallback-adr.md) may add later.
@@ -95,13 +105,14 @@ what this ADR decides.
   unreachable model so the webapp can show the experience ADR's no-provider
   state.
 * Decide how prompts in `service/prompts/` are stored, versioned, and loaded:
-  embedded at build time or read at run time, and how the experience ADR's
-  trial prompts and [backlog 46](./0046-prompt-tuning-evals.md)'s tuned
-  prompts become the first versions.
+  embedded at build time or read at run time, and how
+  [backlog 46](./0046-prompt-tuning-evals.md)'s tuned conversation prompt
+  and [backlog 48](./0048-background-agent-evals.md)'s first agent prompts
+  become the first versions.
 * Decide how the `evals/` harness runs the agent's cases against the
   service, such as through its HTTP API, with cases for each conversation
-  request and each kind of finding the experience ADR ships, and which parts run in `tools/check` without
-  credentials or network access.
+  request and each background agent the background agents ADR ships, and
+  which parts run in `tools/check` without credentials or network access.
 * Decide how service tests and browser tests exercise the agent without a
   model provider, such as a deterministic fake provider chosen by
   configuration.
@@ -113,10 +124,10 @@ what this ADR decides.
 * Decide how a finding names the passages it concerns and how those anchors
   follow the text as the writer edits, so the webapp can show the experience
   ADR's behavior for edited and deleted passages.
-* Decide how reviews start on the experience ADR's triggers, whether the
-  webapp or the service starts them, how they skip unchanged text and cancel
-  when the text changes, and how they stay within its frequency and resource
-  targets.
+* Decide how reviews start on the background agents ADR's triggers, whether
+  the webapp or the service starts them, how they skip unchanged text and
+  cancel when the text changes, and how they stay within the experience
+  ADR's resource targets.
 * Decide how findings reach the webapp under
   [ADR 0004](../adrs/0004-api-conventions.md): returned per request, polled,
   or streamed over SSE.
@@ -142,12 +153,14 @@ what this ADR decides.
   Ollama, and the alternatives weighed against them.
 * [ ] The ADR states how prompts load and how evaluations run, and confirms
   `tools/check` needs no credentials or network access to model providers.
+* [ ] The ADR states how agents chain and how living artifacts update,
+  citing backlog 56.
 * [ ] The ADR shows how the implementation meets each of the experience
-  ADR's targets for latency, review frequency, memory, and battery.
+  ADR's targets for latency, memory, and battery.
 * [ ] ADR 0008's follow-up decision on naming passages links to the ADR.
 * [ ] `tools/check` exits 0.
 
 ## Prerequisites
 
 * [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)
-* [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)
+* [Test a story bible for continuity checking](./0056-story-bible-continuity-test.md)

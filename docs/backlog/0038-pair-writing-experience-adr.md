@@ -2,7 +2,7 @@
 title: Record the pair-writing experience ADR
 description: Decide end to end how writers work with the pair writer, in conversation and in background review, tested with a throwaway prototype and grounded in what local models showed they can do.
 author: Tim Park
-ms.date: 2026-11-22
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - service
@@ -49,13 +49,16 @@ foundation the experience builds on, and
 pair writer's suggestions are shown and accepted.
 
 The largest risk is not how the agent is built but whether its unprompted
-findings help more than they distract, on a model the writer can run. The
-[model ADR](./0039-pair-writing-model-adr.md) measures that first with local
-models served by Ollama. Its results set what this experience can promise:
-which kinds of finding are good enough to ship and how quickly replies
-arrive. [Backlog 46](./0046-prompt-tuning-evals.md) then tunes the prompts,
-so a kind of finding is judged on the best prompt found rather than the
-first one written. Text never leaves the writer's machine; the
+findings help more than they distract, on a model the writer can run.
+[ADR 0010](../adrs/0010-pair-writing-models.md), the model ADR, measured
+that first with local models served by Ollama, and its results set how
+quickly replies arrive. [Backlog 46](./0046-prompt-tuning-evals.md) tunes
+the conversation prompt. The
+[background agents ADR](./0047-background-agents-ux-adr.md) decides which
+background agents ship, their shapes, triggers, surfaces, and interruption,
+and whether the writer can pause them; this decision designs the journeys
+around those choices rather than making them again. Text never leaves the
+writer's machine; the
 [cloud fallback ADR](./0040-cloud-model-fallback-adr.md) revisits that only
 after writers have used the local pair writer.
 
@@ -72,38 +75,34 @@ after writers have used the local pair writer.
   * Reviving a past conversation, and seeing the text as it was when the
     conversation took place
   * Seeing what the agent read and why it said what it did
-  * Turning background review off, and deleting conversations
+  * Pausing background work as the background agents ADR decides, and
+    deleting conversations
   * Using Writer with no provider configured, offline, or after an agent
     failure
-* Take the background agents, their shapes, triggers, and surfaces from the
-  [background agents ADR](./0047-background-agents-ux-adr.md), and design the
-  journeys and the assistant pane around them.
+* Take the background agents, their shapes, triggers, surfaces, and
+  interruption from the background agents ADR, and design the journeys and
+  the assistant pane around them.
 * Decide what the agent pays attention to from the writer's point of view:
   the open document, the selection, other documents in the folder or
   workspace, or earlier conversations.
-* Decide when background review runs as the writer sees it, such as after a
-  pause, on save, or on request, and how often it may surface findings
-  before it becomes noise.
-* Decide where conversations and findings appear: one conversation, separate
-  chats like those in coding assistants, findings grouped per document, or a
-  separate list. Decide how unread results signal while the pane is
-  collapsed, without interrupting typing or moving focus.
+* Decide how conversations appear: one conversation, or separate chats like
+  those in coding assistants, and how they sit beside the surfaces the
+  background agents ADR gives findings and living artifacts. Decide how
+  unread results signal while the pane is collapsed, without interrupting
+  typing or moving focus.
 * Decide what happens to a finding whose passage the writer has since edited
   or deleted.
 * Decide whether suggestions stay advice, or whether a writer can accept a
   proposed rewrite into the document, and how that meets undo.
-* Decide the default for background review.
 * Set targets the implementation must meet, such as how soon a reply starts
-  to appear, how often reviews may run, limits on memory and battery, and no
-  measurable effect on typing in
-  [responsiveness.spec.ts](../../webapp/e2e/responsiveness.spec.ts). Ground
-  each target in the model ADR's measurements.
-* Build a throwaway, clickable prototype of the journeys with scripted
-  responses, keep it out of the repository, try the journeys with it, and
-  record in the ADR what the prototype changed in the design.
-* Decide which kinds of finding ship first from the model ADR's results,
-  as amended by backlog 46's tuned prompts, and
-  cut or defer any kind that does not earn its place.
+  to appear, limits on memory and battery, and no measurable effect on
+  typing in [responsiveness.spec.ts](../../webapp/e2e/responsiveness.spec.ts).
+  Ground each target in ADR 0010's measurements and the battery check the
+  background agents ADR records.
+* Extend the background agents ADR's throwaway prototype with the
+  conversation journeys and scripted replies, keep it out of the repository,
+  try the journeys with it, and record in the ADR what it changed in the
+  design.
 * Resolve how suggestions are shown and accepted from ADR 0008's follow-up
   decision, and link to this ADR from it.
 * State what the experience requires of the agent architecture and
@@ -117,8 +116,8 @@ after writers have used the local pair writer.
 * [ ] The ADR is accepted and listed in the ADR index.
 * [ ] The ADR describes every journey in scope end to end, including the
   no-provider, offline, and failure states.
-* [ ] The ADR records what the prototype showed, and which kinds of finding
-  ship first, which are deferred, and why, citing the model ADR's results.
+* [ ] The ADR records what extending the prototype showed, and cites ADR
+  0010's measurements for each target.
 * [ ] The ADR states the targets and requirements that backlog 10 and backlog
   37 must meet, and those stories reflect them.
 * [ ] ADR 0008's follow-up decision on showing and accepting suggestions links
@@ -128,6 +127,5 @@ after writers have used the local pair writer.
 
 ## Prerequisites
 
-* [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)
-* [Tune the pair-writing prompts with the evaluation harness](./0046-prompt-tuning-evals.md)
+* [Tune the conversation prompt with the evaluation harness](./0046-prompt-tuning-evals.md)
 * [Record the background agents UX ADR](./0047-background-agents-ux-adr.md)

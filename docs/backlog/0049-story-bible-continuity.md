@@ -2,11 +2,12 @@
 title: Keep a story bible and check continuity
 description: Maintain a story bible and timeline from the writer's documents in the background, let the writer read and correct them, and flag contradictions against them.
 author: Tim Park
-ms.date: 2026-11-24
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - service
   - webapp
+  - evals
 estimated_reading_time: 2
 ---
 
@@ -21,12 +22,15 @@ myself.
 
 The [background agents ADR](./0047-background-agents-ux-adr.md) decides the
 story bible's, timeline's, and continuity check's shapes, triggers, and
-surfaces, and [backlog 48](./0048-background-agent-evals.md) measures whether
-local models can produce them and with which prompts. The service's
+surfaces. [Backlog 56](./0056-story-bible-continuity-test.md) tested the
+story bible and continuity chain on local models, and
+[backlog 48](./0048-background-agent-evals.md) added cases and a first
+prompt for the timeline. The service's
 background review from [backlog 35](./0035-service-background-review.md) and
 the findings view from [backlog 36](./0036-background-findings-view.md)
 provide the review plumbing and the way findings appear. The agent and
-conversations ADRs decide where living artifacts are stored.
+conversations ADRs decide how agents chain and where living artifacts are
+stored.
 
 ## Scope
 
@@ -41,8 +45,10 @@ conversations ADRs decide where living artifacts are stored.
   extractions keep the correction.
 * Check new and changed text against the story bible and timeline, and raise
   continuity findings that cite both passages, through backlog 36's view.
-* Add the prompts and evaluation cases backlog 48 chose, and extend the fake
-  provider for tests.
+* Tune the extraction, timeline, and continuity prompts on the cases from
+  backlog 56 and backlog 48, as backlog 35 tunes its agents, and amend
+  [ADR 0010](../adrs/0010-pair-writing-models.md) with the chosen prompts.
+  Add the prompts and cases, and extend the fake provider for tests.
 
 ## Acceptance criteria
 

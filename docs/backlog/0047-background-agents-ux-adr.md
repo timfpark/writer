@@ -1,8 +1,8 @@
 ---
 title: Record the background agents UX ADR
-description: Decide which background agents the pair writer runs, from continuity and story bibles to prose, structure, and nonfiction checks, and how each looks to the writer, with every shipping agent on from the start, tested with a throwaway prototype.
+description: Decide which background agents the pair writer runs first, from continuity and story bibles to prose and structure checks, and how each looks to the writer, with every shipping agent on from the start, tested with a throwaway prototype.
 author: Tim Park
-ms.date: 2026-11-24
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - service
@@ -18,7 +18,7 @@ my writing instead of interrupting it.
 
 ## Context
 
-The [model ADR](./0039-pair-writing-model-adr.md) measured three kinds of
+The model ADR, [ADR 0010](../adrs/0010-pair-writing-models.md), measured three kinds of
 background finding, suggestions, questions, and disconnects, to learn
 whether local models can do background work at all. Those three were
 examples, not a design. A pair writer could do much more, and some of it is
@@ -34,20 +34,25 @@ Background work takes two shapes:
 
 What helps depends on the work: a fantasy novel wants a story bible and
 continuity checks, and a computer science book wants consistent terminology,
-concepts defined before they are used, and checked code examples. Every
-shipping agent starts on for every document. Turning agents on and off for
-parts of the workspace tree comes later, in
-[backlog 54](./0054-agent-settings-tree.md), so until then each agent must
-stay quiet on work it does not apply to, such as a code example check on a
-novel.
+concepts defined before they are used, and checked code examples. The first
+wave serves fiction, and the nonfiction agents (17 to 21 below) wait for
+[backlog 58](./0058-nonfiction-agents.md), after writers can turn agents on
+and off for parts of the workspace tree in
+[backlog 54](./0054-agent-settings-tree.md). Every shipping agent starts on
+for every document, so until then each must stay quiet on work it does not
+apply to, such as a timeline on a technical book.
 
 The shapes interact. Local models found contradictions across a manuscript
 poorly, but extracting facts from one chapter at a time and comparing the
 extracted facts may succeed where reading the whole manuscript failed.
+[Backlog 56](./0056-story-bible-continuity-test.md) tests that approach
+alongside this decision.
 
 The model ADR's measurements bound each agent's cost on the reference
 machine: a paragraph check takes seconds, a chapter review about 8 seconds,
-and a manuscript review over a minute, at about 60 W while running.
+and a manuscript review over a minute, at about 60 W while running. They ran
+on AC power, so battery drain is an estimate this story replaces with a
+measurement.
 
 The candidate agents are:
 
@@ -81,7 +86,8 @@ synopses, stays on request in conversation and is out of scope here.
 ## Scope
 
 * For each candidate agent, decide whether it ships, is deferred, or is cut,
-  and give the reason from the writer's point of view.
+  and give the reason from the writer's point of view. Defer agents 17 to 21
+  to backlog 58, and record what they will need from the first wave.
 * For each agent that ships, decide its shape, its scope (paragraph, scene,
   chapter, or manuscript), its trigger (a pause in typing, a save, a chapter
   settling, opening Writer, or idle time), where it appears (beside the
@@ -95,17 +101,26 @@ synopses, stays on request in conversation and is out of scope here.
   measurements.
 * Decide how each agent recognizes work it does not apply to and stays
   quiet, since every shipping agent runs on every document.
-* Decide how the writer sees what is running and how background work slows
-  on battery, without turning agents off.
+* Decide how the writer sees what is running, whether the writer can pause
+  all background work and what pausing stops, and how background work slows
+  on battery. Turning individual agents on and off waits for backlog 54.
+* Run the check [ADR 0010](../adrs/0010-pair-writing-models.md) left open:
+  the chosen models on battery with the charger unplugged, and typing in a
+  browser on the host while a review runs. Record the results in ADR 0010
+  and ground the battery behavior in them.
 * Build a throwaway, clickable prototype with scripted outputs for the
   shipping agents, keep it out of the repository, try it while writing, and
   record what it changed. Include a workspace that holds both a novel and a
-  technical book.
+  technical book. Build it so the
+  [experience ADR](./0038-pair-writing-experience-adr.md) can extend it with
+  the conversation journeys rather than start another.
 * Rank the shipping agents by value to the writer, so the feasibility
   measurements and delivery stories take them in order.
 * State what the agents require of the experience, agent architecture, and
-  conversations ADRs, such as storing living artifacts, and revise backlog
-  38, 10, 37, 35, 36, and 49 to 53 where the decision departs from them.
+  conversations ADRs, such as storing living artifacts and chaining one
+  agent's output into another, and revise backlog 38, 10, 37, 48, 35, 36,
+  and 49 to 53 where the decision departs from them. Add a delivery story
+  for any shipping agent they do not cover.
 * Add the ADR to the ADR index with `service` and `webapp` in its
   `subsystems` field.
 
@@ -116,11 +131,13 @@ synopses, stays on request in conversation and is out of scope here.
   or is cut, and why.
 * [ ] For every shipping agent, the ADR states its shape, scope, trigger,
   surface, and interruption, and ranks the agents.
-* [ ] The ADR records what the prototype showed.
+* [ ] The ADR records what the prototype showed, and whether and how the
+  writer pauses background work.
+* [ ] ADR 0010 records the battery and typing check.
 * [ ] The backlog stories that depend on it reflect the decision.
 * [ ] No prototype or real manuscript is committed, and `tools/check` exits
   0.
 
 ## Prerequisites
 
-* [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)
+None.

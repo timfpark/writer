@@ -18,7 +18,7 @@ machine when I decide the gain is worth it.
 
 ## Context
 
-The [model ADR](./0039-pair-writing-model-adr.md) chooses local models served
+The [model ADR](../adrs/0010-pair-writing-models.md) chooses local models served
 by Ollama and records any mode or kind of finding where none is good enough.
 Writer ships its first pair writer on those local models alone, through
 [backlog 34](./0034-assistant-pane-agent.md) and

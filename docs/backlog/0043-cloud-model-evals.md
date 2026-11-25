@@ -2,7 +2,7 @@
 title: Measure cloud models for pair writing
 description: Measure inexpensive and frontier cloud models deployed in Azure AI Foundry, through the local proxy, against the chosen local models on the same synthetic cases, for quality, latency, and price per task.
 author: Tim Park
-ms.date: 2026-11-24
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - evals
@@ -18,7 +18,7 @@ falls back to a cloud model.
 
 ## Context
 
-The [model ADR](./0039-pair-writing-model-adr.md) measured local models
+The [model ADR](../adrs/0010-pair-writing-models.md) measured local models
 served by Ollama with the committed `evals/` harness and chose the models
 Writer runs, with no cloud model. It records disconnects across a document,
 and long time to a first token on a manuscript, as the local models' gaps.
@@ -46,8 +46,13 @@ must rerun cheaply and record the prices it used.
   ADR's scripts where needed, so the measurement covers an inexpensive tier,
   such as small or flash models, and a frontier tier from at least two model
   providers in the Foundry catalog. Give reasons for each.
-* Run them on the cases and prompts the model ADR used, beside its chosen
-  local models, and commit the result summaries.
+* Run them on the harness's cases with the prompts the service ships, the
+  conversation prompt from [backlog 46](./0046-prompt-tuning-evals.md) and
+  the review prompts from [backlog 35](./0035-service-background-review.md)
+  and any later agent stories, beside the model ADR's chosen local models on
+  the same prompts, and commit the result summaries. Retune a prompt for a
+  cloud model only if the comparison reports both the shared and the tuned
+  result.
 * Record each run's input and output tokens, and compute the price of a
   conversation reply and of a review at each document length from Foundry's
   published prices for each deployment on the run date, recorded in the
@@ -80,5 +85,5 @@ must rerun cheaply and record the prices it used.
 
 ## Prerequisites
 
-* [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)
+* [Review documents in the background in the service](./0035-service-background-review.md)
 * [Run the cloud model proxy with a first set of Foundry models](./0045-cloud-model-proxy.md)

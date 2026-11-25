@@ -2,7 +2,7 @@
 title: Run the cloud model proxy with a first set of Foundry models
 description: Build the local proxy the proxy ADR chooses, deploy a first set of inexpensive and frontier models in Azure AI Foundry behind it, and connect the evals/ harness to it.
 author: Tim Park
-ms.date: 2026-11-24
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - repository
@@ -21,10 +21,14 @@ local ones without the harness holding credentials.
 
 The [proxy ADR](./0044-cloud-model-proxy-adr.md) chooses the proxy, its
 authentication to Foundry, its client-facing API, where it runs, and how it
-records cost and enforces spending caps. The `evals/` harness from the
-[model ADR](./0039-pair-writing-model-adr.md) reaches models through runtime
-adapters, starting with Ollama. [Backlog 43](./0043-cloud-model-evals.md)
-measures the cloud models this story deploys.
+records cost and enforces spending caps. The `evals/` harness from
+[ADR 0010](../adrs/0010-pair-writing-models.md) reaches models through runtime
+adapters, starting with Ollama.
+[Backlog 56](./0056-story-bible-continuity-test.md) and
+[backlog 48](./0048-background-agent-evals.md) use a frontier model this
+story deploys as a ceiling for local results, and
+[backlog 43](./0043-cloud-model-evals.md) later measures the cloud models
+for price and quality.
 
 ## Scope
 

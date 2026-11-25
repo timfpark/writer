@@ -4,7 +4,7 @@ description: Measures local models served by Ollama on the reference laptop for 
 author: Tim Park
 ms.date: 2026-11-23
 ms.topic: reference
-status: Proposed
+status: Accepted
 subsystems:
   - service
   - evals
@@ -20,15 +20,16 @@ estimated_reading_time: 14
 
 ## Status
 
-Proposed on 2026-11-23, for [backlog 39](../backlog/0039-pair-writing-model-adr.md).
+Accepted on 2026-11-23.
 
 The measurements ran unattended overnight on the reference machine, and the
 maintainer then scored a blind sheet of the leading configurations, which
-changed the reviewer. One check needs a person before this record is
-accepted: a battery run on the chosen models with the charger unplugged, and
-a check that typing in a browser on the host stays smooth while it runs. The
-measurements ran on AC power, so battery drain is estimated from power draw,
-and the typing test ran without the host's GPU.
+changed the reviewer. One check remains as a follow-up, which
+[backlog 47](../backlog/0047-background-agents-ux-adr.md) runs: a battery
+run on the chosen models with the charger unplugged, and a check that typing
+in a browser on the host stays smooth while it runs. The measurements ran on
+AC power, so battery drain is estimated from power draw, and the typing test
+ran without the host's GPU.
 
 This record amends [ADR 0001](./0001-monorepo-structure.md) by adding the
 `evals/` subsystem, which replaces the planned `service/evals/`.
@@ -43,7 +44,8 @@ This record amends [ADR 0001](./0001-monorepo-structure.md) by adding the
   more of the issues a writer wants to hear about with no false alarms. The
   pair peaks at about 36 GB, so it needs a 48 GB machine.
 * Treat this as the first model decision. The harness screens each new model
-  release, and backlog 55 lets writers trial candidates in real use.
+  release, backlog 57 lets writers switch models, and backlog 55 lets them
+  trial candidates in real use.
 * Prefer Ollama's MLX builds on Apple silicon. For every model measured both
   ways, the MLX build ran faster than the GGUF build at 4-bit, often by 70%
   or more, in less memory. Gemma 4 31B's MLX build found more planted issues;
@@ -53,8 +55,8 @@ This record amends [ADR 0001](./0001-monorepo-structure.md) by adding the
   and spread conversation scores where the judge gave nearly all fives.
 * Treat disconnects as the gap. Every model finds weak passages, and most
   find open threads; no model reliably finds contradictions within a
-  chapter or across chapters, so the experience ADR should ship disconnects
-  behind the other kinds or not at first.
+  chapter or across chapters, so the background agents ADR should ship
+  disconnects behind the other kinds or not at first.
 * On 32 GB machines, run Gemma 4 31B's MLX build alone for both modes
   (about 18 GB). Run Gemma 4 12B (`gemma4:12b-it-q4_K_M`, about 14 GB) on
   24 GB machines and Qwen 3.5 9B (`qwen3.5:9b-q4_K_M`, about 9 GB) on 16 GB
@@ -448,8 +450,9 @@ reply, as the runs did.
 
 Suggestions and questions are good enough to ship. Disconnects within a
 scene are found often; disconnects across a chapter or a manuscript are not,
-so the experience ADR should treat them as the gap: ship them later, behind
-a clear label, or only from an on-request review that can take longer.
+so the background agents ADR should treat them as the gap: ship them later,
+behind a clear label, or only from an on-request review that can take
+longer.
 
 ### Smallest machine
 
@@ -533,6 +536,8 @@ Trade-offs and risks:
   that fits the reference machine: run it with the same cases.
 * A prompt change in the agent ADR or later: rerun the chosen configurations.
 * Trials in real use, from backlog 55, favor another model for a mode.
+* The battery check from backlog 47 finds drain or typing well off this
+  record's estimates.
 * Ollama changes how it runs a model, such as an MLX runner or speculative
   decoding for the chosen model: rerun it on the new runtime.
 * A writer on a 32 GB or 16 GB machine finds the smaller model unhelpful.
@@ -541,23 +546,28 @@ Trade-offs and risks:
 
 ## Follow-ups
 
-* [Backlog 55](../backlog/0055-compare-models-in-use.md): switch models and
-  trial new releases side by side in real use. This record is the first model
-  decision; the harness screens each new release and trials confirm it.
-* [Backlog 47](../backlog/0047-background-agents-ux-adr.md) and
-  [backlog 48](../backlog/0048-background-agent-evals.md): choose the
-  background agents beyond these three kinds of finding, and test whether a
-  story bible extracted chapter by chapter closes the disconnect gap this
-  record found.
-* [Backlog 46](../backlog/0046-prompt-tuning-evals.md): sweep prompt
-  variants across this record's leading models, including a separate pass
-  for disconnects, before the experience ADR decides which kinds of finding
-  ship. These results used one untuned prompt per task.
+* [Backlog 57](../backlog/0057-model-settings.md) and
+  [backlog 55](../backlog/0055-compare-models-in-use.md): switch models,
+  then trial new releases side by side in real use. This record is the first
+  model decision; the harness screens each new release and trials confirm
+  it.
+* [Backlog 47](../backlog/0047-background-agents-ux-adr.md): choose the
+  background agents beyond these three kinds of finding, decide how
+  disconnects ship and how often reviews run given about 60 W while one
+  runs, and run the battery and typing check this record left open.
+* [Backlog 56](../backlog/0056-story-bible-continuity-test.md): test
+  whether a story bible extracted chapter by chapter closes the disconnect
+  gap this record found, before the agent architecture is chosen.
+* [Backlog 48](../backlog/0048-background-agent-evals.md): measure each
+  background agent that ships, and give each a first prompt.
+* [Backlog 46](../backlog/0046-prompt-tuning-evals.md): sweep conversation
+  prompt variants across this record's leading models. Each background
+  agent's delivery story tunes its own prompts. These results used one
+  untuned prompt per task.
 * [Backlog 38](../backlog/0038-pair-writing-experience-adr.md): set latency
-  targets from these measurements, decide how disconnects ship, and decide
-  how often reviews run given about 60 W while one runs. If writers can
-  accept rewrites into their text, weigh Muse Glimmer's usage policy on
-  representing output as human generated.
+  targets from these measurements. If writers can accept rewrites into their
+  text, weigh Muse Glimmer's usage policy on representing output as human
+  generated.
 * [Backlog 10](../backlog/0010-agent-architecture-adr.md): configure a model
   per mode, since conversation and review use different models.
 * [Backlog 10](../backlog/0010-agent-architecture-adr.md): reuse cached
