@@ -2,7 +2,7 @@
 title: Record the cloud model proxy ADR
 description: Choose a local proxy that gives Writer's tools one loopback endpoint for cloud models hosted in Azure AI Foundry, holding the credentials, routing models, recording use and cost, and enforcing spending caps.
 author: Tim Park
-ms.date: 2026-11-24
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - repository
@@ -20,11 +20,14 @@ to a provider directly, or can spend without a cap.
 
 ## Context
 
-The [model ADR](./0039-pair-writing-model-adr.md) runs the pair writer on
-local models served by Ollama, reached at `OLLAMA_HOST` on loopback.
-[Backlog 43](./0043-cloud-model-evals.md) measures cloud models on the same
+[ADR 0010](../adrs/0010-pair-writing-models.md), the model ADR, runs the
+pair writer on local models served by Ollama, reached at `OLLAMA_HOST` on
+loopback. [Backlog 56](./0056-story-bible-continuity-test.md) and
+[backlog 48](./0048-background-agent-evals.md) use a frontier cloud model as
+a ceiling for local results,
+[backlog 43](./0043-cloud-model-evals.md) measures cloud models on the same
 cases, and the [cloud fallback ADR](./0040-cloud-model-fallback-adr.md) may
-later let some journeys use one. Both need cloud models reached the same way.
+later let some journeys use one. All need cloud models reached the same way.
 
 Cloud models are hosted in Azure AI Foundry. A Foundry resource or project
 exposes models from several providers through an OpenAI-compatible
@@ -92,4 +95,4 @@ logs.
 
 ## Prerequisites
 
-* [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)
+None.

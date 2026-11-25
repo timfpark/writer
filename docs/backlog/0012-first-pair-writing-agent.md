@@ -2,7 +2,7 @@
 title: Answer the writer in conversation from the service
 description: Add the agent crate, versioned prompts, a conversation endpoint that answers the writer about the open document, and its evaluation cases.
 author: Tim Park
-ms.date: 2026-11-22
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - service
@@ -17,7 +17,7 @@ other ideas to explore, and get an answer grounded in that text so that the
 product's core behavior exists behind the API contract, with prompts and
 evaluations in the places
 [ADR 0001](../adrs/0001-monorepo-structure.md#artifact-locations) and the
-[model ADR](./0039-pair-writing-model-adr.md) set out.
+[model ADR](../adrs/0010-pair-writing-models.md) set out.
 
 ## Context
 
@@ -66,7 +66,7 @@ the agent ADR, amend it in the same pull request.
 * Add the model settings, such as Ollama's address and the chosen models, to
   `service/.env.example`.
 * Update `service/README.md` with how to install Ollama and pull the
-  [model ADR](./0039-pair-writing-model-adr.md)'s models, and a walkthrough
+  [model ADR](../adrs/0010-pair-writing-models.md)'s models, and a walkthrough
   that asks each of the three requests about a synthetic passage. Update
   `service/AGENTS.md` with the new crate, folders, settings, and commands.
 
@@ -90,3 +90,4 @@ the agent ADR, amend it in the same pull request.
 
 * [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)
 * [Record the agent conversations ADR](./0037-agent-conversations-adr.md)
+* [Tune the conversation prompt with the evaluation harness](./0046-prompt-tuning-evals.md)

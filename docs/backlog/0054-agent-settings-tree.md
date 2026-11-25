@@ -2,7 +2,7 @@
 title: Turn background agents on and off across the workspace tree
 description: After writers have used background agents that are always on, decide and build how agents are turned on and off at the workspace, folder, and document level, resolved by inheritance, with presets for kinds of work.
 author: Tim Park
-ms.date: 2026-11-24
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - service
@@ -26,7 +26,9 @@ work it does not apply to. Background review from
 [backlog 36](./0036-background-findings-view.md) shows their findings, and
 backlog 49 to 53 add more. This story follows them, so the case for turning
 agents off rests on which agents writers found unhelpful for which kinds of
-work.
+work. The nonfiction agents in [backlog 58](./0058-nonfiction-agents.md)
+follow this story, so a technical book can run them without a novel doing
+the same.
 
 [ADR 0005](../adrs/0005-workspace-model.md) defines the items in the tree,
 and [ADR 0006](../adrs/0006-storage-architecture.md#workspace-index) keeps
@@ -82,7 +84,8 @@ tree, whichever story lands first.
 
 ## Prerequisites
 
-* [Review documents in the background in the service](./0035-service-background-review.md)
-* [Show background findings in the webapp](./0036-background-findings-view.md)
 * [Keep a story bible and check continuity](./0049-story-bible-continuity.md)
+* [Track open threads and keep a reverse outline](./0050-threads-and-outline.md)
 * [Review finished chapters](./0051-chapter-review.md)
+* [Recap the last session when Writer opens](./0052-session-recap.md)
+* [Check the writer's own rules](./0053-writer-rules.md)

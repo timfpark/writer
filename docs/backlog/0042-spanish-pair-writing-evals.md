@@ -19,7 +19,7 @@ an English reading of it.
 
 ## Context
 
-The [model ADR](./0039-pair-writing-model-adr.md) chose local models from
+The [model ADR](../adrs/0010-pair-writing-models.md) chose local models from
 English cases only. Models differ more across languages than their English
 results suggest, and a judge model scores Spanish prose less reliably than
 English. [Backlog 41](./0041-document-language.md) records each document's
@@ -59,5 +59,4 @@ support is about to ship, so it measures the models available then.
 
 ## Prerequisites
 
-* [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)
 * [Set the language of a document](./0041-document-language.md)

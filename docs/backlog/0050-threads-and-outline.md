@@ -2,11 +2,12 @@
 title: Track open threads and keep a reverse outline
 description: Maintain a list of open threads and a reverse outline of the writer's scenes in the background, and show them beside the navigator.
 author: Tim Park
-ms.date: 2026-11-24
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - service
   - webapp
+  - evals
 estimated_reading_time: 2
 ---
 
@@ -33,7 +34,10 @@ incremental updates, and corrections.
 * Show the reverse outline and open threads in the webapp, linked to their
   passages and to the navigator, keyboard operable and accessible, and let
   the writer correct an entry or mark a thread as intentionally open.
-* Add the prompts and evaluation cases backlog 48 chose.
+* Tune the reverse outline and open threads prompts on backlog 48's cases,
+  as backlog 35 tunes its agents, and amend
+  [ADR 0010](../adrs/0010-pair-writing-models.md) with the chosen prompts.
+  Add the prompts and cases, and extend the fake provider for tests.
 
 ## Acceptance criteria
 

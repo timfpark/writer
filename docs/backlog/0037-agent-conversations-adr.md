@@ -1,8 +1,8 @@
 ---
 title: Record the agent conversations ADR
-description: Decide how the service keeps the pair writer's conversations, ties them to the versions of text they discuss, and exposes them so writers can revive, view, and audit them later.
+description: Decide how the service keeps the pair writer's conversations and living artifacts, ties them to the versions of text they discuss, and exposes them so writers can revive, view, correct, and audit them later.
 author: Tim Park
-ms.date: 2026-11-22
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - service
@@ -37,7 +37,11 @@ threads, it can run background reviews as conversations of their own and
 keep them for the writer to read later.
 
 The [agent architecture ADR](./0010-agent-architecture-adr.md) decides where
-the agent runs and how background reviews execute.
+the agent runs, how background reviews execute, and how agents chain. The
+[background agents ADR](./0047-background-agents-ux-adr.md) adds living
+artifacts, such as a story bible, a timeline, and a reverse outline, which
+the agent keeps current, other agents read, and the writer corrects; they
+need storage as durable as conversations.
 [ADR 0005](../adrs/0005-workspace-model.md) fixes the workspace model and
 [ADR 0006](../adrs/0006-storage-architecture.md) the storage backends and
 copy command that stored conversations must fit. The
@@ -57,24 +61,29 @@ resources.
 * Decide how a message records the text it discussed, and how that record
   stays readable when the document is edited, renamed, moved, or deleted.
 * Reconcile with the change control ADR: whether conversations point to its
-  commits, to lighter snapshots taken for the agent, or to stored excerpts,
-  and whether they can ship before backlog 29 builds history.
+  commits, to lighter snapshots taken for the agent, or to stored excerpts.
+  The change control ADR comes later, so choose a reference that works
+  without it, and state what that ADR must preserve.
+* Model living artifacts: their entries, the passages each entry cites, the
+  writer's corrections and how they survive later extractions, and how an
+  entry is marked stale when its passages change.
 * Decide what the agent receives when a writer revives a conversation, such
   as the earlier text, the current text, or what changed in between.
 * Decide what each agent turn records for audit, such as the prompt version,
   provider and model, the context sent, timing, and token use.
-* Decide where conversations persist in every planned backend, whether they
-  live in the workspace and travel with ADR 0006's copy command, and whether
-  commits include them.
-* Define the API resources for conversations and messages, including
-  listing, filtering by document, pagination, and streaming, under ADR 0004.
+* Decide where conversations and living artifacts persist in every planned
+  backend, whether they live in the workspace and travel with ADR 0006's
+  copy command, and whether commits include them.
+* Define the API resources for conversations, messages, and living
+  artifacts, including listing, filtering by document, pagination,
+  corrections, and streaming, under ADR 0004.
 * Decide how deletion and retention work, what happens to a deleted
   document's conversations, how conversations are exported, and that no
   conversation text appears in logs, since conversations hold manuscript
   text.
 * Amend ADR 0005 and ADR 0006 where the decision departs from them, revise
-  backlog 12, 34, 35, and 36 to the chosen model, and add stories for work
-  they do not cover, such as a conversation list.
+  backlog 12, 34, 35, 36, 49, and 50 to the chosen model, and add stories
+  for work they do not cover, such as a conversation list.
 * Add the ADR to the ADR index with `service` and `webapp` in its
   `subsystems` field.
 
@@ -86,13 +95,15 @@ resources.
 * [ ] The ADR states how a message refers to the text it discussed, and how
   that reference survives edits, moves, and deletion.
 * [ ] The ADR states the audit record, storage in every planned backend, the
-  API resources, and retention and deletion.
+  API resources, and retention and deletion, for conversations and living
+  artifacts.
 * [ ] Each conversation journey in the experience ADR maps to the model and
   resources the ADR defines.
-* [ ] Backlog 12, 34, 35, and 36 match the decision, and any new stories are
-  in the backlog index.
+* [ ] Backlog 12, 34, 35, 36, 49, and 50 match the decision, and any new
+  stories are in the backlog index.
 * [ ] `tools/check` exits 0.
 
 ## Prerequisites
 
 * [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)
+* [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)

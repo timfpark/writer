@@ -2,11 +2,12 @@
 title: Check the writer's own rules
 description: Let writers state their own style rules, and have background review flag text that breaks them.
 author: Tim Park
-ms.date: 2026-11-24
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - service
   - webapp
+  - evals
 estimated_reading_time: 2
 ---
 
@@ -36,7 +37,9 @@ models follow them. Background review from
   rules.
 * Check text against the rules on the ADR's trigger, and raise findings that
   name the rule and the passage.
-* Add the prompt and evaluation cases backlog 48 chose.
+* Tune the rules prompt on backlog 48's cases, as backlog 35 tunes its
+  agents, and amend [ADR 0010](../adrs/0010-pair-writing-models.md) with the
+  chosen prompt. Add the prompt and cases, and extend the fake provider.
 
 ## Acceptance criteria
 

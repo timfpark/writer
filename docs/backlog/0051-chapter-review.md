@@ -2,11 +2,12 @@
 title: Review finished chapters
 description: When a chapter settles, review it for scene purpose and pacing, character voice, a simulated reader's reaction, and anachronisms, and show the results beside the chapter.
 author: Tim Park
-ms.date: 2026-11-24
+ms.date: 2026-11-25
 ms.topic: reference
 subsystems:
   - service
   - webapp
+  - evals
 estimated_reading_time: 2
 ---
 
@@ -36,8 +37,10 @@ to state wrong facts with confidence.
 * Raise pacing, voice, and anachronism findings anchored to passages, and
   show the reader's reaction as the ADR decides.
 * Phrase anachronism findings as questions to check, not corrections.
-* Add the prompts and evaluation cases backlog 48 chose, and extend the fake
-  provider.
+* Tune each shipping agent's prompt on backlog 48's cases, as backlog 35
+  tunes its agents, and amend
+  [ADR 0010](../adrs/0010-pair-writing-models.md) with the chosen prompts.
+  Add the prompts and cases, and extend the fake provider.
 
 ## Acceptance criteria
 
