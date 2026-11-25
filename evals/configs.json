@@ -102,6 +102,24 @@
       "hypothesis": "8-bit dense prose model"
     },
     {
+      "name": "qwen3.8-27b-mlx",
+      "runtime": "ollama",
+      "model": "qwen3.8:27b-mlx",
+      "hypothesis": "MLX build of the maintainer's favorite in blind scoring, at its lowest thinking level"
+    },
+    {
+      "name": "qwen3.8-27b-mlx-nothink",
+      "runtime": "ollama",
+      "model": "qwen3.8:27b-mlx",
+      "hypothesis": "MLX build with thinking off, for conversation speed",
+      "conversation": {
+        "think": false
+      },
+      "review": {
+        "think": false
+      }
+    },
+    {
       "name": "gemma4-31b-q4",
       "runtime": "ollama",
       "model": "gemma4:31b-it-q4_K_M",

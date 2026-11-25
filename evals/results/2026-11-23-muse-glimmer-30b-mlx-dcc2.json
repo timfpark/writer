@@ -110,6 +110,12 @@
         "model": "qwen3.8-flash-next:125b-mlx",
         "digest": "5fcb32f20cb4",
         "prompt": "2cc3856f20cd"
+      },
+      "human": {
+        "usefulness": 5,
+        "grounding": 5,
+        "restraint": 5,
+        "scorer": "Tim Park"
       }
     },
     {
@@ -202,6 +208,12 @@
         "model": "qwen3.8-flash-next:125b-mlx",
         "digest": "5fcb32f20cb4",
         "prompt": "2cc3856f20cd"
+      },
+      "human": {
+        "usefulness": 3,
+        "grounding": 4,
+        "restraint": 3,
+        "scorer": "Tim Park"
       }
     },
     {
