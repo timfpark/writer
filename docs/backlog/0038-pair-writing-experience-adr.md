@@ -53,7 +53,9 @@ findings help more than they distract, on a model the writer can run. The
 [model ADR](./0039-pair-writing-model-adr.md) measures that first with local
 models served by Ollama. Its results set what this experience can promise:
 which kinds of finding are good enough to ship and how quickly replies
-arrive. Text never leaves the writer's machine; the
+arrive. [Backlog 46](./0046-prompt-tuning-evals.md) then tunes the prompts,
+so a kind of finding is judged on the best prompt found rather than the
+first one written. Text never leaves the writer's machine; the
 [cloud fallback ADR](./0040-cloud-model-fallback-adr.md) revisits that only
 after writers have used the local pair writer.
 
@@ -73,8 +75,9 @@ after writers have used the local pair writer.
   * Turning background review off, and deleting conversations
   * Using Writer with no provider configured, offline, or after an agent
     failure
-* Define the kinds of finding, at least suggestions, questions, and
-  disconnects, and what the writer sees for each.
+* Take the background agents, their shapes, triggers, and surfaces from the
+  [background agents ADR](./0047-background-agents-ux-adr.md), and design the
+  journeys and the assistant pane around them.
 * Decide what the agent pays attention to from the writer's point of view:
   the open document, the selection, other documents in the folder or
   workspace, or earlier conversations.
@@ -98,7 +101,8 @@ after writers have used the local pair writer.
 * Build a throwaway, clickable prototype of the journeys with scripted
   responses, keep it out of the repository, try the journeys with it, and
   record in the ADR what the prototype changed in the design.
-* Decide which kinds of finding ship first from the model ADR's results, and
+* Decide which kinds of finding ship first from the model ADR's results,
+  as amended by backlog 46's tuned prompts, and
   cut or defer any kind that does not earn its place.
 * Resolve how suggestions are shown and accepted from ADR 0008's follow-up
   decision, and link to this ADR from it.
@@ -125,3 +129,5 @@ after writers have used the local pair writer.
 ## Prerequisites
 
 * [Record the pair-writing model ADR](./0039-pair-writing-model-adr.md)
+* [Tune the pair-writing prompts with the evaluation harness](./0046-prompt-tuning-evals.md)
+* [Record the background agents UX ADR](./0047-background-agents-ux-adr.md)

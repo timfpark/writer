@@ -20,17 +20,19 @@ Writer is a local-first writing workspace and AI pair writer (see
 3. Follow the [Adding a subsystem](./docs/adrs/0001-monorepo-structure.md#adding-a-subsystem)
    checklist when creating any new subsystem.
 
-| Subsystem  | Responsibility                                               | Stack                  | Guide                                    | Status |
-|------------|--------------------------------------------------------------|------------------------|------------------------------------------|--------|
-| `service/` | Workspace storage, domain rules, `/api/v1/` API, pair writer | Rust, Cargo            | [service/AGENTS.md](./service/AGENTS.md) | Active |
-| `webapp/`  | React editing workspace consuming the generated API client   | TypeScript, React, npm | [webapp/AGENTS.md](./webapp/AGENTS.md)   | Active |
+| Subsystem  | Responsibility                                               | Stack                   | Guide                                    | Status |
+|------------|--------------------------------------------------------------|-------------------------|------------------------------------------|--------|
+| `service/` | Workspace storage, domain rules, `/api/v1/` API, pair writer | Rust, Cargo             | [service/AGENTS.md](./service/AGENTS.md) | Active |
+| `webapp/`  | React editing workspace consuming the generated API client   | TypeScript, React, npm  | [webapp/AGENTS.md](./webapp/AGENTS.md)   | Active |
+| `evals/`   | Scores models and prompts on synthetic cases; ships nothing  | Python standard library | [evals/AGENTS.md](./evals/AGENTS.md)     | Active |
 
 * Couple clients to `service/` only through its HTTP API and committed
   [service/openapi.json](./service/openapi.json) contract; never import across
-  subsystems.
+  subsystems. Only `service/` and `evals/` call model runtimes.
 * Keep coding-agent files (`AGENTS.md` and `.github/`) separate from product
   pair-writer prompts (`service/prompts/`, planned) and evaluations
-  (`service/evals/`, planned).
+  ([evals/](./evals/)). Commit evaluation run summaries, never raw model
+  output, which stays in `.local/evals/raw/`.
 * Target [tools/check](./tools/check), [tools/check_docs.py](./tools/check_docs.py),
   and `tools/tests/` directly when inspecting repository tooling; avoid broad
   globs under `tools/` because `tools/node_modules/` holds installed lint
@@ -88,7 +90,7 @@ Writer is a local-first writing workspace and AI pair writer (see
   `CI result`'s `needs` list.
 * Work on a branch for a pull request to `main` using conventional commits
   (`feat`, `fix`, `docs`, `ci`, `build`, `refactor`, `test`, `chore`),
-  optionally scoped to `service`, `webapp`, `devcontainer`, or `tools`, with an
+  optionally scoped to `service`, `webapp`, `evals`, `devcontainer`, or `tools`, with an
   imperative subject such as
   `feat(webapp): add webapp foundation with generated API client`.
 
@@ -96,8 +98,10 @@ Writer is a local-first writing workspace and AI pair writer (see
 
 * Use fast targeted commands while iterating: `python3 tools/check_docs.py`,
   `python3 -m unittest discover --start-directory tools/tests`, or the affected
-  subsystem's test runner, such as `cargo test --workspace` in `service/`, or
-  `npm run test` and `npm run e2e` in `webapp/`.
+  subsystem's test runner, such as `cargo test --workspace` in `service/`,
+  `npm run test` and `npm run e2e` in `webapp/`, or
+  `python3 -m unittest discover --start-directory tests --top-level-directory .`
+  in `evals/`.
 * Before every commit and before reporting work complete, run `tools/check`
   with no arguments from the repository root on the final contents of the
   change, and rerun it after any edit. If `tools/check` fails or cannot run,

@@ -13,6 +13,8 @@ Runs every validation phase from the repository root:
   docs     Markdown frontmatter, relative links, index coverage, and style lint
   service  formatting, lint, build, and tests of every service/ workspace member,
            including the service/openapi.json freshness test (cargo via rustup)
+  evals    unit tests of the evaluation harness in evals/ against a fake
+           runtime; needs no model runtime, model, or network access
   webapp   install, generated client freshness, formatting, lint, types, tests,
            build, and bundle budget of webapp/
   browser  Playwright browser and accessibility tests of webapp/e2e/, driving
@@ -125,6 +127,15 @@ run_webapp_phase() {
   )
 }
 
+# Tests the harness only; running models against the cases is a manual step
+# that evals/README.md describes, never part of this gate.
+run_evals_phase() {
+  (
+    cd "$root/evals" || exit 1
+    PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover --start-directory tests --top-level-directory . --quiet
+  )
+}
+
 # Uses the webapp phase's install. The browsers step exits 2 when a browser
 # cannot launch, which the gate reports as a missing prerequisite, and the
 # tests do not run.
@@ -159,6 +170,7 @@ run_phase() {
 run_phase tools env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover --start-directory tools/tests --quiet
 run_phase docs run_docs_phase
 run_phase service run_service_phase
+run_phase evals run_evals_phase
 run_phase webapp run_webapp_phase
 run_phase browser run_browser_phase
 

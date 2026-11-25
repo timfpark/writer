@@ -1,0 +1,11 @@
+{
+  "id": "conv-ferry-develop",
+  "task": "conversation",
+  "split": "tune",
+  "length": "chapter",
+  "documents": [
+    "ferry-chapter-1",
+    "ferry-chapter-2"
+  ],
+  "request": "develop"
+}

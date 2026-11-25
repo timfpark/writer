@@ -79,8 +79,9 @@ class CheckDocsTest(unittest.TestCase):
             "docs/pull_request_template.md:1: missing YAML frontmatter delimited by '---' lines",
         ])
 
-    def test_editor_corpus_is_test_data_not_documentation(self):
+    def test_editor_corpus_and_evaluation_documents_are_test_data_not_documentation(self):
         self.write("webapp/src/editor/markdown/corpus/foreign/a.md", "# Title\n\n[x](./missing.md)\n")
+        self.write("evals/cases/documents/scene.md", "# Scene\n\n[x](./missing.md)\n")
         self.write("webapp/src/editor/b.md", "## Heading\n")
         self.assertEqual(self.problems(), [
             "webapp/src/editor/b.md:1: missing YAML frontmatter delimited by '---' lines",
@@ -106,7 +107,7 @@ class CheckDocsTest(unittest.TestCase):
         self.write("docs/adrs/0001-bad.md", "---\ntitle: T\ndescription: D\nsubsystems:\n  - backend\n---\n## Context\n")
         self.write("docs/adrs/0002-dup.md", "---\ntitle: T\ndescription: D\nsubsystems: [service, service]\n---\n## Context\n")
         self.assertEqual(self.problems(), [
-            "docs/adrs/0001-bad.md:1: frontmatter 'subsystems' entry 'backend' must be one of: repository, service, webapp",
+            "docs/adrs/0001-bad.md:1: frontmatter 'subsystems' entry 'backend' must be one of: repository, service, webapp, evals",
             "docs/adrs/0002-dup.md:1: frontmatter 'subsystems' must not contain duplicates",
         ])
 

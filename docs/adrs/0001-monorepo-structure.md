@@ -9,6 +9,7 @@ subsystems:
   - repository
   - service
   - webapp
+  - evals
 keywords:
   - adr
   - monorepo
@@ -30,17 +31,23 @@ the browser tests in `webapp/e2e/`, adds the `browser` phase to the
 validation gate, and adds the Playwright browsers to the development
 container.
 
+Amended on 2026-11-22 by [ADR 0010](./0010-pair-writing-models.md), which
+adds the `evals/` subsystem: the harness, synthetic cases, and committed run
+summaries that score models and prompts. Evaluations move there from the
+planned `service/evals/`, and the validation gate gains an `evals` phase.
+
 ## Decision summary
 
 * Organize the monorepo around self-contained top-level subsystem folders,
-  `service/` (Rust Cargo workspace) and `webapp/` (TypeScript and React),
-  created with their first deliverable rather than as empty placeholders.
+  `service/` (Rust Cargo workspace), `webapp/` (TypeScript and React), and
+  `evals/` (standard-library Python evaluation harness), created with their
+  first deliverable rather than as empty placeholders.
 * Couple clients to `service/` only through its HTTP API and committed OpenAPI
   contract under `service/`, with generated client code in
   `webapp/src/api/generated/` verified for freshness.
 * Keep coding-agent guidance (`AGENTS.md` and `.github/`) strictly separate
   from product pair-writing prompts (`service/prompts/`) and evaluations
-  (`service/evals/`).
+  (`evals/`).
 * Never commit credentials, `.env` files, or real manuscripts; use sanitized
   `*.example` files, synthetic prose, and the ignored `.local/` directory.
 * Pin toolchains in `.devcontainer/` alongside subsystem version pins and
@@ -81,6 +88,9 @@ in `docs/` and repository-wide tooling in `tools/`.
 A subsystem folder is created with its first deliverable, never as an empty
 placeholder. No CLI, shared-library, or separate agent subsystem is planned.
 Internal service crates are part of the service, not separate subsystems.
+`evals/`, which [ADR 0010](./0010-pair-writing-models.md) added, is a
+developer subsystem: it ships nothing to writers and is not deployable, so it
+does not count toward the `apps/` and `packages/` triggers below.
 
 The tree below shows the target repository layout. Paths that do not exist yet
 arrive with the backlog story that first needs them; check the filesystem and
@@ -114,12 +124,18 @@ writer/
     crates/                    internal Cargo workspace members
     openapi.json               API contract of record
     prompts/                   pair-writing agent prompts
-    evals/                     agent evaluation cases
     .env.example
   webapp/
     AGENTS.md, README.md
     package.json, package-lock.json, .npmrc
     src/api/generated/         client generated from the service contract
+    .env.example
+  evals/
+    AGENTS.md, README.md
+    writer_evals/              standard-library Python harness
+    cases/                     synthetic cases and the documents they read
+    prompts/                   candidate and judge prompts
+    results/                   committed run summaries
     .env.example
 ```
 
@@ -149,14 +165,17 @@ top-level subsystem layout.
 
 ### Subsystem boundaries
 
-| Subsystem | Responsibility                                                                                             | Stack                  | May depend on                                  |
-|-----------|------------------------------------------------------------------------------------------------------------|------------------------|------------------------------------------------|
-| `service` | Text storage, business rules, the HTTP API, and the pair-writing agent (prompts, model calls, evaluations) | Rust, Cargo            | Its own crates and external services           |
-| `webapp`  | The first client: editing, presenting pair-writer suggestions, and calling the service                     | TypeScript, React, npm | The service only through its HTTP API contract |
+| Subsystem | Responsibility                                                                                             | Stack                   | May depend on                                                            |
+|-----------|------------------------------------------------------------------------------------------------------------|-------------------------|--------------------------------------------------------------------------|
+| `service` | Text storage, business rules, the HTTP API, and the pair-writing agent (prompts, model calls, evaluations) | Rust, Cargo             | Its own crates and external services                                     |
+| `webapp`  | The first client: editing, presenting pair-writer suggestions, and calling the service                     | TypeScript, React, npm  | The service only through its HTTP API contract                           |
+| `evals`   | Scores models and prompts against synthetic cases and commits run summaries; ships nothing to writers      | Python standard library | Model runtimes such as Ollama, and the service only through its HTTP API |
 
 Dependencies point from clients to the service. The service never imports
 client code, and clients never import service source, read its storage, or
-call model providers directly.
+call model providers directly. `evals/` calls model runtimes directly to
+compare them, and reaches the service's pair writer only through its HTTP
+API; it never imports service or webapp source.
 
 The checked-in OpenAPI document under `service/` is the API contract of
 record. A later service ADR decides whether it is written by hand or emitted
@@ -167,22 +186,24 @@ for freshness. Generated files are never edited by hand.
 
 ### Artifact locations
 
-| Artifact                          | Location                                                                 | Kind                   |
-|-----------------------------------|--------------------------------------------------------------------------|------------------------|
-| Unit and integration tests        | Inside each subsystem, following its stack's convention                  | Source                 |
-| Synthetic test fixtures           | Inside each subsystem, next to the tests that use them                   | Source                 |
-| AI evaluation cases               | `service/evals/`                                                         | Source, synthetic only |
-| Agent prompts                     | `service/prompts/`                                                       | Source                 |
-| Configuration examples            | `<subsystem>/.env.example` or another `*.example` file                   | Source, sanitized      |
-| Repository-wide developer scripts | `tools/`                                                                 | Source                 |
-| Subsystem scripts                 | The stack's own runner, such as Cargo commands or `package.json` scripts | Source                 |
-| Repository-wide documentation     | `docs/`, with ADRs and backlog items indexed by their README files       | Source                 |
-| Subsystem documentation           | `<subsystem>/README.md` for people, `<subsystem>/AGENTS.md` for agents   | Source                 |
-| API contract                      | `service/openapi.*`                                                      | Committed, verified    |
-| Generated API client              | `webapp/src/api/generated/`                                              | Generated, committed   |
-| Build output and dependencies     | `target/`, `node_modules/`, `dist/`, `coverage/`                         | Generated, ignored     |
-| Real secrets and local settings   | `.env`, `.env.*` except examples                                         | Local only, ignored    |
-| Local manuscripts and scratch     | `.local/`                                                                | Local only, ignored    |
+| Artifact                          | Location                                                                 | Kind                       |
+|-----------------------------------|--------------------------------------------------------------------------|----------------------------|
+| Unit and integration tests        | Inside each subsystem, following its stack's convention                  | Source                     |
+| Synthetic test fixtures           | Inside each subsystem, next to the tests that use them                   | Source                     |
+| AI evaluation harness and cases   | `evals/`                                                                 | Source, synthetic only     |
+| AI evaluation run summaries       | `evals/results/`                                                         | Committed, no model output |
+| Raw model output from evaluations | `.local/evals/raw/`                                                      | Local only, ignored        |
+| Agent prompts                     | `service/prompts/`                                                       | Source                     |
+| Configuration examples            | `<subsystem>/.env.example` or another `*.example` file                   | Source, sanitized          |
+| Repository-wide developer scripts | `tools/`                                                                 | Source                     |
+| Subsystem scripts                 | The stack's own runner, such as Cargo commands or `package.json` scripts | Source                     |
+| Repository-wide documentation     | `docs/`, with ADRs and backlog items indexed by their README files       | Source                     |
+| Subsystem documentation           | `<subsystem>/README.md` for people, `<subsystem>/AGENTS.md` for agents   | Source                     |
+| API contract                      | `service/openapi.*`                                                      | Committed, verified        |
+| Generated API client              | `webapp/src/api/generated/`                                              | Generated, committed       |
+| Build output and dependencies     | `target/`, `node_modules/`, `dist/`, `coverage/`                         | Generated, ignored         |
+| Real secrets and local settings   | `.env`, `.env.*` except examples                                         | Local only, ignored        |
+| Local manuscripts and scratch     | `.local/`                                                                | Local only, ignored        |
 
 Cross-subsystem end-to-end tests are deferred until both subsystems exist and
 a story needs them; that story chooses their location.
@@ -245,8 +266,8 @@ placeholder, and make these changes in the same pull request:
 
 `AGENTS.md` files, and anything under `.github/`, guide the coding agents that
 develop Writer. The pair-writing agent is product behavior. Its prompts live in
-`service/prompts/`, its model integrations in service code, and its evaluation
-cases in `service/evals/`. Product prompts are never placed in coding-agent
+`service/prompts/` and its model integrations in service code. Its evaluation
+cases, the harness that runs them, and their results live in `evals/`. Product prompts are never placed in coding-agent
 guidance, and coding-agent guidance never becomes product prompts. Choosing an
 agent framework or model provider is deferred to a later service ADR.
 
@@ -313,6 +334,9 @@ as [ADR 0003](./0003-webapp-architecture.md#quality-checks) lists. The
 after it, and exits 2 when a browser cannot launch, as
 [ADR 0009](./0009-browser-tests.md#gate) decides. The gate exits 1 when any
 phase fails, and otherwise 2 when any phase lacks a prerequisite.
+The `evals` phase, added by [ADR 0010](./0010-pair-writing-models.md), runs
+after `service` and unit-tests the evaluation harness against a fake runtime,
+so it needs no model runtime, model, or network access.
 
 Markdown style lint landed in backlog 5 after the development container
 provided Node.js.
@@ -415,6 +439,11 @@ them.
   `service/` already gives clients one authoritative contract.
 * A separate `agent/` subsystem was rejected because the pair-writing agent
   has no deployable or interface of its own; it is service behavior.
+* Evaluations in `service/evals/`, this record's original plan, were replaced
+  by the top-level `evals/` subsystem in
+  [ADR 0010](./0010-pair-writing-models.md), because the same harness and
+  cases compare models and runtimes the service never ships, and must reach
+  the pair writer wherever the agent architecture places it.
 * `.github/copilot-instructions.md` was rejected as a duplicate of `AGENTS.md`.
 * Selective checks with per-stack reusable workflows were rejected as
   premature for two small subsystems.

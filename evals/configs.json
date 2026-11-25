@@ -1,0 +1,189 @@
+{
+  "defaults": {
+    "options": {
+      "seed": 39
+    },
+    "conversation": {
+      "think": "lowest",
+      "options": {
+        "num_predict": 2000
+      }
+    },
+    "review": {
+      "think": "lowest",
+      "options": {
+        "num_predict": 4000
+      }
+    }
+  },
+  "configs": [
+    {
+      "name": "muse-glimmer-30b-q4",
+      "runtime": "ollama",
+      "model": "muse-glimmer:30b-q4_K_M",
+      "hypothesis": "Permissive dense all-round writer and editor at 4-bit"
+    },
+    {
+      "name": "muse-glimmer-30b-q4-dflash",
+      "runtime": "ollama",
+      "model": "muse-glimmer:30b-q4_K_M-dflash",
+      "hypothesis": "Same model with its speculative drafter: faster, identical quality"
+    },
+    {
+      "name": "muse-glimmer-30b-q4-think",
+      "runtime": "ollama",
+      "model": "muse-glimmer:30b-q4_K_M",
+      "hypothesis": "Reasoning on for review",
+      "review": {
+        "think": "highest",
+        "options": {
+          "num_predict": 12000
+        }
+      }
+    },
+    {
+      "name": "muse-glimmer-30b-q8",
+      "runtime": "ollama",
+      "model": "muse-glimmer:30b-q8_0",
+      "hypothesis": "8-bit keeps subtler word choice than 4-bit"
+    },
+    {
+      "name": "muse-glimmer-30b-q8-dflash",
+      "runtime": "ollama",
+      "model": "muse-glimmer:30b-q8_0-dflash",
+      "hypothesis": "8-bit with the speculative drafter"
+    },
+    {
+      "name": "muse-glimmer-30b-bf16",
+      "runtime": "ollama",
+      "model": "muse-glimmer:30b-bf16",
+      "hypothesis": "Full precision: the ceiling for this model"
+    },
+    {
+      "name": "muse-glimmer-30b-mlx",
+      "runtime": "ollama",
+      "model": "muse-glimmer:30b-mlx",
+      "hypothesis": "Ollama's MLX runner, which includes the speculative drafter, against its GGUF runner"
+    },
+    {
+      "name": "qwen3.8-27b-q4",
+      "runtime": "ollama",
+      "model": "qwen3.8:27b-q4_K_M",
+      "hypothesis": "Dense, low slop, thinking off for drafting"
+    },
+    {
+      "name": "qwen3.8-27b-q4-think",
+      "runtime": "ollama",
+      "model": "qwen3.8:27b-q4_K_M",
+      "hypothesis": "Thinking on for structural review and continuity",
+      "review": {
+        "think": "highest",
+        "options": {
+          "num_predict": 12000
+        }
+      }
+    },
+    {
+      "name": "qwen3.8-27b-q4-nothink",
+      "runtime": "ollama",
+      "model": "qwen3.8:27b-q4_K_M",
+      "hypothesis": "Thinking off: faster replies, if the model honors it",
+      "conversation": {
+        "think": false
+      },
+      "review": {
+        "think": false
+      }
+    },
+    {
+      "name": "qwen3.8-27b-q8",
+      "runtime": "ollama",
+      "model": "qwen3.8:27b-q8_0",
+      "hypothesis": "8-bit dense prose model"
+    },
+    {
+      "name": "qwen3.8-27b-mlx",
+      "runtime": "ollama",
+      "model": "qwen3.8:27b-mlx",
+      "hypothesis": "MLX build of the maintainer's favorite in blind scoring, at its lowest thinking level"
+    },
+    {
+      "name": "qwen3.8-27b-mlx-nothink",
+      "runtime": "ollama",
+      "model": "qwen3.8:27b-mlx",
+      "hypothesis": "MLX build with thinking off, for conversation speed",
+      "conversation": {
+        "think": false
+      },
+      "review": {
+        "think": false
+      }
+    },
+    {
+      "name": "gemma4-31b-q4",
+      "runtime": "ollama",
+      "model": "gemma4:31b-it-q4_K_M",
+      "hypothesis": "Dense, natural dialogue and literary voice"
+    },
+    {
+      "name": "gemma4-31b-mlx",
+      "runtime": "ollama",
+      "model": "gemma4:31b-mlx",
+      "hypothesis": "Ollama's MLX runner against its GGUF runner"
+    },
+    {
+      "name": "gemma4-31b-q8",
+      "runtime": "ollama",
+      "model": "gemma4:31b-it-q8_0",
+      "hypothesis": "8-bit dense prose model"
+    },
+    {
+      "name": "gemma4-26b-a4b-q4",
+      "runtime": "ollama",
+      "model": "gemma4:26b-a4b-it-q4_K_M",
+      "hypothesis": "Mixture of experts, 4B active: fast conversation"
+    },
+    {
+      "name": "qwen3.6-35b-a3b-q4",
+      "runtime": "ollama",
+      "model": "qwen3.6:35b-a3b-q4_K_M",
+      "hypothesis": "Mixture of experts, 3B active: fastest conversation"
+    },
+    {
+      "name": "qwen3.5-122b-a10b-q4",
+      "runtime": "ollama",
+      "model": "qwen3.5:122b-a10b-q4_K_M",
+      "hypothesis": "Heavy MoE for structural and consistency review"
+    },
+    {
+      "name": "mistral-medium-3.5-q4",
+      "runtime": "ollama",
+      "model": "mistral-medium-3.5:128b-q4_K_M",
+      "hypothesis": "Heavy dense model for slow, deep background review"
+    },
+    {
+      "name": "gemma4-12b-q4",
+      "runtime": "ollama",
+      "model": "gemma4:12b-it-q4_K_M",
+      "hypothesis": "Small dense model for machines with 16 to 24 GB"
+    },
+    {
+      "name": "qwen3.5-9b-q4",
+      "runtime": "ollama",
+      "model": "qwen3.5:9b-q4_K_M",
+      "hypothesis": "Small dense model for machines with 16 GB"
+    },
+    {
+      "name": "gpt-oss-120b",
+      "runtime": "ollama",
+      "model": "gpt-oss:120b",
+      "hypothesis": "Control: large model tuned for tools rather than prose"
+    },
+    {
+      "name": "judge-qwen3.8-flash-next",
+      "runtime": "ollama",
+      "model": "qwen3.8-flash-next:125b-mlx",
+      "hypothesis": "Judge only: not a candidate, so it never scores itself"
+    }
+  ]
+}

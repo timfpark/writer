@@ -1,0 +1,13 @@
+{
+  "id": "review-grafting-coherent",
+  "task": "review",
+  "split": "tune",
+  "length": "scene",
+  "documents": [
+    "grafting"
+  ],
+  "expectNone": [
+    "disconnect"
+  ],
+  "note": "A coherent scene: any disconnect is a false alarm."
+}

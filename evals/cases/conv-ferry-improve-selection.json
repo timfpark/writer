@@ -1,0 +1,12 @@
+{
+  "id": "conv-ferry-improve-selection",
+  "task": "conversation",
+  "split": "holdout",
+  "length": "chapter",
+  "documents": [
+    "ferry-chapter-1"
+  ],
+  "request": "improve",
+  "selection": "The lake was a vast, shimmering, glimmering mirror of silvery liquid glass that stretched endlessly, eternally, infinitely toward the distant, faraway horizon, where the beautiful golden rays of the magnificent rising sun kissed the gentle, rippling, sparkling surface of the calm and peaceful waters with a tender, loving, radiant glow of pure and perfect morning light.",
+  "note": "The selection is deliberately overwritten; a useful answer cuts it down without losing the moment."
+}

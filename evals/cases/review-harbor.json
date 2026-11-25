@@ -1,0 +1,30 @@
+{
+  "id": "review-harbor",
+  "task": "review",
+  "split": "tune",
+  "length": "scene",
+  "documents": [
+    "harbor-light"
+  ],
+  "expected": [
+    {
+      "id": "weak-paragraph",
+      "kind": "suggestion",
+      "passages": [
+        "Her heart was pounding like a drum."
+      ],
+      "note": "Clich\u00e9d, telling paragraph amid restrained prose."
+    },
+    {
+      "id": "unopened-letter",
+      "kind": "question",
+      "passages": [
+        "the letter from Tomas still sat unopened"
+      ],
+      "note": "The letter is raised twice and never opened."
+    }
+  ],
+  "expectNone": [
+    "disconnect"
+  ]
+}

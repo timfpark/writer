@@ -1,0 +1,10 @@
+{
+  "id": "conv-harbor-explore",
+  "task": "conversation",
+  "split": "holdout",
+  "length": "scene",
+  "documents": [
+    "harbor-light"
+  ],
+  "request": "explore"
+}

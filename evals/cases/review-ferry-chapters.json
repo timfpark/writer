@@ -1,0 +1,47 @@
+{
+  "id": "review-ferry-chapters",
+  "task": "review",
+  "split": "tune",
+  "length": "chapter",
+  "documents": [
+    "ferry-chapter-1",
+    "ferry-chapter-2"
+  ],
+  "expected": [
+    {
+      "id": "mara-left",
+      "kind": "disconnect",
+      "passages": [
+        "Mara had left Calloway three springs ago",
+        "Mara, who had never once left Calloway"
+      ],
+      "note": "Across chapters: Mara left for the city, yet never left Calloway."
+    },
+    {
+      "id": "dawn-afternoon",
+      "kind": "disconnect",
+      "passages": [
+        "before the first light of dawn",
+        "The afternoon sun slanted through the wheelhouse windows"
+      ],
+      "note": "Within chapter two: before dawn, then afternoon sun, before the six o'clock passengers."
+    },
+    {
+      "id": "purple-lake",
+      "kind": "suggestion",
+      "passages": [
+        "The lake was a vast, shimmering, glimmering mirror of silvery liquid glass"
+      ],
+      "note": "Overwritten paragraph."
+    },
+    {
+      "id": "brass-key",
+      "kind": "question",
+      "passages": [
+        "a brass key she had never seen before",
+        "I'm sorry about the boat"
+      ],
+      "note": "Open threads: the Lindqvist key and the apology about the boat."
+    }
+  ]
+}

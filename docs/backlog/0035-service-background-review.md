@@ -18,28 +18,32 @@ not think to ask for.
 
 ## Context
 
-The [experience ADR](./0038-pair-writing-experience-adr.md) defines the kinds
-of finding that ship first, from suggestions, questions, and disconnects,
-and the targets for review frequency, memory, and battery. The
-[agent ADR](./0010-agent-architecture-adr.md) decides how findings anchor to
+The [background agents ADR](./0047-background-agents-ux-adr.md) decides which
+paragraph- and scene-level findings ship first, such as weak prose,
+repetition, point of view and tense, clarity, and open questions, and the
+[experience ADR](./0038-pair-writing-experience-adr.md) builds on it, setting
+the targets for review frequency, memory, and battery. The [agent
+ADR](./0010-agent-architecture-adr.md) decides how findings anchor to
 passages, how reviews start, skip unchanged text, and stay within those
-targets, and how findings reach the webapp.
-The [conversations ADR](./0037-agent-conversations-adr.md) decides whether
-each review is stored as a conversation of its own and how it points to the
-version of the text it read.
-[Backlog 12](./0012-first-pair-writing-agent.md) builds the agent crate,
-`service/prompts/`, the conversation cases in `evals/`, and the fake
-provider this story extends. [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint
-conventions. If building reveals a flaw in the agent ADR, amend it in the
-same pull request.
+targets, and how findings reach the webapp. The [conversations
+ADR](./0037-agent-conversations-adr.md) decides whether each review is stored
+as a conversation of its own and how it points to the version of the text it
+read. [Backlog 12](./0012-first-pair-writing-agent.md) builds the agent crate,
+`service/prompts/`, the conversation cases in `evals/`, and the fake provider
+this story extends. [ADR 0004](../adrs/0004-api-conventions.md) sets the
+endpoint conventions. Living artifacts such as the story bible, and
+chapter-level and session agents, follow in backlog 49 to 53 on this plumbing.
+If building reveals a flaw in the agent ADR, amend it in the same pull
+request.
 
 ## Scope
 
 * Add the background review prompts to `service/prompts/`, starting from the
-  experience ADR's trial prompts.
-* Add synthetic evaluation cases to `evals/` for each kind of finding the
-  experience ADR ships, such as suggestions grounded in the passage, questions that open a
-  direction the text has not taken, and disconnects between passages.
+  prompts [backlog 46](./0046-prompt-tuning-evals.md) chose for each kind of
+  finding the background agents ADR ships.
+* Run the evaluation cases [backlog 48](./0048-background-agent-evals.md)
+  wrote for each shipping kind of finding against the review endpoint, as
+  the agent ADR decides, and add cases for anything the endpoint adds.
   Include coherent documents that should produce no finding of a kind, so
   the cases catch false alarms as well as misses.
 * Add the review endpoint or stream the agent ADR decides, returning findings

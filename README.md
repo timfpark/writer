@@ -16,18 +16,21 @@ Writer is a writing application where an AI agent is always there with you,
 pairing on the writing. It asks questions, suggests other ideas, and checks
 prose for quality and consistency.
 
-| Subsystem                      | Purpose                                        | Status  |
-|--------------------------------|------------------------------------------------|---------|
-| [Service](./service/README.md) | Text storage, HTTP API, and the AI pair writer | Active  |
-| [Webapp](./webapp/README.md)   | The first client for the system                | Active  |
+| Subsystem                      | Purpose                                                          | Status |
+|--------------------------------|------------------------------------------------------------------|--------|
+| [Service](./service/README.md) | Text storage, HTTP API, and the AI pair writer                   | Active |
+| [Webapp](./webapp/README.md)   | The first client for the system                                  | Active |
+| [Evals](./evals/README.md)     | Scores models and prompts for the pair writer on synthetic cases | Active |
 
 The service stores the workspace of folders and documents in a data folder
 and serves it, with a health endpoint, behind a verified API contract. The
 webapp shows the workspace shell, a header above collapsible side panes and
 a writing region where documents are edited and save themselves, and
 reaches the service through a client generated from the
-contract. Each guide, for the [service](./service/README.md) and the
-[webapp](./webapp/README.md), covers its setup and commands. The repository
+contract. The evaluation harness measures which local models can serve as
+the pair writer and keeps a committed record of every run. Each guide, for
+the [service](./service/README.md), the [webapp](./webapp/README.md), and
+the [evaluations](./evals/README.md), covers its setup and commands. The repository
 also holds its architecture decisions, backlog, validation gate, and
 development container.
 
@@ -42,12 +45,12 @@ the first release leaves room for it without depending on it.
 
 The webapp is one screen with a header bar above three regions:
 
-| Region                   | Purpose                                                                                                     |
-|--------------------------|-------------------------------------------------------------------------------------------------------------|
-| Header bar               | Shows and edits the open document's title, toggles the side panes, and holds the user profile on the right  |
-| Navigator, left          | A tree of folders and documents, indented by level, for grouping work into projects and subprojects         |
-| Writing surface, center  | The open document in a rich-text editor with a carefully chosen typeface on a high-contrast writing surface |
-| Assistant, right         | A conversation with the AI pair writer and a box for writing to it, prototyped without an agent at first    |
+| Region                  | Purpose                                                                                                     |
+|-------------------------|-------------------------------------------------------------------------------------------------------------|
+| Header bar              | Shows and edits the open document's title, toggles the side panes, and holds the user profile on the right  |
+| Navigator, left         | A tree of folders and documents, indented by level, for grouping work into projects and subprojects         |
+| Writing surface, center | The open document in a rich-text editor with a carefully chosen typeface on a high-contrast writing surface |
+| Assistant, right        | A conversation with the AI pair writer and a box for writing to it, prototyped without an agent at first    |
 
 The writing surface is the focus, and it takes every bit of width the side
 panes do not use. Both side panes collapse, so a writer can give the whole
@@ -78,8 +81,9 @@ deliver the workspace, followed by the pair-writing agent.
 ## Where to look
 
 * [AGENTS.md](./AGENTS.md) holds repository-wide rules for contributors and
-  coding agents. [service/AGENTS.md](./service/AGENTS.md) and
-  [webapp/AGENTS.md](./webapp/AGENTS.md) hold each subsystem's rules.
+  coding agents. [service/AGENTS.md](./service/AGENTS.md),
+  [webapp/AGENTS.md](./webapp/AGENTS.md), and
+  [evals/AGENTS.md](./evals/AGENTS.md) hold each subsystem's rules.
 * [ADR 0001](./docs/adrs/0001-monorepo-structure.md) records the repository
   layout, subsystem boundaries, and tooling baseline. The
   [ADR index](./docs/adrs/README.md) lists every decision.
@@ -219,9 +223,12 @@ npx playwright install chromium webkit
 Without them, `tools/check` reports the `browser` phase's prerequisite as
 missing, names the fix, and exits 2.
 
-The [service guide](./service/README.md) and the
-[webapp guide](./webapp/README.md) cover running and configuring each
-subsystem.
+The [service guide](./service/README.md), the
+[webapp guide](./webapp/README.md), and the
+[evaluations guide](./evals/README.md) cover running and configuring each
+subsystem. Running models for evaluations also needs
+[Ollama](https://ollama.com) on a host with a capable GPU; `tools/check`
+never does.
 
 ### Continuous integration
 

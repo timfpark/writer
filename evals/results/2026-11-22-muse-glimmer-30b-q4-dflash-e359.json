@@ -1,0 +1,1443 @@
+{
+  "schema": 1,
+  "kind": "sustained",
+  "id": "2026-11-22-muse-glimmer-30b-q4-dflash-e359",
+  "started": "2026-11-23T05:25:41Z",
+  "machine": {
+    "chip": "Apple M5 Max",
+    "model": "Mac17,7",
+    "memoryGb": 128,
+    "os": "macOS 26.7.3"
+  },
+  "runtime": {
+    "name": "ollama",
+    "version": "0.40.17"
+  },
+  "harness": {
+    "commit": "093fd9cb8a95-dirty",
+    "digest": "af6ba484daa4"
+  },
+  "cases": {
+    "digest": "b166187b5981",
+    "scoredWith": "784897864cf7"
+  },
+  "prompts": {
+    "conversation": "48035782578d",
+    "judge-conversation": "2cc3856f20cd",
+    "judge-review": "09533d3d3e7f",
+    "review": "1edf7c91d081"
+  },
+  "config": {
+    "name": "muse-glimmer-30b-q4-dflash",
+    "model": {
+      "name": "muse-glimmer:30b-q4_K_M-dflash",
+      "digest": "da643f4663abaffc3433eea46aced77fbc5859189fcc79dcfca01c24aafdecd8",
+      "family": "muse-glimmer",
+      "parameter_size": "27.9B",
+      "quantization": "Q4_K_M",
+      "format": "gguf",
+      "runner": "",
+      "context_length": 131072,
+      "license_head": "",
+      "thinking": [
+        false,
+        "low",
+        "medium",
+        "high",
+        "max"
+      ],
+      "sampling": "top_k 64 top_p 0.95 draft_num_predict 3 temperature 1"
+    }
+  },
+  "onBattery": false,
+  "minutes": 20.0,
+  "resources": {
+    "meanWatts": 60.0,
+    "maxWatts": 81.4,
+    "maxMemoryUsedGb": 77.5,
+    "maxRunnerGb": 19.3,
+    "minCpuSpeedLimit": null,
+    "maxThermalWarning": null
+  },
+  "items": [
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 19.25,
+      "firstTokenSeconds": 4.85,
+      "totalSeconds": 39.96,
+      "loadSeconds": 2.21,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 727.5,
+      "outputTokens": 1319,
+      "tokensPerSecond": 37.5,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 28.8,
+        "maxWatts": 29.9,
+        "maxMemoryUsedGb": 77.5,
+        "maxRunnerGb": 19.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 15.49,
+      "firstTokenSeconds": 0.21,
+      "totalSeconds": 36.87,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 17531.3,
+      "outputTokens": 1319,
+      "tokensPerSecond": 35.9,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 54.3,
+        "maxWatts": 81.4,
+        "maxMemoryUsedGb": 74.3,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 15.85,
+      "firstTokenSeconds": 0.2,
+      "totalSeconds": 37.4,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 18530.3,
+      "outputTokens": 1319,
+      "tokensPerSecond": 35.4,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 81.4,
+        "maxWatts": 81.4,
+        "maxMemoryUsedGb": 74.1,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 16.38,
+      "firstTokenSeconds": 0.2,
+      "totalSeconds": 39.53,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 18219.9,
+      "outputTokens": 1319,
+      "tokensPerSecond": 33.5,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 81.4,
+        "maxWatts": 81.4,
+        "maxMemoryUsedGb": 73.7,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 18.67,
+      "firstTokenSeconds": 0.19,
+      "totalSeconds": 43.76,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 18112.6,
+      "outputTokens": 1319,
+      "tokensPerSecond": 30.2,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 80.1,
+        "maxWatts": 81.4,
+        "maxMemoryUsedGb": 73.9,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 18.98,
+      "firstTokenSeconds": 0.21,
+      "totalSeconds": 46.11,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 18160.9,
+      "outputTokens": 1319,
+      "tokensPerSecond": 28.7,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 76.1,
+        "maxWatts": 78.3,
+        "maxMemoryUsedGb": 73.8,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 21.19,
+      "firstTokenSeconds": 0.22,
+      "totalSeconds": 50.94,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 17246.3,
+      "outputTokens": 1319,
+      "tokensPerSecond": 26.0,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 60.3,
+        "maxWatts": 60.3,
+        "maxMemoryUsedGb": 74.0,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 22.76,
+      "firstTokenSeconds": 0.22,
+      "totalSeconds": 53.5,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 16483.4,
+      "outputTokens": 1319,
+      "tokensPerSecond": 24.7,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 55.6,
+        "maxWatts": 60.3,
+        "maxMemoryUsedGb": 73.9,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 22.73,
+      "firstTokenSeconds": 0.23,
+      "totalSeconds": 53.06,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 16065.0,
+      "outputTokens": 1319,
+      "tokensPerSecond": 24.9,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 58.0,
+        "maxWatts": 58.9,
+        "maxMemoryUsedGb": 74.1,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 22.14,
+      "firstTokenSeconds": 0.22,
+      "totalSeconds": 51.82,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 17138.3,
+      "outputTokens": 1319,
+      "tokensPerSecond": 25.5,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 57.0,
+        "maxWatts": 58.9,
+        "maxMemoryUsedGb": 74.2,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 21.66,
+      "firstTokenSeconds": 0.22,
+      "totalSeconds": 54.9,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 17239.6,
+      "outputTokens": 1319,
+      "tokensPerSecond": 24.1,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 57.1,
+        "maxWatts": 57.9,
+        "maxMemoryUsedGb": 74.1,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 22.67,
+      "firstTokenSeconds": 0.25,
+      "totalSeconds": 50.83,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 15294.0,
+      "outputTokens": 1319,
+      "tokensPerSecond": 26.0,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 58.0,
+        "maxWatts": 58.0,
+        "maxMemoryUsedGb": 74.0,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.82,
+      "firstTokenSeconds": 0.26,
+      "totalSeconds": 48.48,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 14097.9,
+      "outputTokens": 1319,
+      "tokensPerSecond": 27.3,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 58.1,
+        "maxWatts": 58.7,
+        "maxMemoryUsedGb": 74.3,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.39,
+      "firstTokenSeconds": 0.24,
+      "totalSeconds": 47.7,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 14135.9,
+      "outputTokens": 1319,
+      "tokensPerSecond": 27.7,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 58.7,
+        "maxWatts": 58.7,
+        "maxMemoryUsedGb": 74.1,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.1,
+      "firstTokenSeconds": 0.26,
+      "totalSeconds": 47.29,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 13737.5,
+      "outputTokens": 1319,
+      "tokensPerSecond": 28.0,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 58.5,
+        "maxWatts": 58.7,
+        "maxMemoryUsedGb": 74.0,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 19.99,
+      "firstTokenSeconds": 0.25,
+      "totalSeconds": 46.93,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 14471.9,
+      "outputTokens": 1319,
+      "tokensPerSecond": 28.2,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 60.0,
+        "maxWatts": 60.8,
+        "maxMemoryUsedGb": 74.1,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.0,
+      "firstTokenSeconds": 0.24,
+      "totalSeconds": 47.03,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 14479.2,
+      "outputTokens": 1319,
+      "tokensPerSecond": 28.1,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 59.8,
+        "maxWatts": 60.8,
+        "maxMemoryUsedGb": 73.9,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 19.97,
+      "firstTokenSeconds": 0.24,
+      "totalSeconds": 47.22,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 15043.1,
+      "outputTokens": 1319,
+      "tokensPerSecond": 28.0,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 58.5,
+        "maxWatts": 59.1,
+        "maxMemoryUsedGb": 74.0,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.02,
+      "firstTokenSeconds": 0.25,
+      "totalSeconds": 47.26,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 14188.2,
+      "outputTokens": 1319,
+      "tokensPerSecond": 28.0,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 59.1,
+        "maxWatts": 59.1,
+        "maxMemoryUsedGb": 73.9,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.15,
+      "firstTokenSeconds": 0.25,
+      "totalSeconds": 47.3,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 14361.4,
+      "outputTokens": 1319,
+      "tokensPerSecond": 28.0,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 58.7,
+        "maxWatts": 59.1,
+        "maxMemoryUsedGb": 74.1,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.4,
+      "firstTokenSeconds": 0.25,
+      "totalSeconds": 47.77,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 14332.2,
+      "outputTokens": 1319,
+      "tokensPerSecond": 27.7,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 59.7,
+        "maxWatts": 60.4,
+        "maxMemoryUsedGb": 74.6,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.26,
+      "firstTokenSeconds": 0.25,
+      "totalSeconds": 47.46,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 14340.9,
+      "outputTokens": 1319,
+      "tokensPerSecond": 27.9,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 59.1,
+        "maxWatts": 60.4,
+        "maxMemoryUsedGb": 74.2,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.16,
+      "firstTokenSeconds": 0.25,
+      "totalSeconds": 47.35,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 14146.3,
+      "outputTokens": 1319,
+      "tokensPerSecond": 28.0,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 56.5,
+        "maxWatts": 57.8,
+        "maxMemoryUsedGb": 74.1,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.06,
+      "firstTokenSeconds": 0.24,
+      "totalSeconds": 47.82,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 14713.2,
+      "outputTokens": 1319,
+      "tokensPerSecond": 27.7,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 57.8,
+        "maxWatts": 57.8,
+        "maxMemoryUsedGb": 74.1,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.08,
+      "firstTokenSeconds": 0.25,
+      "totalSeconds": 47.78,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 13935.5,
+      "outputTokens": 1319,
+      "tokensPerSecond": 27.7,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 57.3,
+        "maxWatts": 57.8,
+        "maxMemoryUsedGb": 74.1,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 20.15,
+      "firstTokenSeconds": 0.25,
+      "totalSeconds": 47.3,
+      "loadSeconds": 0.0,
+      "promptTokens": 1860,
+      "promptTokensPerSecond": 14222.0,
+      "outputTokens": 1319,
+      "tokensPerSecond": 28.0,
+      "thinkingWords": 390,
+      "doneReason": "stop",
+      "modelGb": 2.4,
+      "gpuGb": 2.4,
+      "loadedModels": [
+        "muse-glimmer:30b-q4_K_M-dflash"
+      ],
+      "resources": {
+        "meanWatts": 57.5,
+        "maxWatts": 57.8,
+        "maxMemoryUsedGb": 74.0,
+        "maxRunnerGb": 19.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "a59b6026beeb",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 1
+        },
+        "anchors": 11,
+        "anchorsResolved": 10,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mara-left": true,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": true
+        },
+        "falseAlarms": {}
+      }
+    }
+  ],
+  "finished": "2026-11-23T05:46:14Z"
+}

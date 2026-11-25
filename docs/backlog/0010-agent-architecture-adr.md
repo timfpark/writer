@@ -96,7 +96,8 @@ what this ADR decides.
   state.
 * Decide how prompts in `service/prompts/` are stored, versioned, and loaded:
   embedded at build time or read at run time, and how the experience ADR's
-  trial prompts become the first versions.
+  trial prompts and [backlog 46](./0046-prompt-tuning-evals.md)'s tuned
+  prompts become the first versions.
 * Decide how the `evals/` harness runs the agent's cases against the
   service, such as through its HTTP API, with cases for each conversation
   request and each kind of finding the experience ADR ships, and which parts run in `tools/check` without

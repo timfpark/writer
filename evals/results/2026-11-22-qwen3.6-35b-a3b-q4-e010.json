@@ -1,0 +1,746 @@
+{
+  "schema": 1,
+  "kind": "run",
+  "id": "2026-11-22-qwen3.6-35b-a3b-q4-e010",
+  "started": "2026-11-23T02:18:01Z",
+  "machine": {
+    "chip": "Apple M5 Max",
+    "model": "Mac17,7",
+    "memoryGb": 128,
+    "os": "macOS 26.7.3"
+  },
+  "runtime": {
+    "name": "ollama",
+    "version": "0.40.17"
+  },
+  "harness": {
+    "commit": "093fd9cb8a95-dirty",
+    "digest": "7246137bd313"
+  },
+  "cases": {
+    "digest": "b166187b5981",
+    "scoredWith": "784897864cf7"
+  },
+  "prompts": {
+    "conversation": "48035782578d",
+    "judge-conversation": "2cc3856f20cd",
+    "judge-review": "09533d3d3e7f",
+    "review": "1edf7c91d081"
+  },
+  "config": {
+    "name": "qwen3.6-35b-a3b-q4",
+    "model": {
+      "name": "qwen3.6:35b-a3b-q4_K_M",
+      "digest": "07d35212591fc27746f0a317c975a6d68754fb38e9053d82e25f06057af28522",
+      "family": "qwen35moe",
+      "parameter_size": "36.0B",
+      "quantization": "Q4_K_M",
+      "format": "gguf",
+      "runner": "",
+      "context_length": 262144,
+      "license_head": "Apache License Version 2.0, January 2004 http://www.apache.org/licenses/ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION 1. Definitions. \"License\" ",
+      "thinking": [
+        false,
+        true
+      ],
+      "sampling": "min_p 0 presence_penalty 1.5 repeat_penalty 1 temperature 1 top_k 20 top_p 0.95"
+    },
+    "hypothesis": "Mixture of experts, 3B active: fastest conversation",
+    "conversation": {
+      "think": "lowest",
+      "options": {
+        "seed": 39,
+        "num_predict": 2000
+      }
+    },
+    "review": {
+      "think": "lowest",
+      "options": {
+        "seed": 39,
+        "num_predict": 4000
+      }
+    }
+  },
+  "coldLoadSeconds": 4.31,
+  "items": [
+    {
+      "case": "conv-ferry-develop",
+      "task": "conversation",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": false,
+      "ttftSeconds": 0.56,
+      "firstTokenSeconds": 0.56,
+      "totalSeconds": 4.24,
+      "loadSeconds": 0.0,
+      "promptTokens": 1777,
+      "promptTokensPerSecond": 3274.0,
+      "outputTokens": 437,
+      "tokensPerSecond": 118.7,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.4,
+      "gpuGb": 21.4,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 72.3,
+        "maxWatts": 72.3,
+        "maxMemoryUsedGb": 78.6,
+        "maxRunnerGb": 23.1,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "c98414311cdc",
+      "scores": {
+        "words": 334,
+        "quotes": 3,
+        "quotesGrounded": 3
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 4,
+        "restraint": 4,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-ferry-explore",
+      "task": "conversation",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": false,
+      "ttftSeconds": 0.34,
+      "firstTokenSeconds": 0.34,
+      "totalSeconds": 5.6,
+      "loadSeconds": 0.0,
+      "promptTokens": 1776,
+      "promptTokensPerSecond": 5372.4,
+      "outputTokens": 606,
+      "tokensPerSecond": 115.1,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.4,
+      "gpuGb": 21.4,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 72.3,
+        "maxWatts": 72.3,
+        "maxMemoryUsedGb": 78.7,
+        "maxRunnerGb": 23.1,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "75de27ad9dc3",
+      "scores": {
+        "words": 453,
+        "quotes": 6,
+        "quotesGrounded": 4
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 4,
+        "restraint": 3,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-ferry-improve-selection",
+      "task": "conversation",
+      "split": "holdout",
+      "length": "chapter",
+      "words": 589,
+      "numCtx": 8192,
+      "think": false,
+      "ttftSeconds": 0.17,
+      "firstTokenSeconds": 0.17,
+      "totalSeconds": 3.34,
+      "loadSeconds": 0.0,
+      "promptTokens": 1091,
+      "promptTokensPerSecond": 6710.4,
+      "outputTokens": 355,
+      "tokensPerSecond": 112.0,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.4,
+      "gpuGb": 21.4,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 72.3,
+        "maxWatts": 72.3,
+        "maxMemoryUsedGb": 78.7,
+        "maxRunnerGb": 23.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "70bcec2e0ef8",
+      "scores": {
+        "words": 247,
+        "quotes": 3,
+        "quotesGrounded": 3
+      },
+      "judge": {
+        "usefulness": 5,
+        "grounding": 4,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-harbor-develop",
+      "task": "conversation",
+      "split": "tune",
+      "length": "scene",
+      "words": 582,
+      "numCtx": 8192,
+      "think": false,
+      "ttftSeconds": 0.35,
+      "firstTokenSeconds": 0.35,
+      "totalSeconds": 3.34,
+      "loadSeconds": 0.0,
+      "promptTokens": 965,
+      "promptTokensPerSecond": 2923.5,
+      "outputTokens": 332,
+      "tokensPerSecond": 110.7,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.4,
+      "gpuGb": 21.4,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 72.3,
+        "maxWatts": 72.3,
+        "maxMemoryUsedGb": 78.6,
+        "maxRunnerGb": 23.4,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "12a07ef6ad3c",
+      "scores": {
+        "words": 264,
+        "quotes": 4,
+        "quotesGrounded": 4
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 4,
+        "restraint": 4,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-harbor-explore",
+      "task": "conversation",
+      "split": "holdout",
+      "length": "scene",
+      "words": 582,
+      "numCtx": 8192,
+      "think": false,
+      "ttftSeconds": 0.34,
+      "firstTokenSeconds": 0.34,
+      "totalSeconds": 5.15,
+      "loadSeconds": 0.0,
+      "promptTokens": 964,
+      "promptTokensPerSecond": 2886.8,
+      "outputTokens": 526,
+      "tokensPerSecond": 109.3,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.4,
+      "gpuGb": 21.4,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 76.2,
+        "maxWatts": 80.2,
+        "maxMemoryUsedGb": 78.6,
+        "maxRunnerGb": 23.4,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "c7aa82efd98c",
+      "scores": {
+        "words": 424,
+        "quotes": 7,
+        "quotesGrounded": 5
+      },
+      "judge": {
+        "usefulness": 5,
+        "grounding": 5,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-harbor-improve",
+      "task": "conversation",
+      "split": "tune",
+      "length": "scene",
+      "words": 582,
+      "numCtx": 8192,
+      "think": false,
+      "ttftSeconds": 0.34,
+      "firstTokenSeconds": 0.34,
+      "totalSeconds": 3.76,
+      "loadSeconds": 0.0,
+      "promptTokens": 969,
+      "promptTokensPerSecond": 2896.4,
+      "outputTokens": 373,
+      "tokensPerSecond": 109.1,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.4,
+      "gpuGb": 21.4,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 80.2,
+        "maxWatts": 80.2,
+        "maxMemoryUsedGb": 78.6,
+        "maxRunnerGb": 23.4,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "b0b180e43b64",
+      "scores": {
+        "words": 271,
+        "quotes": 9,
+        "quotesGrounded": 6
+      },
+      "judge": {
+        "usefulness": 5,
+        "grounding": 4,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "review-corran",
+      "task": "review",
+      "split": "holdout",
+      "length": "scene",
+      "words": 469,
+      "numCtx": 8192,
+      "think": false,
+      "ttftSeconds": 0.34,
+      "firstTokenSeconds": 0.34,
+      "totalSeconds": 5.74,
+      "loadSeconds": 0.0,
+      "promptTokens": 939,
+      "promptTokensPerSecond": 2923.9,
+      "outputTokens": 588,
+      "tokensPerSecond": 108.8,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.4,
+      "gpuGb": 21.4,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 80.2,
+        "maxWatts": 80.2,
+        "maxMemoryUsedGb": 78.6,
+        "maxRunnerGb": 23.5,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "aabb6f8a892b",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 4,
+        "byKind": {
+          "suggestion": 1,
+          "question": 1,
+          "disconnect": 2
+        },
+        "anchors": 7,
+        "anchorsResolved": 7,
+        "findingsFullyAnchored": 4,
+        "planted": {
+          "lise-age": false
+        },
+        "falseAlarms": {}
+      },
+      "judge": {
+        "usefulness": 2,
+        "grounding": 2,
+        "restraint": 2,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    },
+    {
+      "case": "review-ferry-chapter-1",
+      "task": "review",
+      "split": "holdout",
+      "length": "chapter",
+      "words": 589,
+      "numCtx": 8192,
+      "think": false,
+      "ttftSeconds": 0.44,
+      "firstTokenSeconds": 0.44,
+      "totalSeconds": 4.55,
+      "loadSeconds": 0.0,
+      "promptTokens": 1125,
+      "promptTokensPerSecond": 2650.7,
+      "outputTokens": 448,
+      "tokensPerSecond": 109.2,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.4,
+      "gpuGb": 21.4,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 80.2,
+        "maxWatts": 80.2,
+        "maxMemoryUsedGb": 78.6,
+        "maxRunnerGb": 23.7,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "bc2199f57cad",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 3,
+        "byKind": {
+          "suggestion": 1,
+          "question": 1,
+          "disconnect": 1
+        },
+        "anchors": 5,
+        "anchorsResolved": 5,
+        "findingsFullyAnchored": 3,
+        "planted": {
+          "purple-lake": true
+        },
+        "falseAlarms": {
+          "disconnect": 1
+        }
+      },
+      "judge": {
+        "usefulness": 2,
+        "grounding": 2,
+        "restraint": 2,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 8192,
+      "think": false,
+      "ttftSeconds": 0.69,
+      "firstTokenSeconds": 0.69,
+      "totalSeconds": 8.2,
+      "loadSeconds": 0.0,
+      "promptTokens": 1906,
+      "promptTokensPerSecond": 2794.0,
+      "outputTokens": 804,
+      "tokensPerSecond": 107.1,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.4,
+      "gpuGb": 21.4,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 80.2,
+        "maxWatts": 80.2,
+        "maxMemoryUsedGb": 78.6,
+        "maxRunnerGb": 23.8,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "ba235935404e",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 5,
+        "byKind": {
+          "suggestion": 2,
+          "question": 1,
+          "disconnect": 2
+        },
+        "anchors": 8,
+        "anchorsResolved": 7,
+        "findingsFullyAnchored": 4,
+        "planted": {
+          "mara-left": false,
+          "dawn-afternoon": false,
+          "purple-lake": true,
+          "brass-key": false
+        },
+        "falseAlarms": {}
+      },
+      "judge": {
+        "usefulness": 2,
+        "grounding": 2,
+        "restraint": 2,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    },
+    {
+      "case": "review-grafting-coherent",
+      "task": "review",
+      "split": "tune",
+      "length": "scene",
+      "words": 533,
+      "numCtx": 8192,
+      "think": false,
+      "ttftSeconds": 0.34,
+      "firstTokenSeconds": 0.34,
+      "totalSeconds": 3.92,
+      "loadSeconds": 0.0,
+      "promptTokens": 1007,
+      "promptTokensPerSecond": 3206.3,
+      "outputTokens": 386,
+      "tokensPerSecond": 107.7,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.4,
+      "gpuGb": 21.4,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 80.2,
+        "maxWatts": 80.2,
+        "maxMemoryUsedGb": 78.6,
+        "maxRunnerGb": 24.0,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "5d0b11974a24",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 3,
+        "byKind": {
+          "suggestion": 1,
+          "question": 1,
+          "disconnect": 1
+        },
+        "anchors": 5,
+        "anchorsResolved": 5,
+        "findingsFullyAnchored": 3,
+        "planted": {},
+        "falseAlarms": {
+          "disconnect": 1
+        }
+      },
+      "judge": {
+        "usefulness": 2,
+        "grounding": 2,
+        "restraint": 2,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    },
+    {
+      "case": "review-harbor",
+      "task": "review",
+      "split": "tune",
+      "length": "scene",
+      "words": 582,
+      "numCtx": 8192,
+      "think": false,
+      "ttftSeconds": 0.35,
+      "firstTokenSeconds": 0.35,
+      "totalSeconds": 5.23,
+      "loadSeconds": 0.0,
+      "promptTokens": 1094,
+      "promptTokensPerSecond": 3281.0,
+      "outputTokens": 523,
+      "tokensPerSecond": 107.4,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.4,
+      "gpuGb": 21.4,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 80.2,
+        "maxWatts": 80.2,
+        "maxMemoryUsedGb": 78.7,
+        "maxRunnerGb": 24.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "f2dbe671b97b",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 3,
+        "byKind": {
+          "suggestion": 1,
+          "question": 1,
+          "disconnect": 1
+        },
+        "anchors": 6,
+        "anchorsResolved": 6,
+        "findingsFullyAnchored": 3,
+        "planted": {
+          "weak-paragraph": true,
+          "unopened-letter": false
+        },
+        "falseAlarms": {
+          "disconnect": 1
+        }
+      },
+      "judge": {
+        "usefulness": 3,
+        "grounding": 3,
+        "restraint": 2,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    },
+    {
+      "case": "conv-saltworks-develop",
+      "task": "conversation",
+      "split": "tune",
+      "length": "manuscript",
+      "words": 18826,
+      "numCtx": 32768,
+      "think": false,
+      "ttftSeconds": 14.9,
+      "firstTokenSeconds": 14.9,
+      "totalSeconds": 20.77,
+      "loadSeconds": 4.27,
+      "promptTokens": 25449,
+      "promptTokensPerSecond": 2407.8,
+      "outputTokens": 578,
+      "tokensPerSecond": 98.6,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 21.9,
+      "gpuGb": 21.9,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 80.1,
+        "maxWatts": 80.2,
+        "maxMemoryUsedGb": 78.7,
+        "maxRunnerGb": 24.3,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "3bc41124ab90",
+      "scores": {
+        "words": 446,
+        "quotes": 8,
+        "quotesGrounded": 5
+      },
+      "judge": {
+        "usefulness": 3,
+        "grounding": 3,
+        "restraint": 4,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "review-saltworks",
+      "task": "review",
+      "split": "tune",
+      "length": "manuscript",
+      "words": 18826,
+      "numCtx": 65536,
+      "think": false,
+      "ttftSeconds": 15.84,
+      "firstTokenSeconds": 15.84,
+      "totalSeconds": 25.05,
+      "loadSeconds": 4.45,
+      "promptTokens": 25578,
+      "promptTokensPerSecond": 2264.3,
+      "outputTokens": 820,
+      "tokensPerSecond": 89.1,
+      "thinkingWords": 0,
+      "doneReason": "stop",
+      "modelGb": 22.9,
+      "gpuGb": 22.9,
+      "loadedModels": [
+        "qwen3.6:35b-a3b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 60.3,
+        "maxWatts": 80.2,
+        "maxMemoryUsedGb": 79.4,
+        "maxRunnerGb": 24.5,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "f5addf8f766e",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 6,
+        "byKind": {
+          "suggestion": 2,
+          "question": 1,
+          "disconnect": 3
+        },
+        "anchors": 10,
+        "anchorsResolved": 9,
+        "findingsFullyAnchored": 5,
+        "planted": {
+          "mill-status": false
+        },
+        "falseAlarms": {}
+      },
+      "judge": {
+        "usefulness": 3,
+        "grounding": 3,
+        "restraint": 3,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    }
+  ],
+  "finished": "2026-11-23T02:19:47Z"
+}

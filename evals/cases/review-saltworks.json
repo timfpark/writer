@@ -1,0 +1,24 @@
+{
+  "id": "review-saltworks",
+  "task": "review",
+  "split": "tune",
+  "length": "manuscript",
+  "documents": [
+    "saltworks"
+  ],
+  "expected": [
+    {
+      "id": "mill-status",
+      "kind": "disconnect",
+      "passages": [
+        "The stone grain mill at Skerry Head stood abandoned, its great wooden wheel still and rotted",
+        "The stone grain mill stood there, a squat, white-washed tower",
+        "Every autumn since 1890 it had ground the island's oats",
+        "roofless since the fire of 1931",
+        "mill has been broken for twenty years"
+      ],
+      "note": "Whether the Skerry Head mill works: abandoned in chapter 1, standing and grinding in chapter 2, broken for twenty years later, and a roofless shell since 1931 in chapter 7."
+    }
+  ],
+  "note": "Chapters drafted by a local model from a written outline. The draft already contradicted itself about the mill; the 1890 and 1931 sentences were planted by hand to sharpen that thread. The draft holds other unplanned inconsistencies, such as the supply boat's name, which are not scored automatically."
+}

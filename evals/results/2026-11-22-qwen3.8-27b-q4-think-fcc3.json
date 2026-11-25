@@ -1,0 +1,408 @@
+{
+  "schema": 1,
+  "kind": "run",
+  "id": "2026-11-22-qwen3.8-27b-q4-think-fcc3",
+  "started": "2026-11-23T03:13:22Z",
+  "machine": {
+    "chip": "Apple M5 Max",
+    "model": "Mac17,7",
+    "memoryGb": 128,
+    "os": "macOS 26.7.3"
+  },
+  "runtime": {
+    "name": "ollama",
+    "version": "0.40.17"
+  },
+  "harness": {
+    "commit": "093fd9cb8a95-dirty",
+    "digest": "7246137bd313"
+  },
+  "cases": {
+    "digest": "b166187b5981",
+    "scoredWith": "784897864cf7"
+  },
+  "prompts": {
+    "conversation": "48035782578d",
+    "judge-conversation": "2cc3856f20cd",
+    "judge-review": "09533d3d3e7f",
+    "review": "1edf7c91d081"
+  },
+  "config": {
+    "name": "qwen3.8-27b-q4-think",
+    "model": {
+      "name": "qwen3.8:27b-q4_K_M",
+      "digest": "25b843619e944cd0ae6069f94ff4e5e26a16e109ccbc0a66a0f05979ed70098e",
+      "family": "qwen35",
+      "parameter_size": "27.3B",
+      "quantization": "Q4_K_M",
+      "format": "gguf",
+      "runner": "",
+      "context_length": 262144,
+      "license_head": "Apache License Version 2.0, January 2004 http://www.apache.org/licenses/ TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION 1. Definitions. \"License\" ",
+      "thinking": [
+        false,
+        "low",
+        "medium",
+        "xhigh"
+      ],
+      "sampling": "top_k 20 top_p 0.95 min_p 0 presence_penalty 0 repeat_penalty 1 temperature 1"
+    },
+    "hypothesis": "Thinking on for structural review and continuity",
+    "conversation": {
+      "think": "lowest",
+      "options": {
+        "seed": 39,
+        "num_predict": 2000
+      }
+    },
+    "review": {
+      "think": "highest",
+      "options": {
+        "seed": 39,
+        "num_predict": 12000
+      }
+    }
+  },
+  "coldLoadSeconds": 3.04,
+  "items": [
+    {
+      "case": "review-corran",
+      "task": "review",
+      "split": "holdout",
+      "length": "scene",
+      "words": 469,
+      "numCtx": 16384,
+      "think": "xhigh",
+      "ttftSeconds": 480.1,
+      "firstTokenSeconds": 1.59,
+      "totalSeconds": 507.76,
+      "loadSeconds": 0.0,
+      "promptTokens": 975,
+      "promptTokensPerSecond": 619.0,
+      "outputTokens": 8806,
+      "tokensPerSecond": 17.4,
+      "thinkingWords": 5954,
+      "doneReason": "stop",
+      "modelGb": 15.5,
+      "gpuGb": 15.5,
+      "loadedModels": [
+        "qwen3.8:27b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 56.5,
+        "maxWatts": 64.5,
+        "maxMemoryUsedGb": 68.4,
+        "maxRunnerGb": 17.8,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "431bc3264a52",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 3,
+        "byKind": {
+          "suggestion": 1,
+          "question": 1,
+          "disconnect": 1
+        },
+        "anchors": 7,
+        "anchorsResolved": 7,
+        "findingsFullyAnchored": 3,
+        "planted": {
+          "lise-age": true
+        },
+        "falseAlarms": {}
+      },
+      "judge": {
+        "usefulness": 3,
+        "grounding": 5,
+        "restraint": 4,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    },
+    {
+      "case": "review-ferry-chapter-1",
+      "task": "review",
+      "split": "holdout",
+      "length": "chapter",
+      "words": 589,
+      "numCtx": 16384,
+      "think": "xhigh",
+      "ttftSeconds": 234.68,
+      "firstTokenSeconds": 3.11,
+      "totalSeconds": 249.94,
+      "loadSeconds": 0.0,
+      "promptTokens": 1161,
+      "promptTokensPerSecond": 383.2,
+      "outputTokens": 4398,
+      "tokensPerSecond": 17.8,
+      "thinkingWords": 2843,
+      "doneReason": "stop",
+      "modelGb": 15.5,
+      "gpuGb": 15.5,
+      "loadedModels": [
+        "qwen3.8:27b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 60.1,
+        "maxWatts": 64.1,
+        "maxMemoryUsedGb": 60.0,
+        "maxRunnerGb": 18.9,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "2b681ebd925e",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 2,
+        "byKind": {
+          "suggestion": 1,
+          "question": 1,
+          "disconnect": 0
+        },
+        "anchors": 3,
+        "anchorsResolved": 3,
+        "findingsFullyAnchored": 2,
+        "planted": {
+          "purple-lake": true
+        },
+        "falseAlarms": {
+          "disconnect": 0
+        }
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 5,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    },
+    {
+      "case": "review-ferry-chapters",
+      "task": "review",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "numCtx": 16384,
+      "think": "xhigh",
+      "ttftSeconds": null,
+      "firstTokenSeconds": 4.58,
+      "totalSeconds": 707.16,
+      "loadSeconds": 0.0,
+      "promptTokens": 1942,
+      "promptTokensPerSecond": 429.1,
+      "outputTokens": 12000,
+      "tokensPerSecond": 17.1,
+      "thinkingWords": 8361,
+      "doneReason": "length",
+      "modelGb": 15.5,
+      "gpuGb": 15.5,
+      "loadedModels": [
+        "qwen3.8:27b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 58.0,
+        "maxWatts": 67.2,
+        "maxMemoryUsedGb": 61.7,
+        "maxRunnerGb": 19.6,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "e3b0c44298fc",
+      "scores": {
+        "valid": false,
+        "error": "not JSON: Expecting value",
+        "findings": 0,
+        "planted": {
+          "mara-left": false,
+          "dawn-afternoon": false,
+          "purple-lake": false,
+          "brass-key": false
+        }
+      },
+      "judge": {
+        "usefulness": 1,
+        "grounding": 5,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    },
+    {
+      "case": "review-grafting-coherent",
+      "task": "review",
+      "split": "tune",
+      "length": "scene",
+      "words": 533,
+      "numCtx": 16384,
+      "think": "xhigh",
+      "ttftSeconds": 376.79,
+      "firstTokenSeconds": 2.57,
+      "totalSeconds": 409.26,
+      "loadSeconds": 0.0,
+      "promptTokens": 1043,
+      "promptTokensPerSecond": 418.6,
+      "outputTokens": 7139,
+      "tokensPerSecond": 17.6,
+      "thinkingWords": 4618,
+      "doneReason": "stop",
+      "modelGb": 15.5,
+      "gpuGb": 15.5,
+      "loadedModels": [
+        "qwen3.8:27b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 59.4,
+        "maxWatts": 67.2,
+        "maxMemoryUsedGb": 62.5,
+        "maxRunnerGb": 20.9,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "451c5afda9a2",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 5,
+        "byKind": {
+          "suggestion": 3,
+          "question": 2,
+          "disconnect": 0
+        },
+        "anchors": 5,
+        "anchorsResolved": 5,
+        "findingsFullyAnchored": 5,
+        "planted": {},
+        "falseAlarms": {
+          "disconnect": 0
+        }
+      },
+      "judge": {
+        "usefulness": 2,
+        "grounding": 3,
+        "restraint": 2,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    },
+    {
+      "case": "review-harbor",
+      "task": "review",
+      "split": "tune",
+      "length": "scene",
+      "words": 582,
+      "numCtx": 16384,
+      "think": "xhigh",
+      "ttftSeconds": 366.94,
+      "firstTokenSeconds": 2.73,
+      "totalSeconds": 397.14,
+      "loadSeconds": 0.0,
+      "promptTokens": 1130,
+      "promptTokensPerSecond": 425.1,
+      "outputTokens": 7013,
+      "tokensPerSecond": 17.8,
+      "thinkingWords": 4496,
+      "doneReason": "stop",
+      "modelGb": 15.5,
+      "gpuGb": 15.5,
+      "loadedModels": [
+        "qwen3.8:27b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 58.3,
+        "maxWatts": 65.4,
+        "maxMemoryUsedGb": 63.5,
+        "maxRunnerGb": 21.9,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "e3aa1659cc98",
+      "scores": {
+        "valid": true,
+        "strayText": false,
+        "findings": 3,
+        "byKind": {
+          "suggestion": 1,
+          "question": 2,
+          "disconnect": 0
+        },
+        "anchors": 6,
+        "anchorsResolved": 6,
+        "findingsFullyAnchored": 3,
+        "planted": {
+          "weak-paragraph": true,
+          "unopened-letter": true
+        },
+        "falseAlarms": {
+          "disconnect": 0
+        }
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 5,
+        "restraint": 4,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    },
+    {
+      "case": "review-saltworks",
+      "task": "review",
+      "split": "tune",
+      "length": "manuscript",
+      "words": 18826,
+      "numCtx": 65536,
+      "think": "xhigh",
+      "ttftSeconds": null,
+      "firstTokenSeconds": 65.84,
+      "totalSeconds": 836.06,
+      "loadSeconds": 1.66,
+      "promptTokens": 25614,
+      "promptTokensPerSecond": 399.7,
+      "outputTokens": 12000,
+      "tokensPerSecond": 15.6,
+      "thinkingWords": 7703,
+      "doneReason": "length",
+      "modelGb": 19.0,
+      "gpuGb": 19.0,
+      "loadedModels": [
+        "qwen3.8:27b-q4_K_M"
+      ],
+      "resources": {
+        "meanWatts": 57.9,
+        "maxWatts": 61.3,
+        "maxMemoryUsedGb": 63.3,
+        "maxRunnerGb": 21.9,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "e3b0c44298fc",
+      "scores": {
+        "valid": false,
+        "error": "not JSON: Expecting value",
+        "findings": 0,
+        "planted": {
+          "mill-status": false
+        }
+      },
+      "judge": {
+        "usefulness": 1,
+        "grounding": 1,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "09533d3d3e7f"
+      }
+    }
+  ],
+  "finished": "2026-11-23T04:05:13Z"
+}

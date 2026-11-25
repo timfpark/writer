@@ -25,6 +25,8 @@ Writer ships its first pair writer on those local models alone, through
 [backlog 36](./0036-background-findings-view.md). This decision waits until
 writers have used it, so the case for a cloud model rests on the gaps they
 felt rather than on gaps assumed in advance.
+[Backlog 43](./0043-cloud-model-evals.md) has by then measured inexpensive and
+frontier cloud models on the same cases, with their price per task.
 
 A cloud fallback changes the promise the
 [experience ADR](./0038-pair-writing-experience-adr.md) makes that text never
@@ -38,22 +40,21 @@ network dependency to the service the
   recorded gaps and from use of the delivered conversation and background
   review, and decide whether any justify a cloud model. If none do, record
   that and close the decision.
-* Add a cloud provider adapter to the `evals/` harness the model ADR
-  creates, with placeholders only in its `.env.example`. Score at least one
-  leading cloud model against the chosen local models on the same cases,
-  blind where practical, for each mode and kind of finding, and commit the
-  result summaries.
+* Weigh backlog 43's measurements of cloud models against the chosen local
+  models, and rerun them if prices or models have changed since.
 * Decide which journeys, modes, and kinds of finding may use a cloud model,
   and what writers on machines below the model ADR's smallest machine get.
 * Decide how the writer is told and asked before any text leaves their
   machine, what they can withdraw, and what the default is.
-* Record each cloud provider's terms for data retention, training on
-  submitted text, and use by Writer.
+* Confirm each chosen provider's terms for data retention, training on
+  submitted text, and use by Writer, starting from those backlog 43 records.
 * Set targets for cloud cost and latency, and how the service stays within
   them.
-* Decide how cloud credentials reach the service at run time with
-  placeholders only in `service/.env.example`, and confirm `tools/check`
-  needs no credentials or network access to model providers.
+* Decide how the service reaches cloud models through the
+  [proxy ADR](./0044-cloud-model-proxy-adr.md)'s local proxy, so the
+  service never holds cloud credentials, and how it behaves when the proxy
+  is not running. Confirm `tools/check` needs no credentials or network
+  access to model providers.
 * Amend the experience and agent ADRs where the fallback changes them, and
   add the delivery stories that build it to the backlog.
 * Commit no credentials, and quote only synthetic text in the ADR.
@@ -63,15 +64,16 @@ network dependency to the service the
 ## Acceptance criteria
 
 * [ ] The ADR is accepted and listed in the ADR index.
-* [ ] The ADR records the local shortfalls it weighed and the blind
+* [ ] The ADR records the local shortfalls it weighed and cites backlog 43's
   comparison, and either chooses no cloud model or names the cloud models
   and the journeys that may use them.
 * [ ] If a cloud model is chosen, the ADR defines the writer's consent, the
-  provider terms, the cost targets, and how credentials reach the service,
+  provider terms, the cost targets, and how the service reaches the proxy,
   and the backlog lists the stories that build it.
 * [ ] `tools/check` exits 0.
 
 ## Prerequisites
 
+* [Measure cloud models for pair writing](./0043-cloud-model-evals.md)
 * [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)
 * [Show background findings in the webapp](./0036-background-findings-view.md)

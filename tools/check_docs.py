@@ -17,15 +17,16 @@ from urllib.parse import unquote
 
 REQUIRED_KEYS = ("title", "description")
 INDEXED_DIRS = ("docs/adrs", "docs/backlog")
-ALLOWED_SUBSYSTEMS = ("repository", "service", "webapp")
+ALLOWED_SUBSYSTEMS = ("repository", "service", "webapp", "evals")
 NUMBERED_DOC = re.compile(r"^\d{4}-[a-z0-9-]+\.md$")
 SKIP_DIRS = {".git", "node_modules", "target", "dist", ".local", "test-results"}
 # GitHub copies these files verbatim into new pull request bodies, so they
 # carry no frontmatter. Their links are still checked.
 NO_FRONTMATTER = {".github/pull_request_template.md"}
-# Markdown test data for the editor's round trip, kept byte for byte as other
-# tools write it, so it is neither documentation nor checked as such.
-FIXTURE_DIRS = ("webapp/src/editor/markdown/corpus/",)
+# Markdown test data, neither documentation nor checked as such: the editor's
+# round-trip corpus, kept byte for byte as other tools write it, and the
+# synthetic manuscripts the evaluation cases read, written as Writer stores them.
+FIXTURE_DIRS = ("webapp/src/editor/markdown/corpus/", "evals/cases/documents/")
 
 FENCE = re.compile(r"^\s{0,3}(```|~~~)")
 INLINE_CODE = re.compile(r"(`+).*?\1")

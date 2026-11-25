@@ -1,0 +1,10 @@
+{
+  "id": "conv-harbor-improve",
+  "task": "conversation",
+  "split": "tune",
+  "length": "scene",
+  "documents": [
+    "harbor-light"
+  ],
+  "request": "improve"
+}

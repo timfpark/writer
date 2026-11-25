@@ -1,0 +1,11 @@
+{
+  "id": "conv-saltworks-develop",
+  "task": "conversation",
+  "split": "tune",
+  "length": "manuscript",
+  "documents": [
+    "saltworks"
+  ],
+  "request": "develop",
+  "note": "Chapters drafted by a local model from a written outline; the mill disconnect was planted by hand."
+}
