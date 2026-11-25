@@ -17,11 +17,35 @@ import {
 //   notes (document)
 // epilogue (document)
 const items: WorkspaceItem[] = [
-  { id: "part", kind: "folder", parentId: null, title: "Part" },
-  { id: "scene", kind: "folder", parentId: "part", title: "Scene" },
-  { id: "draft", kind: "document", parentId: "scene", title: "Draft" },
-  { id: "notes", kind: "document", parentId: "part", title: "Notes" },
-  { id: "epilogue", kind: "document", parentId: null, title: "Epilogue" },
+  { id: "part", kind: "folder", parentId: null, title: "Part", language: null },
+  {
+    id: "scene",
+    kind: "folder",
+    parentId: "part",
+    title: "Scene",
+    language: null,
+  },
+  {
+    id: "draft",
+    kind: "document",
+    parentId: "scene",
+    title: "Draft",
+    language: "en",
+  },
+  {
+    id: "notes",
+    kind: "document",
+    parentId: "part",
+    title: "Notes",
+    language: "en",
+  },
+  {
+    id: "epilogue",
+    kind: "document",
+    parentId: null,
+    title: "Epilogue",
+    language: "en",
+  },
 ];
 
 const ids = (list: WorkspaceItem[]) => list.map((item) => item.id);
@@ -84,6 +108,23 @@ describe("applyChange", () => {
     const renamed = applyChange(items, rename);
     expect(renamed.find((item) => item.id === "notes")?.title).toBe("Renamed");
     expect(applyChange(renamed, rename)).toBe(renamed);
+    const setLanguage = {
+      type: "setLanguage",
+      kind: "document",
+      id: "notes",
+      language: "es",
+    } as const;
+    const switched = applyChange(items, setLanguage);
+    expect(switched.find((item) => item.id === "notes")?.language).toBe("es");
+    expect(applyChange(switched, setLanguage)).toBe(switched);
+    expect(
+      applyChange(items, {
+        type: "setLanguage",
+        kind: "document",
+        id: "part",
+        language: "es",
+      }),
+    ).toBe(items);
     const remove = { type: "delete", kind: "folder", id: "part" } as const;
     const removed = applyChange(items, remove);
     expect(applyChange(removed, remove)).toBe(removed);
@@ -135,6 +176,7 @@ describe("applyChange", () => {
       kind: "folder",
       parentId: "scene",
       title: "Named",
+      language: null,
     });
   });
 });

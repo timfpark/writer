@@ -3,3 +3,4 @@
 import process from "node:process";
 
 export const inCI = Boolean(process.env.CI);
+export const throttle = Number(process.env.THROTTLE ?? (inCI ? 1 : 4));

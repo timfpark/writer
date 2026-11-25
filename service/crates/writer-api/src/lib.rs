@@ -67,6 +67,7 @@ fn v1() -> OpenApiRouter<Store> {
             .layer(DefaultBodyLimit::max(CONTENT_BODY_LIMIT)),
         )
         .routes(routes!(documents::replace_document_title))
+        .routes(routes!(documents::replace_document_language))
         .routes(routes!(documents::replace_document_position))
 }
 

@@ -1,15 +1,16 @@
 use crate::{
-    Conflict, DomainError, ItemId, ItemKind, MAX_DEPTH, MAX_ITEMS, NewItem, Placement, Title,
-    Violation, WorkspaceItem,
+    Conflict, DomainError, ItemId, ItemKind, Language, MAX_DEPTH, MAX_ITEMS, NewItem, Placement,
+    Title, Violation, WorkspaceItem,
 };
 
 /// An item in a [`Tree`], carrying backend data `T` such as its name on disk.
-/// A document's `children` is always empty.
+/// A document's `children` is always empty, and its `language` is `Some`.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Node<T> {
     pub id: ItemId,
     pub kind: ItemKind,
     pub title: Title,
+    pub language: Option<Language>,
     pub data: T,
     pub children: Vec<Node<T>>,
 }
@@ -20,9 +21,17 @@ impl<T> Node<T> {
             id,
             kind,
             title,
+            language: (kind == ItemKind::Document).then(Language::default),
             data,
             children: Vec::new(),
         }
+    }
+
+    pub fn with_language(mut self, language: Language) -> Self {
+        if self.kind == ItemKind::Document {
+            self.language = Some(language);
+        }
+        self
     }
 
     /// The node and its descendants.
@@ -328,6 +337,7 @@ impl<T> Tree<T> {
                     kind: node.kind,
                     parent_id: parent_id.cloned(),
                     title: node.title.clone(),
+                    language: node.language,
                 });
                 walk(&node.children, Some(&node.id), items);
             }

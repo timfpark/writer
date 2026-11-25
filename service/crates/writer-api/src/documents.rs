@@ -5,7 +5,9 @@ use axum::http::StatusCode;
 use axum::response::Response;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
-use writer_domain::{self as domain, Item, ItemId, Markdown, NewItem, Revision, Title, Violation};
+use writer_domain::{
+    self as domain, Item, ItemId, Language, Markdown, NewItem, Revision, Title, Violation,
+};
 use writer_storage::Created;
 
 use crate::extract::{Json, Path};
@@ -24,6 +26,8 @@ pub struct Document {
     #[schema(required = true)]
     pub parent_id: Option<String>,
     pub title: String,
+    /// The document's BCP 47 language tag (`en` or `es`).
+    pub language: String,
     /// An opaque token that changes whenever the content changes; compare
     /// it only for equality.
     pub revision: String,
@@ -35,6 +39,7 @@ impl From<domain::Document> for Document {
             id: document.id.to_string(),
             parent_id: document.parent_id.map(|id| id.to_string()),
             title: document.title.into_string(),
+            language: document.language.as_str().to_owned(),
             revision: document.revision.as_str().to_owned(),
         }
     }
@@ -82,6 +87,18 @@ pub(crate) struct CreateDocumentRequest {
     #[serde(default)]
     #[schema(nullable = false)]
     pub markdown: Option<String>,
+    /// The document's BCP 47 language tag (`en` or `es`); `en` when omitted.
+    #[serde(default)]
+    #[schema(nullable = false)]
+    pub language: Option<String>,
+}
+
+/// A new language for a document.
+#[derive(Debug, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct ReplaceLanguageRequest {
+    /// A supported BCP 47 language tag (`en` or `es`).
+    pub language: String,
 }
 
 /// A whole new content for a document, checked against the revision the
@@ -138,11 +155,15 @@ pub(crate) async fn create_document(
         .map_err(|_| Violation::Identifier(domain::ItemKind::Document));
     let title = Title::parse(body.title);
     let markdown = Markdown::parse(body.markdown.unwrap_or_default());
-    let (id, title, markdown) = match (id, title, markdown) {
-        (Ok(id), Ok(title), Ok(markdown)) => (id, title, markdown),
-        (id, title, markdown) => {
+    let language = match body.language.as_deref() {
+        Some(tag) => Language::parse(tag),
+        None => Ok(Language::default()),
+    };
+    let (id, title, markdown, language) = match (id, title, markdown, language) {
+        (Ok(id), Ok(title), Ok(markdown), Ok(language)) => (id, title, markdown, language),
+        (id, title, markdown, language) => {
             return Err(Problem::violations(
-                [id.err(), title.err(), markdown.err()]
+                [id.err(), title.err(), markdown.err(), language.err()]
                     .into_iter()
                     .flatten(),
             ));
@@ -152,7 +173,7 @@ pub(crate) async fn create_document(
     let created = match placement(body.parent_id, body.before_id) {
         Some(placement) => {
             store
-                .create(NewItem::document(id, title, placement, markdown))
+                .create(NewItem::document(id, title, placement, markdown, language))
                 .await?
         }
         None => Created::Existing(replayed(&store, id, ItemKind::Document).await?),
@@ -310,6 +331,43 @@ pub(crate) async fn replace_document_title(
 ) -> Result<Json<Document>, Problem> {
     let item = rename(&store, &document_id, ItemKind::Document, body).await?;
     Ok(Json(item.try_into()?))
+}
+
+/// Change a document's language without changing its content or revision.
+#[utoipa::path(
+    put,
+    path = "/documents/{documentId}/language",
+    operation_id = "replaceDocumentLanguage",
+    tag = "documents",
+    params(("documentId" = String, Path, description = "The document's identifier.")),
+    request_body = ReplaceLanguageRequest,
+    responses(
+        (status = 200, description = "The document with its updated language.", body = Document),
+        (
+            status = 404,
+            description = "No document has the identifier.",
+            body = Problem,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = 500,
+            description = "The service failed unexpectedly.",
+            body = Problem,
+            content_type = "application/problem+json"
+        ),
+        BodyProblems,
+    )
+)]
+pub(crate) async fn replace_document_language(
+    State(store): State<Store>,
+    Path(document_id): Path<String>,
+    Json(body): Json<ReplaceLanguageRequest>,
+) -> Result<Json<Document>, Problem> {
+    let id = path_id(&document_id)?;
+    let language =
+        Language::parse(&body.language).map_err(|violation| Problem::violations([violation]))?;
+    let document = store.replace_language(id, language).await?;
+    Ok(Json(document.into()))
 }
 
 /// Move or reorder a document.

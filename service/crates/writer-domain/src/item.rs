@@ -1,4 +1,4 @@
-use crate::{ItemId, Markdown, Revision, Title};
+use crate::{ItemId, Language, Markdown, Revision, Title};
 
 /// Whether an item is a folder, which contains items, or a document, which
 /// holds content.
@@ -15,6 +15,7 @@ pub struct WorkspaceItem {
     pub kind: ItemKind,
     pub parent_id: Option<ItemId>,
     pub title: Title,
+    pub language: Option<Language>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -29,6 +30,7 @@ pub struct Document {
     pub id: ItemId,
     pub parent_id: Option<ItemId>,
     pub title: Title,
+    pub language: Language,
     pub revision: Revision,
 }
 
@@ -68,6 +70,14 @@ impl Item {
         }
     }
 
+    /// The language of a document, or `None` for a folder.
+    pub fn language(&self) -> Option<Language> {
+        match self {
+            Self::Folder(_) => None,
+            Self::Document(document) => Some(document.language),
+        }
+    }
+
     /// The revision of a document, or `None` for a folder.
     pub fn revision(&self) -> Option<&Revision> {
         match self {
@@ -100,6 +110,7 @@ pub struct NewItem {
     title: Title,
     placement: Placement,
     markdown: Markdown,
+    language: Language,
 }
 
 impl NewItem {
@@ -110,16 +121,24 @@ impl NewItem {
             title,
             placement,
             markdown: Markdown::default(),
+            language: Language::default(),
         }
     }
 
-    pub fn document(id: ItemId, title: Title, placement: Placement, markdown: Markdown) -> Self {
+    pub fn document(
+        id: ItemId,
+        title: Title,
+        placement: Placement,
+        markdown: Markdown,
+        language: Language,
+    ) -> Self {
         Self {
             id,
             kind: ItemKind::Document,
             title,
             placement,
             markdown,
+            language,
         }
     }
 
@@ -142,5 +161,10 @@ impl NewItem {
     /// A new document's initial content; always empty for a folder.
     pub fn markdown(&self) -> &Markdown {
         &self.markdown
+    }
+
+    /// A new document's language; unused for a folder.
+    pub fn language(&self) -> Language {
+        self.language
     }
 }

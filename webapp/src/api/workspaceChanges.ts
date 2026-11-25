@@ -39,16 +39,14 @@ async function perform(change: TreeChange): Promise<Folder | Document | null> {
         }),
       );
     }
-    const body =
-      change.markdown === undefined
-        ? { documentId: id, parentId, beforeId, title }
-        : {
-            documentId: id,
-            parentId,
-            beforeId,
-            title,
-            markdown: change.markdown,
-          };
+    const body = {
+      documentId: id,
+      parentId,
+      beforeId,
+      title,
+      ...(change.markdown === undefined ? {} : { markdown: change.markdown }),
+      ...(change.language === undefined ? {} : { language: change.language }),
+    };
     return read(client.POST("/api/v1/documents", { body }));
   }
   if (change.type === "rename") {
@@ -65,6 +63,14 @@ async function perform(change: TreeChange): Promise<Folder | Document | null> {
       client.PUT("/api/v1/documents/{documentId}/title", {
         params: { path: { documentId: id } },
         body,
+      }),
+    );
+  }
+  if (change.type === "setLanguage") {
+    return read(
+      client.PUT("/api/v1/documents/{documentId}/language", {
+        params: { path: { documentId: id } },
+        body: { language: change.language },
       }),
     );
   }

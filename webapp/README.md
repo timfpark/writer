@@ -41,6 +41,7 @@ browser tests in [ADR 0009](../docs/adrs/0009-browser-tests.md).
 | [src/saving/](./src/saving/)                                 | Autosave, retries, conflict recovery, and unsaved text in IndexedDB         |
 | [src/styles/](./src/styles/)                                 | Design tokens for both themes, global styles, and the token contrast test   |
 | [src/api/client.ts](./src/api/client.ts)                     | The only module that calls the service, through openapi-fetch               |
+| [src/api/languages.ts](./src/api/languages.ts)               | Supported document languages (`en`, `es`) and their own names               |
 | [src/api/queries.ts](./src/api/queries.ts)                   | The query client, retry policy, and query options components read through   |
 | [src/api/workspaceChanges.ts](./src/api/workspaceChanges.ts) | Tree changes queued in order, and the tree with pending changes applied     |
 | [src/api/workspaceTree.ts](./src/api/workspaceTree.ts)       | Pure functions that apply tree changes and nest the pre-order item list     |
@@ -154,18 +155,19 @@ Markdown outside the
 table or front matter, shows as source in a dashed frame and is saved exactly
 as it was.
 
-| Control                         | Effect                                                             |
-|---------------------------------|--------------------------------------------------------------------|
-| The title in the header         | Edits it in place; `Enter` or leaving the field renames            |
-| `Enter`                         | Starts a new line in a paragraph; twice, starts a new paragraph    |
-| `Shift+Enter`                   | Starts a new line anywhere but a heading, including in a list item |
-| `ArrowLeft` and `ArrowRight`    | Step across a shown marker, one side at a time                     |
-| `Backspace` or `Delete`         | Into a shown marker, removes that formatting and keeps the text    |
-| `Mod+S`                         | Saves at once instead of opening the browser's save dialog         |
-| `Mod+K`                         | Adds, changes, or removes the link at the caret or selection       |
-| `Mod+B`, `Mod+I`, and `Mod+E`   | Strong emphasis, emphasis, and code                                |
-| `Mod+Z`, `Mod+Shift+Z`, `Mod+Y` | Undo and redo, kept per open document until it closes              |
-| `Tab` and `Shift+Tab`           | Nest and unnest a list item; elsewhere, move focus out             |
+| Control                           | Effect                                                                    |
+|-----------------------------------|---------------------------------------------------------------------------|
+| The title in the header           | Edits it in place; `Enter` or leaving the field renames                   |
+| The language picker in the header | Sets the document's language (`en` or `es`) on the surface and in storage |
+| `Enter`                           | Starts a new line in a paragraph; twice, starts a new paragraph           |
+| `Shift+Enter`                     | Starts a new line anywhere but a heading, including in a list item        |
+| `ArrowLeft` and `ArrowRight`      | Step across a shown marker, one side at a time                            |
+| `Backspace` or `Delete`           | Into a shown marker, removes that formatting and keeps the text           |
+| `Mod+S`                           | Saves at once instead of opening the browser's save dialog                |
+| `Mod+K`                           | Adds, changes, or removes the link at the caret or selection              |
+| `Mod+B`, `Mod+I`, and `Mod+E`     | Strong emphasis, emphasis, and code                                       |
+| `Mod+Z`, `Mod+Shift+Z`, `Mod+Y`   | Undo and redo, kept per open document until it closes                     |
+| `Tab` and `Shift+Tab`             | Nest and unnest a list item; elsewhere, move focus out                    |
 
 Every change saves itself a second after typing pauses, and at least every
 five seconds while it continues, and again on leaving the document, leaving

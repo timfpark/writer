@@ -2,7 +2,7 @@
 title: "ADR 0006: Storage interface, filesystem backend, and SQL path"
 description: Defines the asynchronous storage interface and the conformance suite every backend passes, specifies the filesystem backend that mirrors the workspace as directories and Markdown files with one workspace index, and sets the SQLx path to SQLite and PostgreSQL, configuration, the data location, and test isolation
 author: Tim Park
-ms.date: 2026-11-20
+ms.date: 2026-11-25
 ms.topic: reference
 status: Accepted
 subsystems:
@@ -36,6 +36,14 @@ file or directory, to a new UUID name in `.writer/trash/`. The conformance
 module also compiles for `writer-storage`'s own tests, which run it against
 the filesystem backend.
 
+Amended on 2026-11-25 to store each document's `language` from
+[ADR 0005](./0005-workspace-model.md#language). `WorkspaceStore` adds
+`replace_language`, and document entries in `.writer/workspace.json` record
+`"language"` while staying on format 1 so indexes written before this change
+load with the default `en`. Documents created outside Writer and adopted by
+reconciliation also get `en`, and changing a document's language rewrites only
+`.writer/workspace.json`, leaving the `.md` file untouched.
+
 ## Decision summary
 
 * Define the storage interface as `WorkspaceStore`, an object-safe async
@@ -49,10 +57,10 @@ the filesystem backend.
   backend.
 * The filesystem backend mirrors the tree under `<data>/workspace/` as
   directories and `.md` files that hold exactly each document's content. One
-  index, `.writer/workspace.json`, holds identifiers, exact titles, sibling
-  order, and on-disk names. Names come from titles through a portable mapping
-  and collide case- and normalization-insensitively, resolved with numbered
-  suffixes such as `Notes (2).md`.
+  index, `.writer/workspace.json`, holds identifiers, exact titles, document
+  languages, sibling order, and on-disk names. Names come from titles through
+  a portable mapping and collide case- and normalization-insensitively,
+  resolved with numbered suffixes such as `Notes (2).md`.
 * Write every file through a temporary file in `.writer/tmp/`, `sync_all`,
   `rename`, and a directory sync. A structural change makes exactly one
   rename, its commit point, recorded in the index before it runs and rolled
@@ -297,6 +305,7 @@ pub trait WorkspaceStore: Send + Sync {
     fn rename(&self, id: ItemId, kind: ItemKind, title: Title) -> StoreFuture<'_, Item>;
     fn place(&self, id: ItemId, kind: ItemKind, to: Placement) -> StoreFuture<'_, Item>;
     fn replace_content(&self, id: ItemId, markdown: Markdown, base: Revision) -> StoreFuture<'_, Document>;
+    fn replace_language(&self, id: ItemId, language: Language) -> StoreFuture<'_, Document>;
     fn delete(&self, id: ItemId, kind: ItemKind) -> StoreFuture<'_, ()>;
 }
 ```
@@ -359,7 +368,10 @@ The cases cover ADR 0005 through the interface:
 * Deleting a document, deleting a folder with its whole subtree, and deleting
   an item that does not exist
 * Reopening a store from the same location and finding the same tree, order,
-  titles, content, and revisions
+  titles, languages, content, and revisions
+* Setting and updating a document's language, defaulting to `en`, leaving
+  content and revision unchanged, surviving rename, move, and reopen, and
+  returning `NotFound` for missing items or folders
 * Domain checks reaching the store: one case per kind of check, using the
   depth limit for limits, while `writer-domain`'s own tests cover each limit
   exhaustively without storage
@@ -419,10 +431,11 @@ because advisory file locks are unreliable on network file systems.
 
 #### Workspace index
 
-`.writer/workspace.json` is the source of truth for identity, titles, and
-order; the files are the source of truth for content and existence. It
-nests items as the tree does, each parent's `items` in sibling order, and
-stores each entry's name on disk beside its exact title:
+`.writer/workspace.json` is the source of truth for identity, titles,
+document languages, and order; the files are the source of truth for content
+and existence. It nests items as the tree does, each parent's `items` in
+sibling order, and stores each entry's name on disk beside its exact title
+and, for documents, its BCP 47 `language` tag:
 
 ```json
 {
@@ -438,7 +451,8 @@ stores each entry's name on disk beside its exact title:
           "id": "c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a",
           "kind": "document",
           "title": "Chapter one",
-          "name": "Chapter one.md"
+          "name": "Chapter one.md",
+          "language": "en"
         },
         {
           "id": "8a41d7e2-2c90-4f6b-b1a3-5d6e7f809a1b",
@@ -453,7 +467,8 @@ stores each entry's name on disk beside its exact title:
       "id": "5b9d1f3e-7a2c-4c6e-8b0a-2d4f6e8a0c1b",
       "kind": "document",
       "title": "Notes",
-      "name": "Notes.md"
+      "name": "Notes.md",
+      "language": "es"
     }
   ],
   "pending": null
@@ -465,13 +480,17 @@ stores each entry's name on disk beside its exact title:
 * The index is pretty-printed so a writer can read it, and is rewritten whole
   through the atomic write below. At the 10,000 item limit it is a few
   megabytes. Saving content never rewrites it.
-* `format` versions the file. On opening, an older format is migrated
-  forward, and a newer format, an unreadable file, or invalid JSON stops the
-  service with a log line naming the file. The service never overwrites an
-  index it cannot read; a writer can move it aside to rebuild one.
+* `format` stays at `1`: `"language"` is optional when reading a document
+  entry and defaults to `en` when omitted, so an index written before
+  document language existed still loads unchanged. An unsupported language
+  tag, or a `"language"` field on a folder entry, makes the index invalid.
+* On opening, an older format is migrated forward, and a newer format, an
+  unreadable file, or invalid JSON stops the service with a log line naming
+  the file. The service never overwrites an index it cannot read; a writer
+  can move it aside to rebuild one.
 * A missing index is rebuilt from the directories, as reconciliation below
   adopts new entries, so deleting `.writer/` loses identifiers, exact titles,
-  and order, but no content.
+  document languages, and order, but no content.
 
 #### Names on disk
 
@@ -553,9 +572,9 @@ only metadata:
 * An index entry with no matching directory entry of its kind was removed
   outside Writer, and the backend drops it with its subtree.
 * A directory entry with no index entry was added outside Writer. The backend
-  assigns it a version 4 UUID, derives its title from its name, and appends
-  it to its parent's items after existing ones, new entries sorted by name
-  in code point order.
+  assigns it a version 4 UUID, derives its title from its name, assigns the
+  default language `en` when it is a document, and appends it to its parent's
+  items after existing ones, new entries sorted by name in code point order.
 * A title derived from a name drops the `.md` extension, replaces control
   characters and line or paragraph separators with spaces, truncates to 200
   characters, trims surrounding whitespace, and becomes `Untitled` if
@@ -608,13 +627,14 @@ The index and the files can still disagree after a crash, because a
 structural change touches both. Each structural change is therefore at most
 one rename on disk, recorded in the index before it happens:
 
-| Change                  | Rename on disk                                                    |
-|-------------------------|-------------------------------------------------------------------|
-| Create a document       | A temporary file holding its content to its final path            |
-| Create a folder         | An empty directory made in `.writer/tmp/` to its final path       |
-| Rename or move an item  | Its current path to its new path; a directory carries its subtree |
-| Delete an item          | Its path to a new UUID name in `.writer/trash/`                   |
-| Reorder within a parent | None; only the index changes                                      |
+| Change                       | Rename on disk                                                    |
+|------------------------------|-------------------------------------------------------------------|
+| Create a document            | A temporary file holding its content to its final path            |
+| Create a folder              | An empty directory made in `.writer/tmp/` to its final path       |
+| Rename or move an item       | Its current path to its new path; a directory carries its subtree |
+| Delete an item               | Its path to a new UUID name in `.writer/trash/`                   |
+| Reorder within a parent      | None; only the index changes                                      |
+| Change a document's language | None; only the index changes                                      |
 
 That rename is the change's commit point. The backend validates the change
 with `writer-domain` against the reconciled tree, prepares any temporary
@@ -753,13 +773,13 @@ The SQLite and PostgreSQL backends are not built yet. When they are:
   explains. On PostgreSQL, SQLx holds an advisory lock while migrating, so
   services starting together do not race.
 * The schema starts from an `items` table holding identifier, kind, parent,
-  position, and title, with foreign keys that cascade a folder's deletion,
-  and a `contents` table holding each document's Markdown and revision. The
-  backend renumbers sibling positions in the same transaction as a create or
-  move. A save, inside its serialized transaction, returns the current
-  revision when the submitted content equals the stored content, and
-  otherwise runs an `UPDATE` conditioned on the base revision, so the whole
-  stale-write rule holds.
+  position, title, and nullable document language, with foreign keys that
+  cascade a folder's deletion, and a `contents` table holding each document's
+  Markdown and revision. The backend renumbers sibling positions in the same
+  transaction as a create or move. A save, inside its serialized transaction,
+  returns the current revision when the submitted content equals the stored
+  content, and otherwise runs an `UPDATE` conditioned on the base revision,
+  so the whole stale-write rule holds.
 * SQLite runs in WAL mode with `synchronous = FULL` and foreign keys on, and
   every write runs in a `BEGIN IMMEDIATE` transaction, which serializes
   writers. Each PostgreSQL write transaction first locks a single `workspace`

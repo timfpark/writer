@@ -8,11 +8,13 @@ import {
   Tooltip,
   TooltipTrigger,
 } from "react-aria-components";
+import { defaultLanguage } from "../api/languages";
 import { documentQueryOptions } from "../api/queries";
 import { useWorkspaceChange, useWorkspaceTree } from "../api/workspaceChanges";
 import { useSaveStatus } from "../saving/saveManager";
 import controls from "./controls.module.css";
 import styles from "./Header.module.css";
+import { LanguagePicker } from "./LanguagePicker";
 import { paneId } from "./Pane";
 import { ProfileMenu } from "./ProfileMenu";
 import { SaveIndicator } from "./SaveIndicator";
@@ -72,9 +74,9 @@ function DocumentTitle() {
   const { documentId } = useParams({ strict: false });
   const document = useQuery(documentQueryOptions(documentId ?? ""));
   const { items } = useWorkspaceTree();
-  const title =
-    items?.find((item) => item.id === documentId)?.title ??
-    document.data?.title;
+  const item = items?.find((candidate) => candidate.id === documentId);
+  const title = item?.title ?? document.data?.title;
+  const language = item?.language ?? document.data?.language ?? defaultLanguage;
   if (!documentId || title === undefined) {
     return (
       <div className={styles.center}>
@@ -89,10 +91,16 @@ function DocumentTitle() {
   return (
     <div className={styles.center}>
       <div className={styles.lead}>
-        <TitleField key={documentId} documentId={documentId} title={title} />
+        <TitleField
+          key={documentId}
+          documentId={documentId}
+          title={title}
+          language={language}
+        />
         <div className={styles.status}>
           <DocumentSaveIndicator documentId={documentId} />
         </div>
+        <LanguagePicker documentId={documentId} language={language} />
       </div>
     </div>
   );
@@ -107,9 +115,11 @@ function DocumentSaveIndicator({ documentId }: { documentId: string }) {
 function TitleField({
   documentId,
   title,
+  language,
 }: {
   documentId: string;
   title: string;
+  language: string;
 }) {
   const [editing, setEditing] = useState(false);
   const change = useWorkspaceChange();
@@ -162,11 +172,16 @@ function TitleField({
       <span id={`${titleId}-hint`} hidden>
         Rename
       </span>
-      <h1 id={titleId} className={`${styles.title} ${styles.editable}`}>
+      <h1
+        id={titleId}
+        lang={language}
+        className={`${styles.title} ${styles.editable}`}
+      >
         {editing ? (
           <input
             ref={inputRef}
             className={styles.titleInput}
+            lang={language}
             defaultValue={title}
             aria-label="Document title"
             spellCheck={false}

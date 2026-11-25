@@ -7,7 +7,7 @@ use std::io;
 use std::path::Path;
 
 use serde::{Deserialize, Serialize};
-use writer_domain::{ItemId, ItemKind, MAX_DEPTH, MAX_ITEMS, Node, Title, Tree};
+use writer_domain::{ItemId, ItemKind, Language, MAX_DEPTH, MAX_ITEMS, Node, Title, Tree};
 
 use super::disk::{self, Disk, FileIdentity};
 use super::names;
@@ -33,6 +33,8 @@ pub(crate) struct Entry {
     kind: Kind,
     title: String,
     name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    language: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     items: Option<Vec<Entry>>,
 }
@@ -139,6 +141,7 @@ pub(crate) fn entry(node: &Node<String>) -> Entry {
         },
         title: node.title.as_str().to_owned(),
         name: node.data.clone(),
+        language: node.language.map(|language| language.as_str().to_owned()),
         items: (node.kind == ItemKind::Folder).then(|| entries(&node.children)),
     }
 }
@@ -178,6 +181,14 @@ fn nodes(
             && !entry.name.starts_with('.')
             && (kind == ItemKind::Folder || names::is_markdown(&entry.name));
         let valid_items = (kind == ItemKind::Folder) == entry.items.is_some();
+        let language = match (kind, entry.language.as_deref()) {
+            (ItemKind::Folder, None) => None,
+            (ItemKind::Folder, Some(_)) => return Err(LoadError::Invalid),
+            (ItemKind::Document, None) => Some(Language::default()),
+            (ItemKind::Document, Some(tag)) => {
+                Some(Language::parse(tag).map_err(|_| LoadError::Invalid)?)
+            }
+        };
         if !valid_name || !valid_items || !seen.insert(id.clone()) {
             return Err(LoadError::Invalid);
         }
@@ -187,6 +198,7 @@ fn nodes(
         }
         *budget -= 1;
         let mut node = Node::new(id, kind, title, entry.name);
+        node.language = language;
         node.children = nodes(
             entry.items.unwrap_or_default(),
             depth + 1,

@@ -1,4 +1,5 @@
 import type { Document, DocumentContent } from "../api/client";
+import { defaultLanguage } from "../api/languages";
 import { ServiceError } from "../api/queries";
 import type { UnsavedTextStore } from "./unsavedText";
 
@@ -24,6 +25,7 @@ export interface SaveStatus {
 export interface DocumentPlace {
   title: string;
   parentId: string | null;
+  language?: string;
   // The sibling after it, or null when it is last.
   nextId: string | null;
   // Whether the parent folder still exists.
@@ -36,6 +38,7 @@ export interface CreateRequest {
   beforeId: string | null;
   title: string;
   markdown: string;
+  language?: string;
 }
 
 export interface SaverDeps {
@@ -74,6 +77,7 @@ export interface SaverInit {
   pending: string | null;
   title: string;
   parentId: string | null;
+  language?: string;
 }
 
 const copySuffix = " (saved elsewhere)";
@@ -114,6 +118,7 @@ export class DocumentSaver {
   private pending: string | null;
   private title: string;
   private parentId: string | null;
+  private language: string;
   private source: (() => string) | null = null;
   private dirty = false;
   private inFlight = false;
@@ -142,6 +147,7 @@ export class DocumentSaver {
       init.pending === init.acknowledged ? null : (init.pending ?? null);
     this.title = init.title;
     this.parentId = init.parentId;
+    this.language = init.language ?? defaultLanguage;
     this.deps = deps;
     this.update();
   }
@@ -293,6 +299,7 @@ export class DocumentSaver {
       markdown,
       title: this.title,
       parentId: this.parentId,
+      language: this.language,
       updatedAt: Date.now(),
     });
   }
@@ -302,6 +309,7 @@ export class DocumentSaver {
     if (place) {
       this.title = place.title;
       this.parentId = place.parentId;
+      if (place.language) this.language = place.language;
     }
     return place;
   }
@@ -437,6 +445,7 @@ export class DocumentSaver {
           beforeId: place?.nextId ?? null,
           title: copyTitle(place?.title ?? this.title),
           markdown: stored.markdown,
+          language: place?.language ?? this.language,
         };
         try {
           await this.deps.create(copy);
@@ -513,6 +522,7 @@ export class DocumentSaver {
         beforeId: null,
         title: this.title,
         markdown: sent,
+        language: this.language,
       });
     } catch (error) {
       this.recovering = false;

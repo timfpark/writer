@@ -14,8 +14,8 @@ use std::future::Future;
 use std::pin::Pin;
 
 use writer_domain::{
-    Document, DocumentContent, Item, ItemId, ItemKind, Markdown, NewItem, Placement, Revision,
-    Title, WorkspaceItem,
+    Document, DocumentContent, Item, ItemId, ItemKind, Language, Markdown, NewItem, Placement,
+    Revision, Title, WorkspaceItem,
 };
 
 pub use error::{Cause, InternalError, Operation, StoreError, Unreadable};
@@ -83,6 +83,10 @@ pub trait WorkspaceStore: Send + Sync {
         markdown: Markdown,
         base: Revision,
     ) -> StoreFuture<'_, Document>;
+
+    /// Changes a document's language, leaving its content and revision
+    /// unchanged.
+    fn replace_language(&self, id: ItemId, language: Language) -> StoreFuture<'_, Document>;
 
     /// Permanently deletes an item with its subtree.
     fn delete(&self, id: ItemId, kind: ItemKind) -> StoreFuture<'_, ()>;

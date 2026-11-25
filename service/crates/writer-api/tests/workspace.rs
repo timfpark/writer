@@ -221,6 +221,7 @@ fn item(id: &str, kind: ItemKind, parent: Option<&str>, title: &str) -> Workspac
         kind,
         parent_id: parent.map(str::to_owned),
         title: title.to_owned(),
+        language: (kind == ItemKind::Document).then(|| "en".to_owned()),
     }
 }
 
@@ -811,4 +812,116 @@ async fn unreadable_content_is_an_internal_error_that_echoes_nothing() {
 
     // The store logged the failure by identifier, so the capture works.
     assert!(logs().contains(&id(1)), "no log line names the document");
+}
+
+#[tokio::test]
+async fn documents_carry_and_update_their_language_without_changing_markdown() {
+    let api = Api::open().await;
+    api.create_folder(&id(1), None, "Relatos").await;
+    let spanish = format!("¿Dónde está el faro? ¡Qué niebla sobre la ría! {MARKER}\n");
+
+    // Creating a document without `language` defaults to English (`en`).
+    let default_doc = api.create_document(&id(2), None, "Harbor", "Dawn.\n").await;
+    assert_eq!(default_doc.language, "en");
+
+    // Creating a document with `language: "es"` stores Spanish.
+    let body = json!({
+        "documentId": id(3),
+        "parentId": id(1),
+        "beforeId": null,
+        "title": "Capítulo primero",
+        "markdown": spanish,
+        "language": "es",
+    });
+    let created: Document = api
+        .send(Method::POST, "/api/v1/documents", body)
+        .await
+        .json(StatusCode::CREATED);
+    assert_eq!(created.language, "es");
+
+    // Changing a document's language updates metadata without touching content
+    // or revision, and survives rename and move.
+    let lang_uri = format!("/api/v1/documents/{}/language", id(2));
+    let updated: Document = api
+        .send(Method::PUT, &lang_uri, json!({"language": "es"}))
+        .await
+        .json(StatusCode::OK);
+    assert_eq!(updated.language, "es");
+    assert_eq!(updated.revision, default_doc.revision);
+    assert_eq!(api.content(&id(2)).await.markdown, "Dawn.\n");
+
+    let renamed: Document = api
+        .send(
+            Method::PUT,
+            &format!("/api/v1/documents/{}/title", id(2)),
+            json!({"title": "¿Quién llama?"}),
+        )
+        .await
+        .json(StatusCode::OK);
+    assert_eq!(renamed.language, "es");
+
+    let moved: Document = api
+        .send(
+            Method::PUT,
+            &format!("/api/v1/documents/{}/position", id(2)),
+            json!({"parentId": id(1), "beforeId": id(3)}),
+        )
+        .await
+        .json(StatusCode::OK);
+    assert_eq!(moved.language, "es");
+
+    // The workspace tree reports each document's language and null for folders.
+    let tree: Vec<_> = api
+        .workspace()
+        .await
+        .into_iter()
+        .map(|entry| (entry.id, entry.language))
+        .collect();
+    assert_eq!(
+        tree,
+        vec![
+            (id(1), None),
+            (id(2), Some("es".to_owned())),
+            (id(3), Some("es".to_owned())),
+        ]
+    );
+
+    // Unsupported tags, missing fields, unknown fields, and folder/missing IDs
+    // fail with the documented problems without echoing the marker.
+    for invalid in [MARKER, "fr", "EN", "es-MX", ""] {
+        let reply = api
+            .send(Method::PUT, &lang_uri, json!({"language": invalid}))
+            .await;
+        assert_eq!(reply.field_errors(), ["/language"]);
+    }
+    let bad_create = json!({
+        "documentId": id(4),
+        "parentId": null,
+        "beforeId": null,
+        "title": "Invalid language",
+        "language": MARKER,
+    });
+    assert_eq!(
+        api.send(Method::POST, "/api/v1/documents", bad_create)
+            .await
+            .field_errors(),
+        ["/language"]
+    );
+    let reply = api
+        .send(
+            Method::PUT,
+            &lang_uri,
+            json!({"language": "en", "extra": MARKER}),
+        )
+        .await;
+    assert_eq!(reply.field_errors(), [""]);
+    for missing in [id(1), id(9), MARKER.to_owned()] {
+        api.send(
+            Method::PUT,
+            &format!("/api/v1/documents/{missing}/language"),
+            json!({"language": "en"}),
+        )
+        .await
+        .problem(ProblemCode::NotFound);
+    }
 }

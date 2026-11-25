@@ -107,3 +107,35 @@ impl Revision {
         &self.0
     }
 }
+
+/// A document's BCP 47 language tag, limited to the languages Writer supports.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+pub enum Language {
+    #[default]
+    En,
+    Es,
+}
+
+impl Language {
+    /// Accepts only the supported BCP 47 language tags: `en` and `es`.
+    pub fn parse(value: &str) -> Result<Self, Violation> {
+        match value {
+            "en" => Ok(Self::En),
+            "es" => Ok(Self::Es),
+            _ => Err(Violation::Language),
+        }
+    }
+
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::En => "en",
+            Self::Es => "es",
+        }
+    }
+}
+
+impl fmt::Display for Language {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}

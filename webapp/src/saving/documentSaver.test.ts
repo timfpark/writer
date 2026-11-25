@@ -20,7 +20,7 @@ function problem(status: number, code: Problem["code"]): ServiceError {
 }
 
 // A synthetic service holding one document's content and revisions.
-function harness(initial = "Rain on the harbor.\n") {
+function harness(initial = "Rain on the harbor.\n", language = "en") {
   let stored = initial;
   let revision = 1;
   const responses: (Error | null)[] = [];
@@ -47,6 +47,7 @@ function harness(initial = "Rain on the harbor.\n") {
         id: documentId,
         parentId: null,
         title: "Harbor",
+        language,
         revision: `r${revision}`,
       };
       return Promise.resolve(document);
@@ -66,12 +67,14 @@ function harness(initial = "Rain on the harbor.\n") {
         id: request.id,
         parentId: request.parentId,
         title: request.title,
+        language: request.language ?? "en",
         revision: "copy",
       });
     },
     place: () => ({
       title: "Harbor",
       parentId: "folder",
+      language,
       nextId: "next",
       parentExists: true,
     }),
@@ -91,6 +94,7 @@ function harness(initial = "Rain on the harbor.\n") {
       pending: null,
       title: "Harbor",
       parentId: "folder",
+      language,
     },
     deps,
   );
@@ -216,9 +220,9 @@ describe("DocumentSaver", () => {
   });
 
   it("keeps both versions after a conflict", async () => {
-    const h = harness();
-    h.editOutside("Written in another editor.\n");
-    h.type("Written in Writer.\n");
+    const h = harness("Lluvia sobre el puerto.\n", "es");
+    h.editOutside("Escrito en otro editor.\n");
+    h.type("Escrito en Writer.\n");
     h.saver.flush();
     await vi.advanceTimersByTimeAsync(0);
     expect(h.creates).toEqual([
@@ -226,10 +230,11 @@ describe("DocumentSaver", () => {
         parentId: "folder",
         beforeId: "next",
         title: "Harbor (saved elsewhere)",
-        markdown: "Written in another editor.\n",
+        markdown: "Escrito en otro editor.\n",
+        language: "es",
       }),
     ]);
-    expect(h.stored).toBe("Written in Writer.\n");
+    expect(h.stored).toBe("Escrito en Writer.\n");
     expect(h.saver.status.state).toBe("saved");
     expect(h.notices).toHaveLength(1);
   });
@@ -262,19 +267,20 @@ describe("DocumentSaver", () => {
   });
 
   it("recreates a document deleted elsewhere", async () => {
-    const h = harness();
+    const h = harness("Lluvia sobre el puerto.\n", "es");
     h.responses.push(problem(404, "notFound"));
-    h.type("Kept after deletion.\n");
+    h.type("Conservado tras borrar.\n");
     h.saver.flush();
     await vi.advanceTimersByTimeAsync(0);
     expect(h.creates).toEqual([
       expect.objectContaining({
         parentId: "folder",
         title: "Harbor",
-        markdown: "Kept after deletion.\n",
+        markdown: "Conservado tras borrar.\n",
+        language: "es",
       }),
     ]);
-    expect(h.replaced).toEqual(["Kept after deletion.\n"]);
+    expect(h.replaced).toEqual(["Conservado tras borrar.\n"]);
   });
 
   it("does not retry rejected content until it changes", async () => {

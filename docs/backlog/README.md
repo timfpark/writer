@@ -66,8 +66,7 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | 29 | [Record and restore commits in the service](./0029-service-history.md)                        | `service`                        | The contract records commits, reads earlier versions, and restores them.                     | 27                 |
 | 30 | [Browse, compare, and restore history in the webapp](./0030-history-view.md)                  | `webapp`                         | Writers commit, browse history, compare versions, and roll back.                             | 29                 |
 | 31 | [Show writing progress over time](./0031-writing-progress.md)                                 | `service`, `webapp`              | Writers see words added and removed per document and folder over time.                       | 29, 30             |
-| 41 | [Set the language of a document](./0041-document-language.md)                                 | `service`, `webapp`              | Writers pick each document's language, stored in the workspace and set on the editor.        | None               |
-| 42 | [Measure the pair writer in Spanish](./0042-spanish-pair-writing-evals.md)                    | `evals`, `service`               | Spanish cases measure the local models, and the model ADR names Spanish models.              | 41                 |
+| 42 | [Measure the pair writer in Spanish](./0042-spanish-pair-writing-evals.md)                    | `evals`, `service`               | Spanish cases measure the local models, and the model ADR names Spanish models.              | None               |
 
 [ADR 0002](../adrs/0002-service-architecture.md),
 [ADR 0003](../adrs/0003-webapp-architecture.md), and
@@ -159,8 +158,8 @@ format, item 28 precedes item 29. The service records and restores commits
 (29), the webapp browses, compares, and restores them (30), and progress
 views measure what changed over time (31).
 
-Writing in Spanish follows. Item 41 stores each document's language in the
-workspace, adds a picker, and marks the writing surface so spellcheck and
+Writing in Spanish follows. Item 41 stored each document's language in the
+workspace, added a picker, and marked the writing surface so spellcheck and
 hyphenation follow it. Item 42 then measures the local models on Spanish
 cases with the `evals/` harness, scored by a fluent reader, so the pair
 writer answers Spanish documents on a model chosen for them. Translating
