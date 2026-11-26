@@ -2,7 +2,7 @@
 title: Architecture Decision Records
 description: Index of architectural decisions for the Writer service and its clients
 author: Tim Park
-ms.date: 2026-11-20
+ms.date: 2026-11-25
 ms.topic: reference
 keywords:
   - adr
@@ -44,3 +44,4 @@ name it in a Governing decisions section, as
 | [0008](./0008-editor.md)               | Editor, Markdown subset, round trip, and autosave timing         | `webapp`                                   | Tiptap 3 on ProseMirror, micromark bridge, raw source for other Markdown, byte-exact saves, 1 s and 5 s autosave, `Enter` line breaks, markers at the caret. | Accepted |
 | [0009](./0009-browser-tests.md)        | Browser end-to-end and accessibility tests                       | `webapp`, `repository`                     | Playwright and axe-core in `webapp/e2e/` on three engines and iPad WebKit, real service, `browser` gate phase.                                               | Accepted |
 | [0010](./0010-pair-writing-models.md)  | Local models for pair writing                                    | `service`, `evals`, `repository`           | Gemma 4 31B MLX for conversation and Muse Glimmer MLX for review on Ollama, smaller tiers, committed `evals/`.                                               | Accepted |
+| [0011](./0011-background-agents-ux.md) | Background agents and their user experience                      | `service`, `webapp`                        | Fifteen fiction-first agents, subtle underlines, 3-tab assistant with expandable reference, N-level recaps, quietness gates, pause, and battery policy.      | Accepted |

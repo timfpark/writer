@@ -17,13 +17,14 @@ machine can do well reach the backlog's delivery stories.
 
 ## Context
 
-The [background agents ADR](./0047-background-agents-ux-adr.md) decides which
-agents ship in the first wave, their shapes, triggers, and order.
+[ADR 0011](../adrs/0011-background-agents-ux.md) picks the fifteen Wave 1
+shipping agents (deferring anachronisms and the five nonfiction agents),
+their shapes, triggers, structural quietness gates, and ranked order.
 [ADR 0010](../adrs/0010-pair-writing-models.md) measured only suggestions,
-questions, and disconnects. [Backlog 56](./0056-story-bible-continuity-test.md)
-tests the story bible and continuity chain, and this story builds on its
+questions, and disconnects. [Backlog 56](./0056-story-notes-continuity-test.md)
+tests the story notes and continuity chain, and this story builds on its
 cases, scoring, and prompts. The `evals/` harness scores findings against
-planted issues; living artifacts, such as a story bible or a timeline, need
+planted issues; living artifacts, such as story notes or a timeline, need
 scoring against expected content, which backlog 56 adds.
 
 This story measures feasibility with a first prompt per agent. Each
@@ -65,5 +66,4 @@ at the time.
 
 ## Prerequisites
 
-* [Record the background agents UX ADR](./0047-background-agents-ux-adr.md)
-* [Test a story bible for continuity checking](./0056-story-bible-continuity-test.md)
+* [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)

@@ -36,26 +36,25 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                                     | Subsystems                       | Outcome                                                                                      | Prerequisite       |
 |----|-----------------------------------------------------------------------------------------------|----------------------------------|----------------------------------------------------------------------------------------------|--------------------|
-| 47 | [Record the background agents UX ADR](./0047-background-agents-ux-adr.md)                     | `service`, `webapp`              | An accepted ADR picks the first background agents and their UX, all on from the start.       | None               |
 | 46 | [Tune the conversation prompt with the evaluation harness](./0046-prompt-tuning-evals.md)     | `evals`                          | Swept variants pick the conversation prompt, and the harness can sweep any prompt.           | None               |
-| 56 | [Test a story bible for continuity checking](./0056-story-bible-continuity-test.md)           | `evals`                          | Local models are measured on checking continuity against an extracted story bible.           | None               |
+| 56 | [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)             | `evals`                          | Local models are measured on checking continuity against extracted story notes.              | None               |
 | 44 | [Record the cloud model proxy ADR](./0044-cloud-model-proxy-adr.md)                           | `repository`, `evals`, `service` | An accepted ADR picks a local proxy to Azure AI Foundry with keyless auth and spending caps. | None               |
 | 45 | [Run the cloud model proxy with a first set of Foundry models](./0045-cloud-model-proxy.md)   | `repository`, `evals`            | The proxy runs with cheap and frontier Foundry models, and the harness calls it.             | 44                 |
-| 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)               | `service`, `webapp`              | An accepted ADR fixes the writer's experience of the agent, tested end to end.               | 46, 47             |
+| 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)               | `service`, `webapp`              | An accepted ADR fixes the writer's experience of the agent, tested end to end.               | 46                 |
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)            | `service`, `webapp`              | An accepted ADR fixes where the agent runs, how agents chain, and how it is built.           | 38, 56             |
 | 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                       | `service`, `webapp`              | An accepted ADR fixes how conversations and living artifacts are stored and audited.         | 10, 38             |
 | 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md)      | `service`                        | The service answers the writer about the open document, backed by prompts and evals.         | 10, 37, 46         |
 | 34 | [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)               | `webapp`                         | The assistant pane streams the pair writer's answers about the open document.                | 12                 |
 | 57 | [Choose the model for each mode in settings](./0057-model-settings.md)                        | `service`, `webapp`              | Writers switch the model behind each mode at run time from the models Ollama has pulled.     | 34                 |
-| 48 | [Measure the background agents with the evaluation harness](./0048-background-agent-evals.md) | `evals`                          | Each first-wave background agent is measured on local models with a first prompt.            | 47, 56             |
+| 48 | [Measure the background agents with the evaluation harness](./0048-background-agent-evals.md) | `evals`                          | Each first-wave background agent is measured on local models with a first prompt.            | 56                 |
 | 35 | [Review documents in the background in the service](./0035-service-background-review.md)      | `service`, `evals`               | The service returns the first background agents' findings, with tuned prompts.               | 12, 48             |
 | 36 | [Show background findings in the webapp](./0036-background-findings-view.md)                  | `webapp`                         | Findings appear beside the text while writing, linked to their passages.                     | 34, 35             |
 | 59 | [Measure battery drain and host typing during review](./0059-battery-and-typing-check.md)     | `evals`, `webapp`                | ADR 0010 records unplugged battery drain and host-browser typing during review.              | None               |
-| 49 | [Keep a story bible and check continuity](./0049-story-bible-continuity.md)                   | `service`, `webapp`, `evals`     | A story bible and timeline stay current, and contradictions are flagged against them.        | 35, 36             |
+| 49 | [Keep story notes and check continuity](./0049-story-notes-continuity.md)                     | `service`, `webapp`, `evals`     | Story notes and a timeline stay current, and contradictions are flagged against them.        | 35, 36             |
 | 50 | [Track open threads and keep a reverse outline](./0050-threads-and-outline.md)                | `service`, `webapp`, `evals`     | Writers see what each scene does and which setups have no payoff.                            | 49                 |
-| 51 | [Review finished chapters](./0051-chapter-review.md)                                          | `service`, `webapp`, `evals`     | Settled chapters get pacing, voice, reader, and anachronism reviews.                         | 35, 36             |
+| 51 | [Review finished chapters](./0051-chapter-review.md)                                          | `service`, `webapp`, `evals`     | Settled chapters get pacing, voice, and first-reader reviews from story notes and outline.   | 49, 50             |
 | 53 | [Check the writer's own rules](./0053-writer-rules.md)                                        | `service`, `webapp`, `evals`     | Writers set style rules, and background review flags text that breaks them.                  | 35, 36             |
-| 52 | [Recap the last session when Writer opens](./0052-session-recap.md)                           | `service`, `webapp`, `evals`     | Returning writers see where they left off and a suggested next step.                         | 34, 35             |
+| 52 | [Recap the last session when Writer opens](./0052-session-recap.md)                           | `service`, `webapp`, `evals`     | Returning writers get workspace, folder, and document recaps with a suggested next step.     | 34, 35             |
 | 54 | [Turn background agents on and off across the workspace tree](./0054-agent-settings-tree.md)  | `service`, `webapp`              | Writers turn agents on or off for folders and documents, inherited down the tree.            | 49, 50, 51, 52, 53 |
 | 58 | [Check technical nonfiction](./0058-nonfiction-agents.md)                                     | `service`, `webapp`, `evals`     | Technical books get terminology, concept order, code, and cross-reference checks.            | 54                 |
 | 55 | [Compare models while writing](./0055-compare-models-in-use.md)                               | `service`, `webapp`, `evals`     | Writers trial new models side by side on their own work and adopt the better one.            | 36, 57             |
@@ -108,19 +107,23 @@ top-level `evals/` subsystem;
 [ADR 0010](../adrs/0010-pair-writing-models.md) records the models it chose
 and the gaps it found, chiefly disconnects across passages.
 
-Three items start in parallel. Item 47 decides which background agents the
-first wave runs, from a story bible and continuity checks to prose and
-structure checks and session recaps, how each appears, and whether the
-writer can pause them; the first wave serves fiction. Item 46 tunes the
-conversation prompt and teaches the harness to sweep prompts. Item 56 tests
-whether checking continuity against a story bible, extracted chapter by
-chapter, closes the disconnect gap, because the answer shapes the agent's
+[ADR 0011](../adrs/0011-background-agents-ux.md) (item 47) picks the
+fifteen fiction-first background agents for Wave 1, their shapes, triggers,
+always-on subtle passage underlines with density caps, the three-tab
+assistant pane (`Findings`, `Reference` with full-width Expand, and
+`Chat`), recursive session recaps at any tree depth, global Pause, and OS power-state
+battery policy, deferring anachronisms and the nonfiction agents.
+
+Next, items 46, 56, and 44 run in parallel. Item 46 tunes the conversation
+prompt and teaches the harness to sweep prompts. Item 56 tests whether
+checking continuity against story notes, extracted chapter by chapter,
+closes the disconnect gap, because the answer shapes the agent's
 architecture. Cloud models are hosted in Azure AI Foundry and reached only
 through a local proxy that holds the credentials and caps spending: item 44
 chooses it, and item 45 runs it with a first set of models, which items 56
 and 48 use as a ceiling for local results.
 
-Item 38 then designs the writer's journeys around item 47's agents,
+Item 38 then designs the writer's journeys around ADR 0011's agents,
 extending its prototype with conversation. Item 10 decides where the agent
 runs, how agents chain, and how it is built, and item 37 decides how
 conversations and living artifacts are stored, tied to versions of the text,
@@ -135,7 +138,7 @@ review to the service, and item 36 shows its findings beside the text. Item
 59 runs the unplugged battery and host-browser typing check ADR 0010 left
 open without blocking the first agents, so battery targets can be adjusted
 before the full set runs. Items 49 to 53 add the remaining agents on that
-plumbing, each tuning its own prompts: the story bible and continuity checks,
+plumbing, each tuning its own prompts: story notes and continuity checks,
 open threads and a reverse outline, chapter reviews, the writer's own rules,
 and a session recap. Item 54 then lets writers turn each agent on or off for
 a folder or document, inherited down the tree, and item 58 adds the

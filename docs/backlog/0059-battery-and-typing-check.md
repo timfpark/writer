@@ -21,10 +21,10 @@ power limits and scheduling rest on measurements rather than AC estimates.
 [ADR 0010](../adrs/0010-pair-writing-models.md) measured sustained review on
 AC power at about 60 W mean (against about 15 W idle) with no macOS thermal
 or performance warning, which estimates roughly 1.2 hours of continuous
-review on a 72 Wh battery. That AC measurement already bounds agent cost
-well enough to design the background agents and their UX in
-[backlog 47](./0047-background-agents-ux-adr.md) and the writer's journeys
-in [backlog 38](./0038-pair-writing-experience-adr.md).
+review on a 72 Wh battery. That AC measurement already bounded agent cost
+well enough to set the background agents and battery policy in
+[ADR 0011](../adrs/0011-background-agents-ux.md) and design the writer's
+journeys in [backlog 38](./0038-pair-writing-experience-adr.md).
 
 Two measurements from ADR 0010 remain open:
 

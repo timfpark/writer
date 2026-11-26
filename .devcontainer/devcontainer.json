@@ -24,9 +24,11 @@
       "profile": "minimal"
     },
     "ghcr.io/devcontainers/features/github-cli:1.1.3": {
-      // Installs this gh release from GitHub's GPG-signed apt repository
-      // rather than an unverified release download.
-      "version": "2.105.0",
+      // Installs gh from GitHub's GPG-signed apt repository rather than an
+      // unverified release download. GitHub's apt index retains only the
+      // current release, so pinning an exact version breaks builds on every
+      // gh release.
+      "version": "latest",
       "installDirectlyFromGitHubRelease": false
     },
     // A local feature, after node: installs the headless Chromium and WebKit

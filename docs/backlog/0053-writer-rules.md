@@ -20,9 +20,12 @@ rather than a generic one.
 
 ## Context
 
-The [background agents ADR](./0047-background-agents-ux-adr.md) decides how
-rules are written and how their findings appear. Rules apply to the whole
-workspace at first; scoping them to folders and documents comes with
+[ADR 0011](../adrs/0011-background-agents-ux.md) places the writer's own
+rules in the Assistant pane's `Reference` tab (`Rules` sub-view, expandable
+to full view), keeps the agent completely dormant until at least one active
+rule exists, and marks rule findings with dashed warm underlines that
+update on pause or immediately after a rule change. Rules apply to the
+whole workspace at first; scoping them to folders and documents comes with
 [backlog 54](./0054-agent-settings-tree.md), and
 [backlog 48](./0048-background-agent-evals.md) measures how reliably local
 models follow them. Background review from

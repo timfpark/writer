@@ -551,14 +551,14 @@ Trade-offs and risks:
   then trial new releases side by side in real use. This record is the first
   model decision; the harness screens each new release and trials confirm
   it.
-* [Backlog 47](../backlog/0047-background-agents-ux-adr.md): choose the
-  background agents beyond these three kinds of finding, and decide how
-  disconnects ship and how often reviews run given about 60 W while one
-  runs.
+* [ADR 0011](./0011-background-agents-ux.md) (settled): chose the fifteen
+  first-wave background agents, gated continuity checks behind story-notes
+  chaining, and set pause, chapter-settled, and battery-aware review
+  cadences against this record's ~60 W AC draw.
 * [Backlog 59](../backlog/0059-battery-and-typing-check.md): run the
   unplugged battery and host-browser typing check this record left open.
-* [Backlog 56](../backlog/0056-story-bible-continuity-test.md): test
-  whether a story bible extracted chapter by chapter closes the disconnect
+* [Backlog 56](../backlog/0056-story-notes-continuity-test.md): test
+  whether story notes extracted chapter by chapter close the disconnect
   gap this record found, before the agent architecture is chosen.
 * [Backlog 48](../backlog/0048-background-agent-evals.md): measure each
   background agent that ships, and give each a first prompt.

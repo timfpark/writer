@@ -19,9 +19,9 @@ help that suits it and nothing else.
 
 ## Context
 
-The [background agents ADR](./0047-background-agents-ux-adr.md) starts every
-shipping agent on for every document, and asks each agent to stay quiet on
-work it does not apply to. Background review from
+[ADR 0011](../adrs/0011-background-agents-ux.md) starts every shipping
+agent on for every document, and keeps each agent quiet on work it does not
+apply to with structural gates and prompt restraint. Background review from
 [backlog 35](./0035-service-background-review.md) runs the first agents,
 [backlog 36](./0036-background-findings-view.md) shows their findings, and
 backlog 49 to 53 add more. This story follows them, so the case for turning
@@ -84,7 +84,7 @@ it will share the tree-inheritance mechanism this story builds.
 
 ## Prerequisites
 
-* [Keep a story bible and check continuity](./0049-story-bible-continuity.md)
+* [Keep story notes and check continuity](./0049-story-notes-continuity.md)
 * [Track open threads and keep a reverse outline](./0050-threads-and-outline.md)
 * [Review finished chapters](./0051-chapter-review.md)
 * [Recap the last session when Writer opens](./0052-session-recap.md)

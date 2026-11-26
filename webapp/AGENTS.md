@@ -189,6 +189,11 @@ Consult these when changing architecture, dependencies, or conventions:
 * [ADR 0009](../docs/adrs/0009-browser-tests.md): Playwright and axe-core
   browser tests in `e2e/`, the projects, the servers and data folder
   each run starts, the same-origin guard, and the `browser` gate phase
+* [ADR 0011](../docs/adrs/0011-background-agents-ux.md): the fifteen
+  first-wave background agents, always-on subtle passage underlines with
+  density caps, the collapsed assistant badge, the three-tab assistant pane
+  with expandable Reference views, three-level session recaps, global pause,
+  and battery status
 
 ## Commands
 
