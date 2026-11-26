@@ -23,10 +23,12 @@ one after the fact.
 The [pair-writing experience ADR](./0038-pair-writing-experience-adr.md)
 describes how writers work with the agent, in conversation and in background
 review, what the agent pays attention to, and the targets for latency,
-memory, and battery. The
-[background agents ADR](./0047-background-agents-ux-adr.md) decides which
-agents run, their triggers, and which keep living artifacts, such as a story
-bible, that other agents read. [Backlog 56](./0056-story-bible-continuity-test.md)
+memory, and battery. [ADR 0011](../adrs/0011-background-agents-ux.md) picks
+the fifteen Wave 1 background agents, their pause and chapter-settled
+triggers, zero-cost structural quietness gates, living artifacts (story
+bible, timeline, reverse outline, open threads, chapter reader reaction,
+and session recaps) that downstream agents read, global Pause, and OS
+power-state battery policy. [Backlog 56](./0056-story-bible-continuity-test.md)
 measures whether chaining a story bible into a continuity check works and
 what it costs. This decision chooses an implementation that meets them.
 
@@ -88,11 +90,14 @@ what this ADR decides.
 * Decide where background reviews execute, as tasks on the service's Tokio
   runtime or in a separate worker, and how a review is scheduled, cancelled,
   and recovered after a restart.
-* Decide how agents chain, such as a continuity check reading the story
-  bible, and how living artifacts are updated incrementally as documents
-  change, grounded in backlog 56's measurements. Leave how living artifacts
-  are stored to the [agent conversations ADR](./0037-agent-conversations-adr.md),
-  and state what it needs from this decision.
+* Decide how agents chain (`Story bible` and `Timeline` into `Continuity
+  check` and `Character voice`; `Reverse outline` into `Scene purpose and
+  pacing` and `Session recap`), how zero-cost structural quietness gates
+  skip non-applicable documents, and how living artifacts update
+  incrementally as chapters settle, grounded in backlog 56's measurements.
+  Leave how living artifacts are stored to the
+  [agent conversations ADR](./0037-agent-conversations-adr.md), and state
+  what it needs from this decision.
 * Within that location, choose whether to adopt an agent framework or call
   model providers directly, and compare at least two options.
 * Choose the client that calls ADR 0010's
@@ -124,10 +129,13 @@ what this ADR decides.
 * Decide how a finding names the passages it concerns and how those anchors
   follow the text as the writer edits, so the webapp can show the experience
   ADR's behavior for edited and deleted passages.
-* Decide how reviews start on the background agents ADR's triggers, whether
-  the webapp or the service starts them, how they skip unchanged text and
-  cancel when the text changes, and how they stay within the experience
-  ADR's resource targets.
+* Decide how reviews start on [ADR 0011](../adrs/0011-background-agents-ux.md)'s
+  pause, chapter-settled, and idle triggers, whether the webapp or the
+  service starts them, how they skip unchanged text, enforce ADR 0011's
+  per-scene and per-chapter finding density caps, cancel immediately on new
+  keystrokes or Pause, read OS power and battery state from the local
+  service (since Safari lacks the Web Battery API), and stay within the
+  experience ADR's resource targets.
 * Decide how findings reach the webapp under
   [ADR 0004](../adrs/0004-api-conventions.md): returned per request, polled,
   or streamed over SSE.

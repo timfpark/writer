@@ -19,11 +19,12 @@ so that I get help without stopping to ask.
 
 ## Context
 
-The [background agents ADR](./0047-background-agents-ux-adr.md) decides which
-paragraph- and scene-level agents ship first, such as weak prose,
-repetition, point of view and tense, clarity, and open questions, with their
-triggers, surfaces, and interruption, and whether the writer can pause
-them. The [experience ADR](./0038-pair-writing-experience-adr.md) sets the
+[ADR 0011](../adrs/0011-background-agents-ux.md) picks the five
+pause-triggered agents that ship first (`Weak prose`, `Clarity`, `Open
+questions`, `Point of view and tense`, and `Repetition`), with their short
+typing-pause trigger, structural quietness gates, per-scene and per-chapter
+finding density caps, global Pause cancellation, and OS power-state battery
+cadence. The [experience ADR](./0038-pair-writing-experience-adr.md) sets the
 targets for memory and battery. The [agent
 ADR](./0010-agent-architecture-adr.md) decides how findings anchor to
 passages, how reviews start, skip unchanged text, and stay within those
@@ -63,11 +64,15 @@ agent ADR, amend it in the same pull request.
 * Add the review endpoint or stream the agent ADR decides, returning findings
   with their agent, text, and passage anchors, and regenerate
   `service/openapi.json`.
-* Enforce the background agents ADR's triggers and the experience ADR's
-  resource targets in the service as the agent ADR decides: skip text
-  already reviewed, and cap reviews per document and per period.
-* Stop sending text for review while the writer has paused background work,
-  if the background agents ADR lets them.
+* Enforce [ADR 0011](../adrs/0011-background-agents-ux.md)'s triggers,
+  zero-cost structural quietness gates, finding density caps, and battery
+  policy, and the experience ADR's resource targets in the service as the
+  agent ADR decides: skip text already reviewed, and cap reviews per
+  document and per period.
+* Cancel in-flight reviews and stop sending text for review while the
+  writer has paused background work or low-battery auto-pause is active
+  (unless resumed), as ADR 0011 specifies, and expose OS power policy state
+  to the webapp.
 * Add background review's model to the settings from
   [backlog 57](./0057-model-settings.md) if it has landed.
 * Record each review and its findings as the conversations ADR decides,

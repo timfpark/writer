@@ -37,11 +37,13 @@ threads, it can run background reviews as conversations of their own and
 keep them for the writer to read later.
 
 The [agent architecture ADR](./0010-agent-architecture-adr.md) decides where
-the agent runs, how background reviews execute, and how agents chain. The
-[background agents ADR](./0047-background-agents-ux-adr.md) adds living
-artifacts, such as a story bible, a timeline, and a reverse outline, which
-the agent keeps current, other agents read, and the writer corrects; they
-need storage as durable as conversations.
+the agent runs, how background reviews execute, and how agents chain.
+[ADR 0011](../adrs/0011-background-agents-ux.md) adds book-scoped living
+artifacts (story bible, timeline, reverse outline, open threads,
+per-chapter reader reaction, and the writer's own rules) plus three-level
+session recaps (workspace, folder, and document), which the agent keeps
+current, other agents read, and the writer corrects; they need storage as
+durable as conversations.
 [ADR 0005](../adrs/0005-workspace-model.md) fixes the workspace model and
 [ADR 0006](../adrs/0006-storage-architecture.md) the storage backends and
 copy command that stored conversations must fit. The
@@ -64,9 +66,13 @@ resources.
   commits, to lighter snapshots taken for the agent, or to stored excerpts.
   The change control ADR comes later, so choose a reference that works
   without it, and state what that ADR must preserve.
-* Model living artifacts: their entries, the passages each entry cites, the
-  writer's corrections and how they survive later extractions, and how an
-  entry is marked stale when its passages change.
+* Model living artifacts scoped to the top-level folder (book) subtree:
+  their entries, the passages each entry cites, `Extracted` versus `Edited
+  by you` provenance (with `Revert to extracted`), deleted-entry
+  suppression, `Intentionally open` thread states, per-chapter reader
+  reactions, the writer's own rules, lightweight session-change records for
+  ADR 0011's three-level recaps, and how an entry is marked stale when its
+  passages change.
 * Decide what the agent receives when a writer revives a conversation, such
   as the earlier text, the current text, or what changed in between.
 * Decide what each agent turn records for audit, such as the prompt version,

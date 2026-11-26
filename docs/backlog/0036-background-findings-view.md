@@ -20,10 +20,11 @@ when I pause and follow them to the passages they concern.
 
 [Backlog 35](./0035-service-background-review.md) returns findings anchored
 to passages, and [backlog 34](./0034-assistant-pane-agent.md) connects the
-assistant pane to the service. The
-[background agents ADR](./0047-background-agents-ux-adr.md) decides which
-agents ship, their triggers, where each appears, how much it may interrupt,
-and whether the writer can pause background work. The
+assistant pane to the service. [ADR 0011](../adrs/0011-background-agents-ux.md)
+picks the five pause-triggered agents, always-on subtle hairline passage
+underlines with density caps, the collapsed-pane badge and running dot, the
+three-tab assistant pane (`Findings`, `Reference`, `Chat`), and the global
+Pause and low-battery status bar. The
 [experience ADR](./0038-pair-writing-experience-adr.md) decides how findings
 are dismissed, what happens to a finding whose passage changed, and how
 unread results signal. The [agent ADR](./0010-agent-architecture-adr.md)
@@ -38,16 +39,21 @@ typing latency, which a review must never degrade.
 * Request reviews as the background agents and agent ADRs decide, never
   while the writer is typing, and cancel a review whose text has since
   changed.
-* Show findings where the background agents ADR decides, marked by agent and
-  distinct from replies, and let the writer answer a question from the agent.
-* Highlight a finding's passage in the editor and scroll to it when the
-  writer selects the finding, and mark or remove a finding whose passage has
-  changed.
+* Show findings in the Assistant pane's `Findings` tab (distinct from
+  `Chat`, with category filters, `Discuss in Chat` / `Answer in Chat`
+  handoffs, and `Dismiss`) and render ADR 0011's subtle hairline passage
+  underlines on the writing surface whether the pane is open or closed,
+  never mid-keystroke.
+* Clicking an underlined passage opens the Assistant pane to that finding;
+  selecting a finding highlights and scrolls to its passage in the editor,
+  and marks or removes a finding whose passage has changed.
 * Dismiss a finding so that it does not return.
-* Add the pause the background agents ADR decides, if any, and send no text
-  for review while background work is paused.
-* Signal new findings while the assistant pane is collapsed or covering the
-  page, without opening it or moving focus.
+* Add ADR 0011's status line and global `Pause` / `Resume` control
+  (`Mod+Shift+P`, plus low-battery `Resume anyway`) in the Assistant pane
+  header, sending no text for review while paused while keeping `Chat`
+  available.
+* Show a quiet count badge and running dot on the collapsed Assistant
+  toggle button without opening the pane or moving focus.
 * Make every action operable from the keyboard, announce new findings
   politely to assistive technology, and cover the flow with browser and
   accessibility tests against a real service using the fake provider.

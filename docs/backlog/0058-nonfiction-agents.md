@@ -20,12 +20,14 @@ not tripped up by errors I could not see.
 
 ## Context
 
-The [background agents ADR](./0047-background-agents-ux-adr.md) defers the
-nonfiction agents so the first wave serves fiction, and records what they
-need from it. [Backlog 54](./0054-agent-settings-tree.md) lets writers turn
-agents on for a folder or document, so these agents run on a technical book
-and never on a novel, without each having to recognize fiction and stay
-quiet. Background review from
+[ADR 0011](../adrs/0011-background-agents-ux.md) defers the nonfiction
+agents (17 through 21) so the first wave serves fiction, and records the
+seams they reuse from Wave 1 (living-artifact storage and correction UX,
+anchors over headings and code blocks, question-phrased uncertainty, and
+tree-inherited settings). [Backlog 54](./0054-agent-settings-tree.md) lets
+writers turn agents on for a folder or document, so these agents run on a
+technical book and never on a novel, without each having to recognize
+fiction and stay quiet. Background review from
 [backlog 35](./0035-service-background-review.md), its findings view from
 [backlog 36](./0036-background-findings-view.md), and the living artifacts
 from [backlog 49](./0049-story-bible-continuity.md), which a terminology

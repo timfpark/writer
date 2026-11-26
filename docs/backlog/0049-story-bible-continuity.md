@@ -20,9 +20,11 @@ myself.
 
 ## Context
 
-The [background agents ADR](./0047-background-agents-ux-adr.md) decides the
-story bible's, timeline's, and continuity check's shapes, triggers, and
-surfaces. [Backlog 56](./0056-story-bible-continuity-test.md) tested the
+[ADR 0011](../adrs/0011-background-agents-ux.md) defines the story bible's,
+timeline's, and continuity check's shapes, chapter-settled triggers,
+book-scoped `Reference` tab with full-width `Expand`, plain `Save` with
+`Edited by you` provenance and `Revert to extracted`, and immediate
+downstream continuity re-evaluation. [Backlog 56](./0056-story-bible-continuity-test.md) tested the
 story bible and continuity chain on local models, and
 [backlog 48](./0048-background-agent-evals.md) added cases and a first
 prompt for the timeline. The service's
@@ -40,9 +42,12 @@ stored.
 * Store the story bible and timeline as the agent and conversations ADRs
   decide, and expose them through the API under
   [ADR 0004](../adrs/0004-api-conventions.md).
-* Show the story bible and timeline in the webapp, keyboard operable and
-  accessible, and let the writer correct or delete an entry so later
-  extractions keep the correction.
+* Show the story bible and timeline in the Assistant pane's `Reference` tab
+  (scoped to the active book subtree, with an `Expand` action for full-width
+  tables in the center region), keyboard operable and accessible, and let
+  the writer edit (`Save` -> `Edited by you`), `Revert to extracted`, or
+  delete an entry so later extractions keep the correction and immediately
+  re-evaluate continuity findings.
 * Check new and changed text against the story bible and timeline, and raise
   continuity findings that cite both passages, through backlog 36's view.
 * Tune the extraction, timeline, and continuity prompts on the cases from

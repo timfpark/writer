@@ -53,11 +53,13 @@ findings help more than they distract, on a model the writer can run.
 [ADR 0010](../adrs/0010-pair-writing-models.md), the model ADR, measured
 that first with local models served by Ollama, and its results set how
 quickly replies arrive. [Backlog 46](./0046-prompt-tuning-evals.md) tunes
-the conversation prompt. The
-[background agents ADR](./0047-background-agents-ux-adr.md) decides which
-background agents ship, their shapes, triggers, surfaces, and interruption,
-and whether the writer can pause them; this decision designs the journeys
-around those choices rather than making them again. Text never leaves the
+the conversation prompt. [ADR 0011](../adrs/0011-background-agents-ux.md),
+the background agents UX ADR, picks the fifteen Wave 1 shipping agents,
+their shapes, triggers, always-on subtle passage underlines with density
+caps, the three-tab assistant pane (`Findings`, `Reference` with full-width
+Expand, and `Chat`), three-level session recaps, global Pause, and battery
+policy; this decision designs the journeys around those choices rather than
+making them again. Text never leaves the
 writer's machine; the
 [cloud fallback ADR](./0040-cloud-model-fallback-adr.md) revisits that only
 after writers have used the local pair writer.
@@ -70,18 +72,22 @@ after writers have used the local pair writer.
     three example requests above
   * Writing while background review runs, and noticing its findings
   * Returning later to findings and to earlier conversations
-  * Answering a question the agent raised
+  * Answering a question or discussing a finding the agent raised via
+    ADR 0011's `Answer in Chat` and `Discuss in Chat` handoffs
   * Following a finding to its passage, then acting on it or dismissing it
   * Reviving a past conversation, and seeing the text as it was when the
     conversation took place
   * Seeing what the agent read and why it said what it did
-  * Pausing background work as the background agents ADR decides, and
-    deleting conversations
+  * Pausing background work and overriding low-battery auto-pause as
+    ADR 0011 decides, and deleting conversations
   * Using Writer with no provider configured, offline, or after an agent
     failure
-* Take the background agents, their shapes, triggers, surfaces, and
-  interruption from the background agents ADR, and design the journeys and
-  the assistant pane around them.
+* Take the fifteen shipping agents, their shapes, triggers, surfaces
+  (always-on hairline underlines with density caps, collapsed-pane badge,
+  `Findings` / `Reference` / `Chat` tabs with full-width Expand, and
+  three-level session recaps), and interruption from
+  [ADR 0011](../adrs/0011-background-agents-ux.md), and design the journeys
+  and the assistant pane around them.
 * Decide what the agent pays attention to from the writer's point of view:
   the open document, the selection, other documents in the folder or
   workspace, or earlier conversations.
@@ -100,10 +106,10 @@ after writers have used the local pair writer.
   Ground each target in ADR 0010's measurements, leaving unplugged battery
   and host-browser typing adjustments to
   [backlog 59](./0059-battery-and-typing-check.md).
-* Extend the background agents ADR's throwaway prototype with the
-  conversation journeys and scripted replies, keep it out of the repository,
-  try the journeys with it, and record in the ADR what it changed in the
-  design.
+* Extend [ADR 0011](../adrs/0011-background-agents-ux.md)'s throwaway
+  prototype (in ignored `.local/prototype/`) with the conversation journeys
+  and scripted replies, keep it out of the repository, try the journeys
+  with it, and record in the ADR what it changed in the design.
 * Resolve how suggestions are shown and accepted from ADR 0008's follow-up
   decision, and link to this ADR from it.
 * State what the experience requires of the agent architecture and
@@ -129,4 +135,3 @@ after writers have used the local pair writer.
 ## Prerequisites
 
 * [Tune the conversation prompt with the evaluation harness](./0046-prompt-tuning-evals.md)
-* [Record the background agents UX ADR](./0047-background-agents-ux-adr.md)

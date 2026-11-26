@@ -153,6 +153,10 @@ Consult these when changing architecture, dependencies, or conventions:
 * [ADR 0010](../docs/adrs/0010-pair-writing-models.md): the local models the
   pair writer runs, their memory and latency, and reaching Ollama through
   `OLLAMA_HOST`
+* [ADR 0011](../docs/adrs/0011-background-agents-ux.md): the fifteen
+  first-wave background agents, their triggers, work sharing and chaining,
+  living-artifact provenance, structural quietness gates, global pause, and
+  OS power-state battery policy
 
 ## Commands
 

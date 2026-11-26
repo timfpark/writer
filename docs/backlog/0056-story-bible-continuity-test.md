@@ -20,10 +20,9 @@ keep living artifacts.
 
 [ADR 0010](../adrs/0010-pair-writing-models.md) found that no local model
 reliably finds contradictions within a chapter or across chapters when it
-reads the text at once. The
-[background agents ADR](./0047-background-agents-ux-adr.md) considers a
-story bible, a living artifact extracted from the writer's documents, that a
-continuity check reads instead of the manuscript.
+reads the text at once. [ADR 0011](../adrs/0011-background-agents-ux.md)
+ships a story bible, a living artifact extracted chapter by chapter, and
+chains a continuity check onto it rather than rereading the manuscript.
 
 Whether that works shapes the
 [agent architecture ADR](./0010-agent-architecture-adr.md): chained agents,
