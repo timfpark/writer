@@ -11,9 +11,9 @@ from . import cases as cases_mod
 from .judge import judge_results, rescore
 from .prompts import PromptError, load_templates
 from .report import report
-from .runner import ConfigError, Environment, load_configs, run_config, run_pair, run_sustained
+from .runner import (ConfigError, Environment, load_configs, run_config, run_pair, run_sustained,
+                     validate_config_prompts)
 from .runtimes import GenerationFailed, OllamaRuntime, RuntimeUnavailable, ollama_url_from_env
-from .sheet import build_sheet, ingest_scores
 
 EVALS = Path(__file__).resolve().parent.parent
 REPO = EVALS.parent
@@ -35,6 +35,8 @@ def _parser() -> argparse.ArgumentParser:
     run.add_argument("--case", action="append", dest="case_ids")
     run.add_argument("--task", choices=cases_mod.TASKS)
     run.add_argument("--split", choices=cases_mod.SPLITS)
+    run.add_argument("--prompt", action="append", dest="prompts",
+                     help="override a task prompt (NAME when running one task, or TASK=NAME)")
 
     pair = sub.add_parser("pair", help="keep a chat model and a reviewer loaded together")
     pair.add_argument("chat")
@@ -51,21 +53,39 @@ def _parser() -> argparse.ArgumentParser:
     judge.add_argument("results", nargs="+", type=Path)
     judge.add_argument("--force", action="store_true")
 
-    sheet = sub.add_parser("sheet", help="write a blind scoring sheet for people")
-    sheet.add_argument("results", nargs="+", type=Path)
-    sheet.add_argument("--out", type=Path, default=REPO / ".local" / "evals" / "sheet")
-    sheet.add_argument("--case", action="append", dest="case_ids")
-
-    ingest = sub.add_parser("ingest", help="copy a filled scoring sheet into the result summaries")
-    ingest.add_argument("--sheet", type=Path, default=REPO / ".local" / "evals" / "sheet")
-    ingest.add_argument("--scorer", required=True)
-
     resc = sub.add_parser("rescore", help="recompute automatic scores from raw output")
     resc.add_argument("results", nargs="+", type=Path)
 
     rep = sub.add_parser("report", help="summarize result files as Markdown tables")
     rep.add_argument("results", nargs="*", type=Path)
+    rep.add_argument("--split", choices=cases_mod.SPLITS)
+    rep.add_argument("--task", choices=cases_mod.TASKS)
     return p
+
+
+def _parse_prompt_overrides(specs: Optional[List[str]], chosen: List[cases_mod.Case],
+                            explicit_task: Optional[str], templates) -> dict:
+    overrides = {}
+    tasks = sorted({c.task for c in chosen})
+    for spec in specs or []:
+        if "=" in spec:
+            task_name, prompt_name = spec.split("=", 1)
+            if task_name not in cases_mod.TASKS:
+                raise ConfigError(f"unknown task {task_name!r} in --prompt {spec!r}")
+        else:
+            task_name = explicit_task or (tasks[0] if len(tasks) == 1 else "")
+            if not task_name:
+                raise ConfigError(
+                    f"--prompt {spec!r} is ambiguous across tasks {', '.join(tasks)}; "
+                    f"use --task or --prompt TASK={spec}"
+                )
+            prompt_name = spec
+        if prompt_name not in templates:
+            raise ConfigError(
+                f"unknown prompt {prompt_name!r}; available: {', '.join(sorted(templates))}"
+            )
+        overrides[task_name] = prompt_name
+    return overrides
 
 
 def main(argv: Optional[List[str]] = None, runtime=None, out=None, err=None) -> int:
@@ -77,6 +97,7 @@ def main(argv: Optional[List[str]] = None, runtime=None, out=None, err=None) -> 
         by_id = {c.id: c for c in all_cases}
         templates = load_templates(args.prompts_dir)
         configs = load_configs(args.configs)
+        validate_config_prompts(configs, templates)
     except (cases_mod.CaseError, PromptError, ConfigError) as error:
         err(f"writer_evals: {error}")
         return 2
@@ -88,7 +109,10 @@ def main(argv: Optional[List[str]] = None, runtime=None, out=None, err=None) -> 
 
     if args.command == "list":
         for c in configs.values():
-            out(f"config {c.name}: {c.model}")
+            prompts = ", ".join(f"{t}={c.task(t)['prompt']}" for t in cases_mod.TASKS)
+            out(f"config {c.name}: {c.model} ({prompts})")
+        for t in templates.values():
+            out(f"prompt {t.name}: {t.digest}")
         for c in all_cases:
             out(f"case {c.id}: {c.task}, {c.length}, {c.words} words, {c.split}")
         return 0
@@ -97,25 +121,17 @@ def main(argv: Optional[List[str]] = None, runtime=None, out=None, err=None) -> 
         if not paths:
             err("writer_evals: no result files")
             return 2
-        out(report(paths).rstrip("\n"))
-        return 0
-    if args.command == "ingest":
-        try:
-            count = ingest_scores(args.sheet, args.results_dir, args.scorer)
-        except (OSError, ValueError) as error:
-            err(f"writer_evals: {error}")
+        text = report(paths, split=args.split, task=args.task).rstrip("\n")
+        if not text:
+            err("writer_evals: no matching results")
             return 2
-        out(f"ingested {count} scored outputs")
+        out(text)
         return 0
     if args.command == "rescore":
         env = Environment(runtime=None, templates=templates,
                           cases_digest=cases_mod.tree_digest(args.cases_dir), results_dir=args.results_dir,
                           raw_dir=args.raw_dir, repo_root=REPO, log=out)
         out(f"rescored {rescore(env, args.results, by_id)} outputs")
-        return 0
-    if args.command == "sheet":
-        count = build_sheet(args.results, by_id, args.raw_dir, args.out, args.case_ids)
-        out(f"wrote {count} outputs to {args.out}")
         return 0
 
     if runtime is None:
@@ -129,8 +145,10 @@ def main(argv: Optional[List[str]] = None, runtime=None, out=None, err=None) -> 
             if not chosen:
                 err("writer_evals: no cases match")
                 return 2
+            overrides = _parse_prompt_overrides(args.prompts, chosen, args.task, templates)
             for name in args.config:
-                out(f"wrote {run_config(env, config(name), chosen)}")
+                cfg = config(name).with_prompts(overrides)
+                out(f"wrote {run_config(env, cfg, chosen)}")
         elif args.command == "pair":
             chat_cases = cases_mod.select(all_cases, task="conversation", split="tune")
             out(f"wrote {run_pair(env, config(args.chat), config(args.reviewer), chat_cases, by_id[args.review_case])}")

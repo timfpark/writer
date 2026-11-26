@@ -87,6 +87,20 @@ class CasesTest(unittest.TestCase):
         self.assertEqual({c.split for c in cases}, {"tune", "holdout"})
         self.assertTrue(any(c.expect_none for c in cases))
 
+    def test_custom_conversation_request_loads_and_renders(self):
+        from writer_evals.prompts import case_values
+
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "documents").mkdir()
+            (root / "documents" / "a.md").write_text("# A\n\nSome synthetic text here.\n")
+            (root / "conv-custom.json").write_text(json.dumps({
+                "id": "conv-custom", "task": "conversation", "split": "tune",
+                "length": "scene", "documents": ["a"],
+                "request": "Does the ending earn its quietness?"}))
+            [loaded] = load_cases(root)
+            self.assertEqual(case_values(loaded)["request"], "Does the ending earn its quietness?")
+
     def test_errors_name_the_file_and_problem(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

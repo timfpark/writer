@@ -1,0 +1,10 @@
+{
+  "id": "conv-dry-well-pacing",
+  "task": "conversation",
+  "split": "tune",
+  "length": "scene",
+  "documents": [
+    "dry-well"
+  ],
+  "request": "How can I sharpen the tension between the two characters without making either one a villain?"
+}

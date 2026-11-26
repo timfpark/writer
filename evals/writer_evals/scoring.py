@@ -1,7 +1,7 @@
 """Automatic scores: structure, anchoring, planted-issue recall, and false alarms.
 
-These measure what a machine can check. Usefulness is scored by a judge model
-and by people on a blind sheet.
+These measure what a machine can check. Usefulness, grounding, and restraint
+are scored by a judge model.
 """
 
 from __future__ import annotations

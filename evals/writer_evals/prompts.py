@@ -103,7 +103,7 @@ def render_documents(documents: List[Document]) -> str:
 
 
 def case_values(case: Case) -> Dict[str, str]:
-    from .cases import REQUESTS
+    from .cases import request_text
 
     selection = ""
     if case.selection:
@@ -111,5 +111,5 @@ def case_values(case: Case) -> Dict[str, str]:
     return {
         "documents": render_documents(case.documents),
         "selection": selection,
-        "request": REQUESTS.get(case.request, ""),
+        "request": request_text(case.request) if case.request else "",
     }

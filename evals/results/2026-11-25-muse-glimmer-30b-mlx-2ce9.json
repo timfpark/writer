@@ -1,0 +1,606 @@
+{
+  "schema": 1,
+  "kind": "run",
+  "id": "2026-11-25-muse-glimmer-30b-mlx-2ce9",
+  "started": "2026-11-26T04:18:08Z",
+  "machine": {
+    "chip": "Apple M5 Max",
+    "model": "Mac17,7",
+    "memoryGb": 128,
+    "os": "macOS 26.7.3"
+  },
+  "runtime": {
+    "name": "ollama",
+    "version": "0.40.17"
+  },
+  "harness": {
+    "commit": "50514ae34fb0-dirty",
+    "digest": "3f50d0140410"
+  },
+  "cases": {
+    "digest": "58221751ca8f"
+  },
+  "prompts": {
+    "conversation": "48035782578d",
+    "conversation-concise": "dc48e533876b",
+    "conversation-editor": "a64c792df219",
+    "conversation-examples": "d58f5cde655a",
+    "conversation-grounded": "c0a3c0b9f874",
+    "judge-conversation": "2cc3856f20cd",
+    "judge-review": "09533d3d3e7f",
+    "review": "1edf7c91d081"
+  },
+  "config": {
+    "name": "muse-glimmer-30b-mlx",
+    "model": {
+      "name": "muse-glimmer:30b-mlx",
+      "digest": "015fa21845bead56096c2f8773aff7a2047063507fe82897e662ad544c5b2fa6",
+      "family": "muse_glimmer",
+      "parameter_size": "32.3B",
+      "quantization": "nvfp4",
+      "format": "safetensors",
+      "runner": "",
+      "context_length": 131072,
+      "license_head": "",
+      "thinking": [
+        false,
+        "low",
+        "medium",
+        "high",
+        "max"
+      ],
+      "sampling": "draft_num_predict 15 temperature 1 top_k 64 top_p 0.95"
+    },
+    "hypothesis": "Ollama's MLX runner, which includes the speculative drafter, against its GGUF runner",
+    "conversation": {
+      "prompt": "conversation",
+      "think": "lowest",
+      "options": {
+        "seed": 39,
+        "num_predict": 2000
+      },
+      "promptDigest": "48035782578d"
+    },
+    "review": {
+      "prompt": "review",
+      "think": "lowest",
+      "options": {
+        "seed": 39,
+        "num_predict": 4000
+      },
+      "promptDigest": "1edf7c91d081"
+    }
+  },
+  "coldLoadSeconds": 3.01,
+  "items": [
+    {
+      "case": "conv-corran-improve",
+      "task": "conversation",
+      "split": "tune",
+      "length": "scene",
+      "words": 469,
+      "prompt": "conversation",
+      "promptDigest": "48035782578d",
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 10.12,
+      "firstTokenSeconds": 1.47,
+      "totalSeconds": 19.9,
+      "loadSeconds": 0.0,
+      "promptTokens": 798,
+      "promptTokensPerSecond": 610.2,
+      "outputTokens": 648,
+      "tokensPerSecond": 34.9,
+      "thinkingWords": 254,
+      "doneReason": "stop",
+      "modelGb": 17.9,
+      "gpuGb": 17.9,
+      "loadedModels": [
+        "muse-glimmer:30b-mlx"
+      ],
+      "resources": {
+        "meanWatts": 4.1,
+        "maxWatts": 4.1,
+        "maxMemoryUsedGb": 68.8,
+        "maxRunnerGb": 17.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "4fae0e28b744",
+      "scores": {
+        "words": 251,
+        "quotes": 9,
+        "quotesGrounded": 9
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 5,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-dry-well-explore",
+      "task": "conversation",
+      "split": "tune",
+      "length": "scene",
+      "words": 629,
+      "prompt": "conversation",
+      "promptDigest": "48035782578d",
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 6.12,
+      "firstTokenSeconds": 1.69,
+      "totalSeconds": 14.91,
+      "loadSeconds": 0.0,
+      "promptTokens": 1003,
+      "promptTokensPerSecond": 638.8,
+      "outputTokens": 485,
+      "tokensPerSecond": 36.4,
+      "thinkingWords": 122,
+      "doneReason": "stop",
+      "modelGb": 18.0,
+      "gpuGb": 18.0,
+      "loadedModels": [
+        "muse-glimmer:30b-mlx"
+      ],
+      "resources": {
+        "meanWatts": 4.1,
+        "maxWatts": 4.1,
+        "maxMemoryUsedGb": 69.1,
+        "maxRunnerGb": 17.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "f737bdcbc813",
+      "scores": {
+        "words": 254,
+        "quotes": 10,
+        "quotesGrounded": 10
+      },
+      "judge": {
+        "usefulness": 3,
+        "grounding": 4,
+        "restraint": 4,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-dry-well-pacing",
+      "task": "conversation",
+      "split": "tune",
+      "length": "scene",
+      "words": 629,
+      "prompt": "conversation",
+      "promptDigest": "48035782578d",
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 5.96,
+      "firstTokenSeconds": 0.2,
+      "totalSeconds": 15.18,
+      "loadSeconds": 0.0,
+      "promptTokens": 1013,
+      "promptTokensPerSecond": 11421.9,
+      "outputTokens": 571,
+      "tokensPerSecond": 37.9,
+      "thinkingWords": 170,
+      "doneReason": "stop",
+      "modelGb": 18.2,
+      "gpuGb": 18.2,
+      "loadedModels": [
+        "muse-glimmer:30b-mlx"
+      ],
+      "resources": {
+        "meanWatts": 18.3,
+        "maxWatts": 67.7,
+        "maxMemoryUsedGb": 69.2,
+        "maxRunnerGb": 17.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "7950c808f6aa",
+      "scores": {
+        "words": 264,
+        "quotes": 13,
+        "quotesGrounded": 13
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 5,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-ferry-develop",
+      "task": "conversation",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "prompt": "conversation",
+      "promptDigest": "48035782578d",
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 10.39,
+      "firstTokenSeconds": 2.87,
+      "totalSeconds": 24.78,
+      "loadSeconds": 0.0,
+      "promptTokens": 1736,
+      "promptTokensPerSecond": 628.9,
+      "outputTokens": 890,
+      "tokensPerSecond": 40.4,
+      "thinkingWords": 218,
+      "doneReason": "stop",
+      "modelGb": 18.5,
+      "gpuGb": 18.5,
+      "loadedModels": [
+        "muse-glimmer:30b-mlx"
+      ],
+      "resources": {
+        "meanWatts": 67.7,
+        "maxWatts": 67.7,
+        "maxMemoryUsedGb": 70.5,
+        "maxRunnerGb": 17.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "2a21c342d3a4",
+      "scores": {
+        "words": 466,
+        "quotes": 14,
+        "quotesGrounded": 14
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 5,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-ferry-explore",
+      "task": "conversation",
+      "split": "tune",
+      "length": "chapter",
+      "words": 1169,
+      "prompt": "conversation",
+      "promptDigest": "48035782578d",
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 5.51,
+      "firstTokenSeconds": 0.14,
+      "totalSeconds": 17.07,
+      "loadSeconds": 0.0,
+      "promptTokens": 1735,
+      "promptTokensPerSecond": 27162.4,
+      "outputTokens": 677,
+      "tokensPerSecond": 39.8,
+      "thinkingWords": 176,
+      "doneReason": "stop",
+      "modelGb": 18.7,
+      "gpuGb": 18.7,
+      "loadedModels": [
+        "muse-glimmer:30b-mlx"
+      ],
+      "resources": {
+        "meanWatts": 67.7,
+        "maxWatts": 67.7,
+        "maxMemoryUsedGb": 69.9,
+        "maxRunnerGb": 17.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "cb0d928ec952",
+      "scores": {
+        "words": 344,
+        "quotes": 15,
+        "quotesGrounded": 15
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 5,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-grafting-ending",
+      "task": "conversation",
+      "split": "tune",
+      "length": "scene",
+      "words": 533,
+      "prompt": "conversation",
+      "promptDigest": "48035782578d",
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 6.66,
+      "firstTokenSeconds": 1.56,
+      "totalSeconds": 15.02,
+      "loadSeconds": 0.0,
+      "promptTokens": 863,
+      "promptTokensPerSecond": 589.0,
+      "outputTokens": 637,
+      "tokensPerSecond": 47.0,
+      "thinkingWords": 201,
+      "doneReason": "stop",
+      "modelGb": 18.8,
+      "gpuGb": 18.8,
+      "loadedModels": [
+        "muse-glimmer:30b-mlx"
+      ],
+      "resources": {
+        "meanWatts": 67.7,
+        "maxWatts": 67.7,
+        "maxMemoryUsedGb": 69.6,
+        "maxRunnerGb": 17.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "fc6bf22eba0c",
+      "scores": {
+        "words": 288,
+        "quotes": 10,
+        "quotesGrounded": 10
+      },
+      "judge": {
+        "usefulness": 5,
+        "grounding": 5,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-harbor-develop",
+      "task": "conversation",
+      "split": "tune",
+      "length": "scene",
+      "words": 582,
+      "prompt": "conversation",
+      "promptDigest": "48035782578d",
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 6.56,
+      "firstTokenSeconds": 1.51,
+      "totalSeconds": 17.64,
+      "loadSeconds": 0.0,
+      "promptTokens": 954,
+      "promptTokensPerSecond": 668.4,
+      "outputTokens": 742,
+      "tokensPerSecond": 45.8,
+      "thinkingWords": 191,
+      "doneReason": "stop",
+      "modelGb": 19.0,
+      "gpuGb": 19.0,
+      "loadedModels": [
+        "muse-glimmer:30b-mlx"
+      ],
+      "resources": {
+        "meanWatts": 69.8,
+        "maxWatts": 70.1,
+        "maxMemoryUsedGb": 69.9,
+        "maxRunnerGb": 17.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "fe0059eafece",
+      "scores": {
+        "words": 390,
+        "quotes": 11,
+        "quotesGrounded": 11
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 5,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-harbor-improve",
+      "task": "conversation",
+      "split": "tune",
+      "length": "scene",
+      "words": 582,
+      "prompt": "conversation",
+      "promptDigest": "48035782578d",
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 7.53,
+      "firstTokenSeconds": 0.13,
+      "totalSeconds": 16.41,
+      "loadSeconds": 0.0,
+      "promptTokens": 958,
+      "promptTokensPerSecond": 15796.7,
+      "outputTokens": 765,
+      "tokensPerSecond": 46.8,
+      "thinkingWords": 256,
+      "doneReason": "stop",
+      "modelGb": 19.2,
+      "gpuGb": 19.2,
+      "loadedModels": [
+        "muse-glimmer:30b-mlx"
+      ],
+      "resources": {
+        "meanWatts": 70.1,
+        "maxWatts": 70.1,
+        "maxMemoryUsedGb": 69.7,
+        "maxRunnerGb": 17.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "28b23a9daa9f",
+      "scores": {
+        "words": 335,
+        "quotes": 9,
+        "quotesGrounded": 9
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 5,
+        "restraint": 4,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-watchmaker-dialogue",
+      "task": "conversation",
+      "split": "tune",
+      "length": "scene",
+      "words": 589,
+      "prompt": "conversation",
+      "promptDigest": "48035782578d",
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 4.81,
+      "firstTokenSeconds": 1.43,
+      "totalSeconds": 8.37,
+      "loadSeconds": 0.0,
+      "promptTokens": 946,
+      "promptTokensPerSecond": 704.7,
+      "outputTokens": 490,
+      "tokensPerSecond": 69.8,
+      "thinkingWords": 207,
+      "doneReason": "stop",
+      "modelGb": 19.3,
+      "gpuGb": 19.3,
+      "loadedModels": [
+        "muse-glimmer:30b-mlx"
+      ],
+      "resources": {
+        "meanWatts": 70.1,
+        "maxWatts": 70.1,
+        "maxMemoryUsedGb": 69.9,
+        "maxRunnerGb": 17.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "f399373a9083",
+      "scores": {
+        "words": 188,
+        "quotes": 4,
+        "quotesGrounded": 4
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 5,
+        "restraint": 5,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-watchmaker-selection",
+      "task": "conversation",
+      "split": "tune",
+      "length": "scene",
+      "words": 589,
+      "prompt": "conversation",
+      "promptDigest": "48035782578d",
+      "numCtx": 8192,
+      "think": "low",
+      "ttftSeconds": 4.86,
+      "firstTokenSeconds": 0.43,
+      "totalSeconds": 11.43,
+      "loadSeconds": 0.0,
+      "promptTokens": 1108,
+      "promptTokensPerSecond": 3206.4,
+      "outputTokens": 488,
+      "tokensPerSecond": 44.0,
+      "thinkingWords": 161,
+      "doneReason": "stop",
+      "modelGb": 19.5,
+      "gpuGb": 19.5,
+      "loadedModels": [
+        "muse-glimmer:30b-mlx"
+      ],
+      "resources": {
+        "meanWatts": 70.1,
+        "maxWatts": 70.1,
+        "maxMemoryUsedGb": 70.6,
+        "maxRunnerGb": 17.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "639a7ed6674e",
+      "scores": {
+        "words": 224,
+        "quotes": 6,
+        "quotesGrounded": 6
+      },
+      "judge": {
+        "usefulness": 4,
+        "grounding": 4,
+        "restraint": 4,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    },
+    {
+      "case": "conv-saltworks-develop",
+      "task": "conversation",
+      "split": "tune",
+      "length": "manuscript",
+      "words": 18826,
+      "prompt": "conversation",
+      "promptDigest": "48035782578d",
+      "numCtx": 32768,
+      "think": "low",
+      "ttftSeconds": 51.96,
+      "firstTokenSeconds": 41.3,
+      "totalSeconds": 68.59,
+      "loadSeconds": 0.0,
+      "promptTokens": 25003,
+      "promptTokensPerSecond": 607.4,
+      "outputTokens": 938,
+      "tokensPerSecond": 34.2,
+      "thinkingWords": 276,
+      "doneReason": "stop",
+      "modelGb": 20.3,
+      "gpuGb": 20.3,
+      "loadedModels": [
+        "muse-glimmer:30b-mlx"
+      ],
+      "resources": {
+        "meanWatts": 79.7,
+        "maxWatts": 81.4,
+        "maxMemoryUsedGb": 70.7,
+        "maxRunnerGb": 17.2,
+        "minCpuSpeedLimit": null,
+        "maxThermalWarning": null
+      },
+      "outputDigest": "c68dc69212f7",
+      "scores": {
+        "words": 412,
+        "quotes": 15,
+        "quotesGrounded": 13
+      },
+      "judge": {
+        "usefulness": 3,
+        "grounding": 5,
+        "restraint": 4,
+        "model": "qwen3.8-flash-next:125b-mlx",
+        "digest": "5fcb32f20cb4",
+        "prompt": "2cc3856f20cd"
+      }
+    }
+  ],
+  "finished": "2026-11-26T04:22:02Z"
+}

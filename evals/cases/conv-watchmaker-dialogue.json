@@ -1,0 +1,10 @@
+{
+  "id": "conv-watchmaker-dialogue",
+  "task": "conversation",
+  "split": "tune",
+  "length": "scene",
+  "documents": [
+    "watchmaker"
+  ],
+  "request": "Where does the dialogue explain too much instead of letting the subtext do the work?"
+}

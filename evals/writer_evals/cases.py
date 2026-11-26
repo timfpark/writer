@@ -18,6 +18,11 @@ REQUESTS = {
 }
 
 
+def request_text(request: str) -> str:
+    """Expand a named example request or return a custom writer request verbatim."""
+    return REQUESTS.get(request, request)
+
+
 class CaseError(Exception):
     """A case or document file is malformed; the message names the file."""
 
@@ -109,9 +114,10 @@ def load_cases(cases_dir: Path) -> List[Case]:
         documents = [docs[d] for d in doc_ids]
         request = ""
         if task == "conversation":
-            _require(data.get("request") in REQUESTS, path,
-                     f"'request' must be one of {', '.join(REQUESTS)}")
-            request = data["request"]
+            req = data.get("request")
+            _require(isinstance(req, str) and bool(req.strip()), path,
+                     f"'request' must be a non-empty string or one of {', '.join(REQUESTS)}")
+            request = req.strip()
         selection = data.get("selection", "")
         if selection:
             _require(contains(documents, selection), path,

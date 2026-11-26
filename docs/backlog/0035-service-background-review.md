@@ -35,8 +35,8 @@ read. [Backlog 12](./0012-first-pair-writing-agent.md) builds the agent crate,
 `service/prompts/`, the conversation cases in `evals/`, and the fake provider
 this story extends. [Backlog 48](./0048-background-agent-evals.md) wrote
 cases and a first prompt for each agent and measured which are feasible, and
-[backlog 46](./0046-prompt-tuning-evals.md) added prompt sweeps to the
-harness. [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint
+[evals/README.md](../../evals/README.md#sweeping-prompt-variants) documents
+how to sweep prompt variants in the harness. [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint
 conventions. Living artifacts such as story notes, and chapter-level and
 session agents, follow in backlog 49 to 53 on this plumbing, and each tunes
 its own prompts the way this story does. If building reveals a flaw in the
@@ -45,17 +45,18 @@ agent ADR, amend it in the same pull request.
 ## Scope
 
 * Tune a prompt for each agent this story ships, starting from backlog 48's
-  first prompt and sweeping variants on its tuning cases as backlog 46
+  first prompt and sweeping variants on its tuning cases as
+  [evals/README.md](../../evals/README.md#sweeping-prompt-variants)
   documents, at least:
   * Separate passes per agent instead of one combined pass
   * Worked examples of a good finding and a false alarm
   * Different caps on the number of findings, and wording that asks for
     fewer, stronger findings
   * Brief reasoning before a pass, on models that offer it
-* Run the finalists once on the holdout cases, have the maintainer score a
-  blind sheet of finalists only, measure each variant's time and tokens per
-  review, and amend [ADR 0010](../adrs/0010-pair-writing-models.md) with the
-  chosen prompts and any agent still not good enough.
+* Run the finalists once on the holdout cases, score them with automatic
+  metrics and the judge, measure each variant's time and tokens per review,
+  and amend [ADR 0010](../adrs/0010-pair-writing-models.md) with the chosen
+  prompts and any agent still not good enough.
 * Add the chosen prompts to `service/prompts/`.
 * Run backlog 48's evaluation cases for each shipping agent against the
   review endpoint, as the agent ADR decides, and add cases for anything the

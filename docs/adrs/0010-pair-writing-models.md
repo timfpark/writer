@@ -2,7 +2,7 @@
 title: "ADR 0010: Local models for pair writing"
 description: Measures local models served by Ollama on the reference laptop for conversation and background review with a committed evaluation harness, chooses the models Writer runs first, records where none is good enough, and decides how the service reaches Ollama
 author: Tim Park
-ms.date: 2026-11-23
+ms.date: 2026-11-26
 ms.topic: reference
 status: Accepted
 subsystems:
@@ -20,16 +20,24 @@ estimated_reading_time: 14
 
 ## Status
 
-Accepted on 2026-11-23.
+Accepted on 2026-11-23; amended on 2026-11-26 with the conversation prompt
+sweep.
 
-The measurements ran unattended overnight on the reference machine, and the
-maintainer then scored a blind sheet of the leading configurations, which
-changed the reviewer. One check remains as a follow-up, which
-[backlog 59](../backlog/0059-battery-and-typing-check.md) runs: a battery
-run on the chosen models with the charger unplugged, and a check that typing
-in a browser on the host stays smooth while it runs. The measurements ran on
-AC power, so battery drain is estimated from power draw, and the typing test
-ran without the host's GPU.
+The initial measurements ran unattended overnight on the reference machine,
+and the maintainer then scored a blind sheet of the leading configurations,
+which changed the reviewer. On 2026-11-26, a five-variant conversation
+prompt sweep across `gemma4:31b-mlx` and its closest challengers chose the
+starting conversation prompt (`conversation-grounded`), kept
+`gemma4:31b-mlx` as the default conversation model, and removed offline
+blind sheets (`sheet` / `ingest`) from the harness so offline sweeps use
+automatic metrics and LLM judging while human feedback waits for in-app
+comparisons on writers' own prose in
+[backlog 55](../backlog/0055-compare-models-in-use.md). One check remains as
+a follow-up, which [backlog 59](../backlog/0059-battery-and-typing-check.md)
+runs: a battery run on the chosen models with the charger unplugged, and a
+check that typing in a browser on the host stays smooth while it runs. The
+measurements ran on AC power, so battery drain is estimated from power draw,
+and the typing test ran without the host's GPU.
 
 This record amends [ADR 0001](./0001-monorepo-structure.md) by adding the
 `evals/` subsystem, which replaces the planned `service/evals/`.
@@ -43,6 +51,19 @@ This record amends [ADR 0001](./0001-monorepo-structure.md) by adding the
   build (`muse-glimmer:30b-mlx`) for background review, because it raises
   more of the issues a writer wants to hear about with no false alarms. The
   pair peaks at about 36 GB, so it needs a 48 GB machine.
+* Start conversation from
+  [conversation-grounded.txt](../../evals/prompts/conversation-grounded.txt)
+  (digest `c0a3c0b9f874`), chosen from a five-variant sweep across
+  `gemma4:31b-mlx` and its four closest challengers. On `gemma4:31b-mlx`, it
+  lifted quote grounding from 89% to 98% on tuning cases (100% on unseen
+  holdout cases) and cut reply length by a third (351 to 231 tokens on tune;
+  278 to 187 on holdout) while preserving judge quality. The sweep did not
+  change the chosen conversation model: `qwen3.8:27b-mlx` with
+  `conversation-concise` (`dc48e533876b`) scored highest (5.0 on holdout,
+  4.9 on tune) and cut its TTFT from 18 to 21 seconds down to 12 to 13
+  seconds, making it the leading slower alternative for backlog 57 and
+  backlog 55, while `gemma4:31b-mlx` remains the only leading model near 2
+  seconds to first token.
 * Treat this as the first model decision. The harness screens each new model
   release, backlog 57 lets writers switch models, and backlog 55 lets them
   trial candidates in real use.
@@ -50,9 +71,11 @@ This record amends [ADR 0001](./0001-monorepo-structure.md) by adding the
   ways, the MLX build ran faster than the GGUF build at 4-bit, often by 70%
   or more, in less memory. Gemma 4 31B's MLX build found more planted issues;
   Muse Glimmer's found one or two fewer.
-* Weigh people's blind scores over the judge's. The judge rewarded reviews
-  with fewer findings; the maintainer preferred reviews that covered more,
-  and spread conversation scores where the judge gave nearly all fives.
+* Use automatic checks and an out-of-candidate LLM judge for offline
+  evaluation sweeps, and defer human scoring to in-app comparisons on
+  writers' own prose in backlog 55. Offline blind scoring on synthetic prose
+  was difficult to differentiate once outputs were all strong, so `sheet`
+  and `ingest` were removed from the harness after the initial model survey.
 * Treat disconnects as the gap. Every model finds weak passages, and most
   find open threads; no model reliably finds contradictions within a
   chapter or across chapters, so the background agents ADR should ship
@@ -367,6 +390,82 @@ and two review cases got a best and a worst mark.
   purpose, so the scores rank the configurations rather than measure an
   absolute quality gap.
 
+### Conversation prompt sweep (2026-11-26)
+
+The initial model survey ran a single untuned prompt (`conversation`, digest
+`48035782578d`) across seven conversation cases. To pick a measured starting
+prompt without fitting a handful of requests, the harness was extended to
+name per-task prompts and custom conversation requests, and the case set was
+expanded before running any variant to 11 tuning cases across 7 documents
+(including all three example requests from backlog 38 plus focused craft
+questions and a selection) and 6 unseen holdout cases across 4 documents
+(adding `night-train.md` and `glasshouse.md` exclusively for holdout).
+
+Five prompt variants were swept against the baseline across `gemma4-31b-mlx`
+and four closest challengers (`muse-glimmer-30b-mlx`, `qwen3.8-27b-mlx`,
+`qwen3.8-27b-mlx-nothink`, and `gemma4-26b-a4b-q4`), 30 runs and 330 tuning
+replies scored by `judge-qwen3.8-flash-next`:
+
+| Prompt                  | Digest         | Reason for testing                                                                              | Outcome                                               |
+|-------------------------|----------------|-------------------------------------------------------------------------------------------------|-------------------------------------------------------|
+| `conversation`          | `48035782578d` | ADR 0010 baseline: 3 to 5 numbered points, verbatim quotes, no preamble or praise               | Kept as baseline                                      |
+| `conversation-concise`  | `dc48e533876b` | Tight length and format cap (150 to 250 words, 2 to 4 points, direct 1-sentence answer first)   | Finalist on `qwen3.8-27b-mlx`; stopped on others      |
+| `conversation-grounded` | `c0a3c0b9f874` | Strict verbatim double-quoting, italics for illustrative phrasing, voice-first restraint        | Chosen default; finalist on Gemma 4 and Qwen 3.8      |
+| `conversation-examples` | `d58f5cde655a` | Two synthetic worked examples (broad critique and focused question) to anchor tone and depth    | Stopped: leaked example phrases on Muse Glimmer       |
+| `conversation-editor`   | `a64c792df219` | Combined concise format, strict quoting rules, and one compact worked example                   | Stopped: below baseline on dense models; leaked once  |
+| `conversation-sharp`    | `bee8b5f0cc3d` | Tuning-informed follow-up removing worked examples and forbidding redundant or surface points   | Finalist on `muse-glimmer-30b-mlx`; stopped on others |
+
+Tuning observations (11 `tune` cases, judged before touching `holdout`):
+
+* Worked examples caused cross-contamination on `muse-glimmer-30b-mlx`:
+  phrases from the unrelated kiln and bicycle examples (`"ash on her cuffs"`,
+  `"helmet"`, `"draft door shuddering"`) leaked into replies about the ferry
+  and saltworks drafts, and `conversation-examples` pushed `qwen3.8-27b-mlx`
+  to exhaust its 2,000-token output budget thinking on one case.
+* Hard word caps (`conversation-concise`) squeezed depth on `gemma4-31b-mlx`
+  (judge 4.0 vs. 4.3 baseline), `muse-glimmer-30b-mlx` (4.0 vs. 4.5), and
+  the two fast challengers, but helped `qwen3.8-27b-mlx` substantially by
+  curbing its verbose 591-word baseline replies (judge 4.9 vs. 4.8, TTFT
+  13.3 s vs. 21.0 s, tokens/reply 805 vs. 1,536).
+* Separating verbatim draft quotes (double quotes) from suggested wording
+  (italics) in `conversation-grounded` lifted `gemma4-31b-mlx`'s quote
+  grounding from 89% to 98% and `qwen3.8-27b-mlx`'s from 85% to 94%, while
+  cutting tokens per reply by a third.
+* Neither fast challenger caught the dense MLX models even with its best
+  prompt: `gemma4-26b-a4b-q4` peaked at 4.06 (`conversation-sharp`, 0.4 s
+  TTFT) and `qwen3.8-27b-mlx-nothink` peaked at 4.09 (`conversation-examples`,
+  1.8 s TTFT), both below `gemma4-31b-mlx` (4.30), `muse-glimmer-30b-mlx`
+  (4.48), and `qwen3.8-27b-mlx` (4.97).
+
+Four beating-baseline finalists and their three same-model baselines ran
+once on the 6 unseen `holdout` cases and were scored by
+`judge-qwen3.8-flash-next`. Their `tune` and `holdout` summaries are
+committed in [evals/results/](../../evals/results/):
+
+Tuning split (11 cases):
+
+| Config               | Prompt                | Digest       | Peak GB | TTFT s | Tok/s | Tok/reply | Quotes grounded % | Judge chat |
+|----------------------|-----------------------|--------------|---------|--------|-------|-----------|-------------------|------------|
+| gemma4-31b-mlx       | conversation          | 48035782578d | 18.3    | 1.6    | 36.2  | 351       | 89                | 4.3        |
+| gemma4-31b-mlx       | conversation-grounded | c0a3c0b9f874 | 18.3    | 1.9    | 32.4  | 231       | 98                | 4.3        |
+| muse-glimmer-30b-mlx | conversation          | 48035782578d | 17.2    | 6.6    | 40.4  | 648       | 99                | 4.5        |
+| muse-glimmer-30b-mlx | conversation-sharp    | bee8b5f0cc3d | 17.2    | 11.0   | 39.4  | 681       | 96                | 4.5        |
+| qwen3.8-27b-mlx      | conversation          | 48035782578d | 15.0    | 21.0   | 37.0  | 1536      | 85                | 4.8        |
+| qwen3.8-27b-mlx      | conversation-grounded | c0a3c0b9f874 | 15.0    | 17.7   | 37.1  | 1091      | 94                | 5.0        |
+| qwen3.8-27b-mlx      | conversation-concise  | dc48e533876b | 15.0    | 13.3   | 37.7  | 805       | 87                | 4.9        |
+
+Holdout split (6 unseen cases):
+
+| Config               | Prompt                | Digest       | Peak GB | TTFT s | Tok/s | Tok/reply | Quotes grounded % | Judge chat |
+|----------------------|-----------------------|--------------|---------|--------|-------|-----------|-------------------|------------|
+| gemma4-31b-mlx       | conversation          | 48035782578d | 18.3    | 1.5    | 36.3  | 278       | 100               | 4.3        |
+| gemma4-31b-mlx       | conversation-grounded | c0a3c0b9f874 | 18.3    | 2.3    | 28.6  | 187       | 100               | 4.2        |
+| muse-glimmer-30b-mlx | conversation          | 48035782578d | 17.2    | 5.3    | 47.2  | 606       | 99                | 4.6        |
+| muse-glimmer-30b-mlx | conversation-sharp    | bee8b5f0cc3d | 17.2    | 8.9    | 36.5  | 644       | 95                | 4.7        |
+| qwen3.8-27b-mlx      | conversation          | 48035782578d | 15.0    | 17.9   | 38.2  | 1432      | 82                | 4.9        |
+| qwen3.8-27b-mlx      | conversation-grounded | c0a3c0b9f874 | 15.0    | 23.6   | 36.0  | 1339      | 100               | 4.9        |
+| qwen3.8-27b-mlx      | conversation-concise  | dc48e533876b | 15.0    | 12.4   | 35.6  | 731       | 89                | 5.0        |
+
 ### Two models together
 
 | Chat model        | Reviewer                   | Both loaded | Peak GB | TTFT idle s | TTFT during review s | Tok/s idle | Tok/s during review | Reviews |
@@ -445,6 +544,41 @@ lowest thinking level that reasons, as the
 [configurations](../../evals/configs.json) record. Size the context to the
 document, and reserve 4,000 output tokens for a review and 2,000 for a
 reply, as the runs did.
+
+### Conversation prompt
+
+Start the pair writer's conversation mode from
+[conversation-grounded.txt](../../evals/prompts/conversation-grounded.txt)
+(digest `c0a3c0b9f874`), keeping
+[conversation.txt](../../evals/prompts/conversation.txt) as the baseline in
+`evals/prompts/`. The prompt sweep did not change the chosen conversation
+model (`gemma4:31b-mlx`):
+
+* On `gemma4:31b-mlx`, `conversation-grounded` raised quote grounding from
+  89% to 98% on the 11 tuning cases (holding 100% on the 6 unseen holdout
+  cases) and cut reply size by a third (351 to 231 tokens on tune, 278 to
+  187 on holdout) with essentially unchanged judge scores (4.30 vs. 4.27 on
+  tune, 4.22 vs. 4.33 on holdout) and a ~2-second first token.
+* `qwen3.8:27b-mlx` paired with
+  [conversation-concise.txt](../../evals/prompts/conversation-concise.txt)
+  (`dc48e533876b`) achieved 5.0 on holdout (4.9 on tune) while cutting TTFT
+  from 18 to 21 seconds down to 12 to 13 seconds and halving reply tokens,
+  and `muse-glimmer:30b-mlx` with
+  [conversation-sharp.txt](../../evals/prompts/conversation-sharp.txt)
+  (`bee8b5f0cc3d`) reached 4.7 on holdout at 8.9 seconds TTFT. Both remain
+  significantly slower to first token than `gemma4:31b-mlx`, so they stay
+  alternatives for writers who switch models in backlog 57 or trial them on
+  their own prose in backlog 55.
+* The best prompt differed by model family (strict quoting for Gemma 4 31B,
+  hard length bounds for verbose Qwen 3.8 27B, and direct anti-redundancy
+  rules without worked examples for Muse Glimmer 30B). If a writer or future
+  decision switches conversation models, pair the model with its measured
+  prompt rather than assuming one prompt fits every family.
+* The maintainer opted to decide offline prompt sweeps with automatic scores
+  and the LLM judge rather than scoring a blind sheet on synthetic prose,
+  deferring human feedback to in-app comparisons on writers' own work in
+  backlog 55. The `sheet` and `ingest` commands were removed from the
+  harness accordingly.
 
 ### Kinds of finding
 
@@ -562,10 +696,11 @@ Trade-offs and risks:
   gap this record found, before the agent architecture is chosen.
 * [Backlog 48](../backlog/0048-background-agent-evals.md): measure each
   background agent that ships, and give each a first prompt.
-* [Backlog 46](../backlog/0046-prompt-tuning-evals.md): sweep conversation
-  prompt variants across this record's leading models. Each background
-  agent's delivery story tunes its own prompts. These results used one
-  untuned prompt per task.
+* Conversation prompt sweep (settled on 2026-11-26): swept five prompt
+  variants across `gemma4:31b-mlx` and four challengers, chose
+  `conversation-grounded` (`c0a3c0b9f874`), kept `gemma4:31b-mlx`, and
+  documented prompt sweeping in [evals/README.md](../../evals/README.md).
+  Each background agent's delivery story tunes its own prompts the same way.
 * [Backlog 38](../backlog/0038-pair-writing-experience-adr.md): set latency
   targets from these measurements. If writers can accept rewrites into their
   text, weigh Muse Glimmer's usage policy on representing output as human

@@ -51,9 +51,9 @@ pair writer's suggestions are shown and accepted.
 The largest risk is not how the agent is built but whether its unprompted
 findings help more than they distract, on a model the writer can run.
 [ADR 0010](../adrs/0010-pair-writing-models.md), the model ADR, measured
-that first with local models served by Ollama, and its results set how
-quickly replies arrive. [Backlog 46](./0046-prompt-tuning-evals.md) tunes
-the conversation prompt. [ADR 0011](../adrs/0011-background-agents-ux.md),
+that first with local models served by Ollama, chose the starting
+`conversation-grounded` prompt, and set how quickly replies arrive.
+[ADR 0011](../adrs/0011-background-agents-ux.md),
 the background agents UX ADR, picks the fifteen Wave 1 shipping agents,
 their shapes, triggers, always-on subtle passage underlines with density
 caps, the three-tab assistant pane (`Findings`, `Reference` with full-width
@@ -135,4 +135,4 @@ after writers have used the local pair writer.
 
 ## Prerequisites
 
-* [Tune the conversation prompt with the evaluation harness](./0046-prompt-tuning-evals.md)
+None.

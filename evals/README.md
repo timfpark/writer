@@ -46,23 +46,22 @@ cd evals
 python3 -m writer_evals list
 python3 -m writer_evals run qwen3.8-27b-q4 gemma4-26b-a4b-q4
 python3 -m writer_evals run muse-glimmer-30b-q8 --task review --split tune
+python3 -m writer_evals run gemma4-31b-mlx --task conversation --split tune --prompt conversation-grounded
 python3 -m writer_evals pair gemma4-26b-a4b-q4 muse-glimmer-30b-q8 --review-case review-saltworks
 python3 -m writer_evals sustained muse-glimmer-30b-q4 --case review-saltworks --minutes 30
 python3 -m writer_evals judge judge-qwen3.8-flash-next results/2026-11-22-*.json
-python3 -m writer_evals report
+python3 -m writer_evals report --split holdout
 ```
 
 | Command     | What it does                                                                                              |
 |-------------|-----------------------------------------------------------------------------------------------------------|
-| `list`      | Lists the configurations in [configs.json](./configs.json) and the cases in [cases/](./cases/).           |
+| `list`      | Lists the configurations in [configs.json](./configs.json), prompts in [prompts/](./prompts/), and cases. |
 | `run`       | Unloads every model, times a load, runs the chosen cases, scores them, and writes one summary per config. |
 | `pair`      | Loads a conversation model and a reviewer together and times conversation replies while reviews run.      |
 | `sustained` | Reviews one case repeatedly, sampling power and thermal state, and battery level when unplugged.          |
 | `judge`     | Scores outputs with a judge configuration that sees no model names, and adds the scores to the summaries. |
-| `sheet`     | Writes a blind scoring sheet for people to `.local/evals/sheet/`.                                         |
-| `ingest`    | Copies the filled sheet's scores into the summaries, with the scorer's name.                              |
 | `rescore`   | Recomputes the automatic scores from raw output after the scoring rules or case expectations change.      |
-| `report`    | Prints the summaries as Markdown tables for ADRs and pull requests.                                       |
+| `report`    | Prints the summaries as Markdown tables for ADRs and pull requests (filter with `--split` and `--task`).  |
 
 The commands exit 0 on success, 1 when a generation fails, and 2 on a usage
 error, an unknown configuration or case, or a model or runtime that is not
@@ -76,8 +75,9 @@ or `manuscript`), and the documents it reads from
 [cases/documents/](./cases/documents/). Documents are synthetic Markdown, as
 Writer stores it, and are test data rather than documentation.
 
-* A conversation case names one of the three requests (`improve`, `develop`,
-  `explore`) and optionally a selection.
+* A conversation case names either one of the three example requests
+  (`improve`, `develop`, `explore`) or a custom question string, and
+  optionally a verbatim `selection`.
 * A review case lists the issues planted in its documents under `expected`,
   each with a kind (`suggestion`, `question`, or `disconnect`) and the exact
   passages involved, and lists under `expectNone` the kinds that would be
@@ -102,8 +102,8 @@ The harness scores what a machine can check:
 * False alarms: findings of a kind the case lists in `expectNone`
 * For conversation, the share of quoted passages that appear in the text
 
-Usefulness needs judgment. A judge model and people score each output from 1
-to 5 on three criteria:
+Usefulness needs judgment. A judge model scores each output from 1 to 5 on
+three criteria:
 
 | Criterion  | 5 means                                                              | 1 means                                |
 |------------|----------------------------------------------------------------------|----------------------------------------|
@@ -112,10 +112,10 @@ to 5 on three criteria:
 | restraint  | Respects the writer's voice; no filler, praise, or invented problems | Bloated, overreaching, or mostly noise |
 
 The judge configuration must not be a candidate, so no model scores its own
-output. Judge scores are provisional; people's scores on the blind sheet
-decide. To score by hand, run `sheet` on the results to compare, fill
-`.local/evals/sheet/scores.csv` while reading `sheet.txt`, then run
-`ingest --scorer <name>`.
+output. Human judgment on synthetic cases is hard to differentiate from prose
+a writer did not write, so offline sweeps use automatic scores and the judge
+model, while human feedback is deferred to in-app comparisons on writers'
+own work in [backlog 55](../docs/backlog/0055-compare-models-in-use.md).
 
 ## Results
 
@@ -125,12 +125,62 @@ suffix. Each records the machine, the runtime and its version, the model's
 digest and quantization, the digests of the prompts and cases, and per case
 the timings, memory, power, thermal state, and scores. Summaries carry no
 model output, only its digest. Raw output goes to `.local/evals/raw/`, which
-Git ignores, so judging and the blind sheet must run on the machine that
-produced the output.
+Git ignores, so judging must run on the machine that produced the output.
 
 Commit the summaries a decision cites. To compare a new model with an earlier
 decision, run it with the same prompts and cases, which the digests confirm,
 and compare the `report` tables.
+
+## Sweeping prompt variants
+
+A configuration in [configs.json](./configs.json) can name its prompt for
+each task inside its `conversation` or `review` block (defaulting to
+`conversation` and `review`), and `run` accepts `--prompt <name>` (or
+`--prompt <task>=<name>`) to override it during an exploratory sweep. Every
+result summary records the prompt's name and SHA-256 digest on both the
+configuration block and each case item.
+
+Follow these steps when tuning any agent's prompt:
+
+1. Freeze the cases before running a variant. Keep `holdout` cases unseen
+   while iterating, and write any new holdout cases before reading any
+   variant's output.
+2. Keep the current prompt as the baseline, add candidate `.txt` templates
+   under [prompts/](./prompts/) with a `[system]` and `[user]` section, and
+   record the reason for each variant.
+3. Sweep the baseline and every candidate on `--split tune` across the
+   chosen model and at least two closest challengers, writing exploratory
+   summaries under `.local/evals/` so losing variants stay out of Git:
+
+   ```bash
+   cd evals
+   for prompt in conversation conversation-concise conversation-grounded; do
+     python3 -m writer_evals --results-dir ../.local/evals/sweep-tune \
+       run gemma4-31b-mlx muse-glimmer-30b-mlx qwen3.8-27b-mlx \
+       --task conversation --split tune --prompt "$prompt"
+   done
+   python3 -m writer_evals judge judge-qwen3.8-flash-next ../.local/evals/sweep-tune/*.json
+   python3 -m writer_evals report --split tune ../.local/evals/sweep-tune/*.json
+   ```
+
+4. Rank the variants on `tune` using automatic scores (quote grounding,
+   valid findings, TTFT, and tokens per reply) and judge scores. Stop
+   variants that do not beat the baseline on a model, and copy only the
+   baseline and finalist `tune` summaries into [results/](./results/).
+5. Run the baselines and finalists once on `--split holdout`, judge them,
+   and report `--split tune` and `--split holdout` separately:
+
+   ```bash
+   cd evals
+   python3 -m writer_evals run gemma4-31b-mlx --task conversation --split holdout --prompt conversation-grounded
+   python3 -m writer_evals judge judge-qwen3.8-flash-next results/2026-11-26-*.json
+   python3 -m writer_evals report --split tune results/2026-11-25-*.json results/2026-11-26-*.json
+   python3 -m writer_evals report --split holdout results/2026-11-26-*.json
+   ```
+
+6. Choose the prompt from the holdout judge scores, automatic grounding, and
+   latency/token budgets, commit the chosen and finalist prompts plus the
+   baseline and finalist summaries, and remove losing prompt templates.
 
 ## Tests
 

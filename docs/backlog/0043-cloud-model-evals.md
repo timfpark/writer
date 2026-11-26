@@ -47,7 +47,8 @@ must rerun cheaply and record the prices it used.
   such as small or flash models, and a frontier tier from at least two model
   providers in the Foundry catalog. Give reasons for each.
 * Run them on the harness's cases with the prompts the service ships, the
-  conversation prompt from [backlog 46](./0046-prompt-tuning-evals.md) and
+  conversation prompt from
+  [ADR 0010](../adrs/0010-pair-writing-models.md#conversation-prompt) and
   the review prompts from [backlog 35](./0035-service-background-review.md)
   and any later agent stories, beside the model ADR's chosen local models on
   the same prompts, and commit the result summaries. Retune a prompt for a

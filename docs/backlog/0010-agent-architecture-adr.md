@@ -111,8 +111,9 @@ what this ADR decides.
   state.
 * Decide how prompts in `service/prompts/` are stored, versioned, and loaded:
   embedded at build time or read at run time, and how
-  [backlog 46](./0046-prompt-tuning-evals.md)'s tuned conversation prompt
-  and [backlog 48](./0048-background-agent-evals.md)'s first agent prompts
+  [ADR 0010](../adrs/0010-pair-writing-models.md#conversation-prompt)'s
+  tuned conversation prompt and
+  [backlog 48](./0048-background-agent-evals.md)'s first agent prompts
   become the first versions.
 * Decide how the `evals/` harness runs the agent's cases against the
   service, such as through its HTTP API, with cases for each conversation
