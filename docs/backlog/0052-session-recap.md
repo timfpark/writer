@@ -1,6 +1,6 @@
 ---
 title: Recap the last session when Writer opens
-description: Show a prepared recap of where the writer left off, what changed, and a suggested next step at the workspace root, on folder selection, and when returning to a document from an earlier session.
+description: Show prepared recaps across all root folders at the workspace root, for any directory tree at any depth, and for each file when returning from an earlier session.
 author: Tim Park
 ms.date: 2026-11-25
 ms.topic: reference
@@ -19,12 +19,14 @@ thread quickly.
 
 ## Context
 
-[ADR 0011](../adrs/0011-background-agents-ux.md) scopes `Session recap` to
-three levels: opening the workspace root with no document loaded shows a
-workspace recap grouped by top-level folder, selecting a folder shows a
-subtree recap of recent activity in that book, and returning to a document
-not visited since an earlier session shows a compact, non-modal banner that
-clears the instant the writer types. [Backlog 48](./0048-background-agent-evals.md)
+[ADR 0011](../adrs/0011-background-agents-ux.md) scopes `Session recap`
+recursively across N levels: the workspace root shows recaps across all
+root folders and their descendants, selecting any directory shows only
+that directory's tree, and selecting a file shows only that file's recap.
+There is no fixed directory depth or required book / chapter layout.
+Returning to a document not visited since an earlier session shows a
+compact, non-modal banner that clears the instant the writer types.
+[Backlog 48](./0048-background-agent-evals.md)
 measures it. Knowing
 what changed needs a record of the last session: the change control work
 from [backlog 29](./0029-service-history.md) provides history if it has
@@ -39,27 +41,41 @@ workspace comes with [backlog 54](./0054-agent-settings-tree.md).
 
 ## Scope
 
-* Record lightweight session-change metadata per workspace, folder subtree,
-  and document, as ADR 0011 and the conversations ADR decide, without
+* Record lightweight session-change metadata per file, directory tree at any
+  depth, and workspace, as ADR 0011 and the conversations ADR decide, without
   storing more text than the workspace already holds.
-* Prepare workspace, folder, and document recaps in the background on idle,
-  reusing reverse outline and open threads when available, so opening
-  Writer or switching folders is never delayed.
-* Show the recap at all three scopes as ADR 0011 decides: on the workspace
-  root when no document is loaded, when selecting a folder in the
-  navigator, and as a non-modal dismissible banner when returning to a
-  document from an earlier session (cleared automatically on typing),
-  linked to documents and passages, keyboard operable and accessible.
+* Prepare file recaps in the background on idle, rolling up activity through
+  every ancestor directory to the workspace root without duplicate entries.
+  Reuse reverse outline and open threads when available; opening Writer
+  or navigating the tree never waits on a model call.
+* Show the workspace recap grouped across all root folders, including
+  descendant activity and any files directly under the root. Show any
+  selected directory's whole tree, including its direct files and nested
+  directories, with no sibling or ancestor activity leaking into it.
+* Show only the selected file's recap as a non-modal dismissible banner when
+  returning from an earlier session (cleared automatically on typing,
+  never repeated during rapid same-session switching). Link recaps to
+  files and passages and keep navigation keyboard operable and accessible.
+* Refresh only the changed file's recap and its ancestor rollups. Show an
+  explicit no-previous-activity state for trees or files without a recap,
+  never a recap borrowed from another scope.
 * Tune the recap prompt on backlog 48's cases, as backlog 35 tunes its
   agents, and amend [ADR 0010](../adrs/0010-pair-writing-models.md) with the
   chosen prompt. Add the prompt and cases, and extend the fake provider.
 
 ## Acceptance criteria
 
-* [ ] After a synthetic session across two books, opening the workspace
-  root shows a workspace recap, clicking a folder shows that subtree's
-  recap, and reopening a document from an earlier session shows a document
-  recap banner that clears on typing.
+* [ ] After a synthetic session across two root folders with at least four
+  nested directory levels, the workspace root includes activity across
+  both trees, grouped by root folder. Every directory selection shows all
+  and only that directory's descendant activity, including direct files,
+  without duplicate entries or a hard-coded depth limit.
+* [ ] Reopening any file from an earlier session shows only that file's
+  recap, not its siblings' or ancestors' activity; the banner clears on
+  typing and does not repeat on rapid same-session switching.
+* [ ] Direct workspace-root files are included, empty trees show no previous
+  activity, and a file change refreshes its ancestor rollups without
+  changing unrelated trees.
 * [ ] Opening Writer is no slower with the recap on.
 * [ ] No document text appears in a log line or error response.
 * [ ] `tools/check` exits 0.

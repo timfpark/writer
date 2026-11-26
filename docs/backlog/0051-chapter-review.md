@@ -1,6 +1,6 @@
 ---
 title: Review finished chapters
-description: When a chapter settles, review it for scene purpose and pacing, character voice, and a simulated reader's reaction using the story bible and reverse outline, and show the results beside the chapter.
+description: When a chapter settles, review it for scene purpose and pacing, character voice, and a simulated reader's reaction using story notes and the reverse outline, and show the results beside the chapter.
 author: Tim Park
 ms.date: 2026-11-25
 ms.topic: reference
@@ -27,8 +27,8 @@ rather than inline underlines, and defers anachronisms and facts until
 after per-book settings ([backlog 54](./0054-agent-settings-tree.md)) and
 stronger factual grounding. To stay within
 [ADR 0010](../adrs/0010-pair-writing-models.md)'s cost bounds and avoid
-noise, `Character voice` reads the story bible from
-[backlog 49](./0049-story-bible-continuity.md) and `Scene purpose and
+noise, `Character voice` reads story notes from
+[backlog 49](./0049-story-notes-continuity.md) and `Scene purpose and
 pacing` reads the reverse outline from
 [backlog 50](./0050-threads-and-outline.md).
 [Backlog 48](./0048-background-agent-evals.md) measures them, and
@@ -43,7 +43,7 @@ plumbing and findings view.
   session, above the chapter minimum word count), and review it once for
   each shipping agent.
 * Raise `Scene purpose and pacing` findings (reading the reverse outline)
-  and `Character voice` findings (reading the story bible, skipped on
+  and `Character voice` findings (reading story notes, skipped on
   chapters without dialogue) anchored to passages through backlog 36's
   view.
 * Generate `Reader reaction` (engagement, confusion, predictions) as a
@@ -66,5 +66,5 @@ plumbing and findings view.
 
 ## Prerequisites
 
-* [Keep a story bible and check continuity](./0049-story-bible-continuity.md)
+* [Keep story notes and check continuity](./0049-story-notes-continuity.md)
 * [Track open threads and keep a reverse outline](./0050-threads-and-outline.md)

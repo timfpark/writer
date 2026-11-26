@@ -30,7 +30,7 @@ technical book and never on a novel, without each having to recognize
 fiction and stay quiet. Background review from
 [backlog 35](./0035-service-background-review.md), its findings view from
 [backlog 36](./0036-background-findings-view.md), and the living artifacts
-from [backlog 49](./0049-story-bible-continuity.md), which a terminology
+from [backlog 49](./0049-story-notes-continuity.md), which a terminology
 list can reuse, provide the plumbing. Technical accuracy relies on a local
 model's knowledge, so it needs care not to state wrong facts with
 confidence.

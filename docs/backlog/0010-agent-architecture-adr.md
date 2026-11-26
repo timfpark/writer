@@ -26,10 +26,10 @@ review, what the agent pays attention to, and the targets for latency,
 memory, and battery. [ADR 0011](../adrs/0011-background-agents-ux.md) picks
 the fifteen Wave 1 background agents, their pause and chapter-settled
 triggers, zero-cost structural quietness gates, living artifacts (story
-bible, timeline, reverse outline, open threads, chapter reader reaction,
+notes, timeline, reverse outline, open threads, chapter reader reaction,
 and session recaps) that downstream agents read, global Pause, and OS
-power-state battery policy. [Backlog 56](./0056-story-bible-continuity-test.md)
-measures whether chaining a story bible into a continuity check works and
+power-state battery policy. [Backlog 56](./0056-story-notes-continuity-test.md)
+measures whether chaining story notes into a continuity check works and
 what it costs. This decision chooses an implementation that meets them.
 
 [ADR 0001](../adrs/0001-monorepo-structure.md#coding-agents-and-the-product-agent)
@@ -90,7 +90,7 @@ what this ADR decides.
 * Decide where background reviews execute, as tasks on the service's Tokio
   runtime or in a separate worker, and how a review is scheduled, cancelled,
   and recovered after a restart.
-* Decide how agents chain (`Story bible` and `Timeline` into `Continuity
+* Decide how agents chain (`Story notes` and `Timeline` into `Continuity
   check` and `Character voice`; `Reverse outline` into `Scene purpose and
   pacing` and `Session recap`), how zero-cost structural quietness gates
   skip non-applicable documents, and how living artifacts update
@@ -171,4 +171,4 @@ what this ADR decides.
 ## Prerequisites
 
 * [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)
-* [Test a story bible for continuity checking](./0056-story-bible-continuity-test.md)
+* [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)

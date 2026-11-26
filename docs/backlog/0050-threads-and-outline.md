@@ -22,8 +22,8 @@ paid off so that I can shape the structure of my work without rereading it.
 triggers and `Reference` tab surface (with full-width `Expand` for wide
 scene tables) for open threads and the reverse outline, and
 [backlog 48](./0048-background-agent-evals.md) measures them. They are
-book-scoped living artifacts like the story bible from
-[backlog 49](./0049-story-bible-continuity.md), and reuse its storage,
+book-scoped living artifacts like story notes from
+[backlog 49](./0049-story-notes-continuity.md), and reuse their storage,
 incremental updates, and corrections.
 
 ## Scope
@@ -53,4 +53,4 @@ incremental updates, and corrections.
 
 ## Prerequisites
 
-* [Keep a story bible and check continuity](./0049-story-bible-continuity.md)
+* [Keep story notes and check continuity](./0049-story-notes-continuity.md)

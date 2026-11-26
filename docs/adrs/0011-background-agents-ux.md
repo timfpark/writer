@@ -13,7 +13,7 @@ keywords:
   - background agents
   - ux
   - living artifacts
-  - story bible
+  - story notes
   - continuity
   - battery
   - pair writing
@@ -31,7 +31,7 @@ writer's first wave. Its cost and battery thresholds rest on
 revisited if [backlog 59](../backlog/0059-battery-and-typing-check.md)'s
 unplugged battery and host-browser typing checks diverge materially from
 those estimates. Its continuity chain waits on
-[backlog 56](../backlog/0056-story-bible-continuity-test.md) and its agent
+[backlog 56](../backlog/0056-story-notes-continuity-test.md) and its agent
 feasibility waits on
 [backlog 48](../backlog/0048-background-agent-evals.md). Per-folder and
 per-document agent settings follow in
@@ -44,7 +44,7 @@ nonfiction agents follow in
 * Ship 15 fiction-first background agents in Wave 1 (candidates 1 through
   15), ranked from fast prose and question checks through living artifacts,
   chained continuity and chapter reviews, the writer's own rules, and
-  three-level session recaps. Every shipping agent starts on for every
+  tree-scoped session recaps at any depth. Every shipping agent starts on for every
   document until backlog 54 adds tree-inherited settings.
 * Defer candidate 16 (anachronisms and facts) until after backlog 54 allows
   opt-in per book or [backlog 40](../backlog/0040-cloud-model-fallback-adr.md)
@@ -53,7 +53,7 @@ nonfiction agents follow in
   cut; generative rewrites and synopses stay on request in conversation.
 * Separate background outputs into two shapes: findings (passage-anchored
   notes the writer jumps to, discusses in chat, or dismisses) and living
-  artifacts (story bible, timeline, reverse outline, open threads, chapter
+  artifacts (story notes, timeline, reverse outline, open threads, chapter
   reader reaction, and the workspace's session recaps).
 * Show subtle hairline passage underlines on the writing surface for
   passages with active findings whether the assistant pane is open or
@@ -62,16 +62,18 @@ nonfiction agents follow in
   active-findings count badge (and a subtle running dot while an agent
   works) on the assistant toggle without opening the pane or moving focus.
 * Organize the assistant pane into three tabs: Findings, Reference, and
-  Chat. Living artifacts (story bible, timeline, reverse outline, open
+  Chat. Living artifacts (story notes, timeline, reverse outline, open
   threads, and the writer's own rules) live in the Reference tab beside the
   writer's prose, scoped to the active top-level folder (book) subtree, with
   an Expand control to open wide tables and outlines full-width in the
-  center region. Reader reaction sits as a collapsible chapter card inside
-  Findings once a chapter settles.
-* Scope Session recap to three levels: opening the workspace root with no
-  document loaded shows a workspace recap, selecting a folder shows a
-  subtree recap, and returning to a document from an earlier session shows
-  a compact dismissible banner that clears the moment the writer types.
+  center region. The Reader reaction background agent surfaces its
+  chapter-level findings as a collapsible card inside Findings once a
+  chapter settles.
+* Scope Session recap recursively across N levels: the workspace root
+  aggregates recaps across all root folders, any directory at any depth
+  shows only its own tree's recap, and any file shows only that file's
+  recap. Returning to a file from an earlier session shows a compact
+  dismissible banner that clears the moment the writer types.
 * Make living artifacts trustworthy through source passage citations,
   visible provenance (`Extracted` versus `Edited by you`), inline editing
   with a plain Save button that pins the writer's value against future
@@ -114,7 +116,7 @@ and disconnects). Real writing help spans two distinct shapes:
 * Findings: one-off notes anchored to specific passages that a writer acts
   on, discusses in chat, or dismisses.
 * Living artifacts: evolving reference material the pair writer maintains
-  across chapters (such as a story bible, a timeline, a reverse outline, or
+  across chapters (such as story notes, a timeline, a reverse outline, or
   a list of open threads) that the writer reads, trusts, and corrects.
 
 A single Writer workspace can hold different kinds of work at once, such as
@@ -156,29 +158,29 @@ against local 30B model capability, false-alarm risk when always on, and
 Wave 1's fiction focus. Generative work (rewrites, alternate scenes,
 synopses) stays on request in conversation and out of scope here.
 
-| #  | Agent                    | Decision | Target story   | Writer-facing reason                                                                                             |
-|----|--------------------------|----------|----------------|------------------------------------------------------------------------------------------------------------------|
-| 1  | Story bible              | Ship     | Backlog 49     | Relieves the writer of manual note-keeping for characters, places, and objects, and feeds continuity checks.     |
-| 2  | Continuity check         | Ship     | Backlog 49     | Catches high-stakes factual slips across chapters by reading the story bible and timeline; gated on backlog 56.  |
-| 3  | Timeline                 | Ship     | Backlog 49     | Tracks days, seasons, and time of day per scene and exposes impossible sequences alongside the story bible.      |
-| 4  | Open threads             | Ship     | Backlog 50     | Surfaces setups without payoffs so promises to the reader are not dropped; local models already spot these well. |
-| 5  | Reverse outline          | Ship     | Backlog 50     | Shows what each scene tries to do and what changes, helping structural revision without rereading every page.    |
-| 6  | Scene purpose and pacing | Ship     | Backlog 51     | Highlights scenes where nothing shifts and sagging middles, grounded in the reverse outline once settled.        |
-| 7  | Weak prose               | Ship     | Backlog 35, 36 | High universal value for clichés, filler, and overwriting; ADR 0010 proved local models handle this reliably.    |
-| 8  | Repetition               | Ship     | Backlog 35, 36 | Concrete, low-ego catch of echo words, repeated gestures, and repeated openings that writers go blind to.        |
-| 9  | Point of view and tense  | Ship     | Backlog 35, 36 | Mechanical slips (head-hopping, tense drift) that disrupt immersion and are painful to miss in revision.         |
-| 10 | Character voice          | Ship     | Backlog 51     | Flags out-of-character dialogue once a chapter settles, chained to story bible voice notes to avoid noise.       |
-| 11 | Clarity                  | Ship     | Backlog 35, 36 | Catches ambiguous pronouns, unclear speakers, and muddled blocking without imposing a house style.               |
-| 12 | Reader reaction          | Ship     | Backlog 51     | Gives an immediate chapter-level beta-reader read (engagement, confusion, predictions) without waiting days.     |
-| 13 | Open questions           | Ship     | Backlog 35, 36 | Core pair-writer behavior: opens creative paths the draft has not taken and bridges naturally into chat.         |
-| 14 | Session recap            | Ship     | Backlog 52     | Cuts re-entry friction after a break by summarizing where the writer left off, what changed, and a next step.    |
-| 15 | The writer's own rules   | Ship     | Backlog 53     | High-trust personalized checks defined by the writer; naturally silent until the writer adds a rule.             |
-| 16 | Anachronisms and facts   | Defer    | After 54 / 40  | Offline 30B models hallucinate historical facts and misfire on fantasy or sci-fi worldbuilding when always on.   |
-| 17 | Terminology              | Defer    | Backlog 58     | Technical nonfiction check; waits for tree settings (backlog 54) so novels never run it.                         |
-| 18 | Concept order            | Defer    | Backlog 58     | Technical nonfiction check; waits for tree settings (backlog 54) and living-artifact plumbing from Wave 1.       |
-| 19 | Code and examples        | Defer    | Backlog 58     | Technical nonfiction check; waits for tree settings (backlog 54) and code-block passage anchors.                 |
-| 20 | Technical accuracy       | Defer    | Backlog 58     | Technical nonfiction check; needs opt-in scoping and question-phrased uncertainty to avoid false corrections.    |
-| 21 | Cross-references         | Defer    | Backlog 58     | Technical nonfiction check; waits for tree settings (backlog 54) and heading or figure reference tracking.       |
+| #  | Agent                    | Decision | Target story   | Writer-facing reason                                                                                                                                           |
+|----|--------------------------|----------|----------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| 1  | Story notes              | Ship     | Backlog 49     | Relieves the writer of manual note-keeping for characters, places, and objects, and feeds continuity checks (replaces the earlier "story bible" working name). |
+| 2  | Continuity check         | Ship     | Backlog 49     | Catches high-stakes factual slips across chapters by reading story notes and the timeline; gated on backlog 56.                                                |
+| 3  | Timeline                 | Ship     | Backlog 49     | Tracks days, seasons, and time of day per scene and exposes impossible sequences alongside story notes.                                                        |
+| 4  | Open threads             | Ship     | Backlog 50     | Surfaces setups without payoffs so promises to the reader are not dropped; local models already spot these well.                                               |
+| 5  | Reverse outline          | Ship     | Backlog 50     | Shows what each scene tries to do and what changes, helping structural revision without rereading every page.                                                  |
+| 6  | Scene purpose and pacing | Ship     | Backlog 51     | Highlights scenes where nothing shifts and sagging middles, grounded in the reverse outline once settled.                                                      |
+| 7  | Weak prose               | Ship     | Backlog 35, 36 | High universal value for clichés, filler, and overwriting; ADR 0010 proved local models handle this reliably.                                                  |
+| 8  | Repetition               | Ship     | Backlog 35, 36 | Concrete, low-ego catch of echo words, repeated gestures, and repeated openings that writers go blind to.                                                      |
+| 9  | Point of view and tense  | Ship     | Backlog 35, 36 | Mechanical slips (head-hopping, tense drift) that disrupt immersion and are painful to miss in revision.                                                       |
+| 10 | Character voice          | Ship     | Backlog 51     | Flags out-of-character dialogue once a chapter settles, chained to story notes voice details to avoid noise.                                                   |
+| 11 | Clarity                  | Ship     | Backlog 35, 36 | Catches ambiguous pronouns, unclear speakers, and muddled blocking without imposing a house style.                                                             |
+| 12 | Reader reaction          | Ship     | Backlog 51     | Gives an immediate chapter-level beta-reader read (engagement, confusion, predictions) without waiting days.                                                   |
+| 13 | Open questions           | Ship     | Backlog 35, 36 | Core pair-writer behavior: opens creative paths the draft has not taken and bridges naturally into chat.                                                       |
+| 14 | Session recap            | Ship     | Backlog 52     | Cuts re-entry friction after a break by summarizing where the writer left off, what changed, and a next step.                                                  |
+| 15 | The writer's own rules   | Ship     | Backlog 53     | High-trust personalized checks defined by the writer; naturally silent until the writer adds a rule.                                                           |
+| 16 | Anachronisms and facts   | Defer    | After 54 / 40  | Offline 30B models hallucinate historical facts and misfire on fantasy or sci-fi worldbuilding when always on.                                                 |
+| 17 | Terminology              | Defer    | Backlog 58     | Technical nonfiction check; waits for tree settings (backlog 54) so novels never run it.                                                                       |
+| 18 | Concept order            | Defer    | Backlog 58     | Technical nonfiction check; waits for tree settings (backlog 54) and living-artifact plumbing from Wave 1.                                                     |
+| 19 | Code and examples        | Defer    | Backlog 58     | Technical nonfiction check; waits for tree settings (backlog 54) and code-block passage anchors.                                                               |
+| 20 | Technical accuracy       | Defer    | Backlog 58     | Technical nonfiction check; needs opt-in scoping and question-phrased uncertainty to avoid false corrections.                                                  |
+| 21 | Cross-references         | Defer    | Backlog 58     | Technical nonfiction check; waits for tree settings (backlog 54) and heading or figure reference tracking.                                                     |
 
 No candidate is permanently cut. Candidate 16 (anachronisms and facts) has
 real value for historical fiction once writers can turn it on for a specific
@@ -195,7 +197,7 @@ Wave 1 leaves four seams ready for them:
 * Generalized living-artifact storage and correction UX: Terminology (17)
   and Concept order (18) reuse the same book-scoped artifact store, source
   citations, `Edited by you` provenance, and `Revert to extracted` actions
-  built for the Story bible and Timeline.
+  built for Story notes and Timeline.
 * Passage anchoring across prose, headings, and fenced code blocks: Code
   and examples (19) and Cross-references (21) need ADR 0008's decoration
   anchors to address headings and code blocks cleanly, not only body
@@ -223,15 +225,15 @@ the delivery stories build them in order.
 | 3    | 13 | Open questions           | Finding         | Scene                    | Short typing pause              | Dotted underline + Findings tab (Answer in Chat)   | None while typing; quiet mark after pause       |
 | 4    | 9  | Point of view and tense  | Finding         | Scene                    | Short typing pause              | Hairline underline + Findings tab                  | None while typing; quiet mark after pause       |
 | 5    | 8  | Repetition               | Finding         | Scene                    | Short typing pause              | Hairline underline + Findings tab                  | None while typing; quiet mark after pause       |
-| 6    | 1  | Story bible              | Living artifact | Chapter to book          | Chapter settled                 | Reference tab (+ Expand full view)                 | Silent update; never interrupts the page        |
-| 7    | 2  | Continuity check         | Finding         | Chapter vs. artifacts    | Chained after Story bible       | Terracotta hairline underline + Findings tab       | Quiet mark + cross-chapter link once settled    |
+| 6    | 1  | Story notes              | Living artifact | Chapter to book          | Chapter settled                 | Reference tab (+ Expand full view)                 | Silent update; never interrupts the page        |
+| 7    | 2  | Continuity check         | Finding         | Chapter vs. artifacts    | Chained after Story notes       | Terracotta hairline underline + Findings tab       | Quiet mark + cross-chapter link once settled    |
 | 8    | 3  | Timeline                 | Living artifact | Chapter to book          | Chapter settled                 | Reference tab (+ Expand) + sequence findings       | Silent update; impossible sequence adds finding |
 | 9    | 4  | Open threads             | Living artifact | Chapter to book          | Chapter settled                 | Reference tab (+ Expand full view)                 | Silent update; never interrupts the page        |
 | 10   | 5  | Reverse outline          | Living artifact | Chapter to book          | Chapter settled                 | Reference tab (+ Expand full view)                 | Silent update; never interrupts the page        |
 | 11   | 6  | Scene purpose and pacing | Finding         | Chapter (uses outline)   | Chapter settled                 | Hairline underline + Findings tab                  | Quiet mark after chapter settles                |
 | 12   | 15 | The writer's own rules   | Finding         | Document                 | Short pause or rule edit        | Dashed underline + Findings tab; rules in Ref.     | Quiet mark after pause; silent if no rules      |
 | 13   | 12 | Reader reaction          | Living artifact | Chapter                  | Chapter settled                 | Collapsible chapter card inside Findings tab       | Silent card; no inline underlines on the page   |
-| 14   | 10 | Character voice          | Finding         | Chapter (uses bible)     | Chapter settled                 | Hairline underline + Findings tab                  | Quiet mark after chapter settles                |
+| 14   | 10 | Character voice          | Finding         | Chapter (uses notes)     | Chapter settled                 | Hairline underline + Findings tab                  | Quiet mark after chapter settles                |
 | 15   | 14 | Session recap            | Living artifact | Workspace / folder / doc | Background idle; shown on entry | Workspace view, folder view, or dismissible banner | Non-modal; clears the instant the writer types  |
 
 ### Triggers defined
@@ -297,7 +299,7 @@ The Assistant pane holds three tabs:
   `Dismiss`. Once a chapter settles, `Reader reaction` appears as a
   collapsed chapter-level card above the line findings so it never clutters
   the page with underlines.
-* Reference: holds `Story bible`, `Timeline`, `Outline` (Reverse outline),
+* Reference: holds `Story notes`, `Timeline`, `Outline` (Reverse outline),
   `Threads` (Open threads), and `Rules` (The writer's own rules) beside the
   writing surface so a writer can check a character detail or add a rule
   without losing sight of the sentence they are drafting. Entries are
@@ -311,32 +313,45 @@ The Assistant pane holds three tabs:
   accepts finding handoffs and stays available even while background agents
   are paused or auto-paused on low battery.
 
-### Three-level Session recap
+### Recursive Session recap at any depth
 
 Returning writers do not always return to the same scope, especially when a
-workspace holds more than one book. Session recap therefore adapts to where
-the writer lands:
+workspace holds more than one book or nests parts, chapters, and scenes
+inside directories. Session recap follows the selected node across N
+levels, not a fixed workspace / book / chapter hierarchy:
 
 * Workspace root (opening Writer with no document loaded): shows a calm
-  workspace recap summarizing recent changes grouped by top-level folder
-  with one-click links back to where the writer left off.
-* Folder or subtree selection: clicking a folder in the navigator shows the
-  latest activity, recent changes, and suggested next step for that subtree
-  (for example, returning to a novel after spending a week in a technical
-  book).
-* Returning to a document: opening a document that has not been visited
+  workspace recap across all root folders and their descendants, grouped
+  by root folder, with one-click links back to where the writer left off.
+  Documents directly under the workspace root appear here too.
+* Directory selection at any depth: clicking any directory in the navigator
+  shows the latest activity, recent changes, and suggested next steps for
+  that directory's entire tree, including files directly inside it and
+  all nested directories. Selecting a child directory narrows the recap to
+  that child's tree, repeatedly for as many levels as the workspace has.
+  Parent and sibling activity never leaks into the selected tree's recap.
+* File selection: a file recap concerns only that file, not its parent tree
+  or neighboring files. Opening a document that has not been visited
   since an earlier session (never on rapid document switching within the
   same session) shows a compact, non-modal recap banner above the writing
   surface summarizing what changed last time and a suggested next step. It
   can be dismissed explicitly and clears automatically the instant the
   writer starts typing.
 
+Directory recaps roll up prepared descendant activity without counting
+the same file twice; the workspace rolls up the root trees. A changed file
+refreshes its recap and the rollups along its ancestor chain, not unrelated
+trees. Recaps reuse session metadata and available living artifacts
+without requiring fiction-specific artifacts for technical prose or notes.
+A tree with no previous session activity says so rather than borrowing
+another tree's recap. Navigation never starts a blocking model call.
+
 ## Living artifacts: reading, correcting, and trust
 
 Living artifacts earn a writer's trust only when they stay inspectable,
 correctable, and obedient to the writer's intent:
 
-* Passage provenance: every extracted entry in the Story bible, Timeline,
+* Passage provenance: every extracted entry in Story notes, Timeline,
   Reverse outline, and Open threads links directly to the source passage(s)
   it was drawn from. Clicking a citation navigates to that document and
   scrolls to the passage.
@@ -352,11 +367,11 @@ correctable, and obedient to the writer's intent:
   re-extraction of the same fact unless the underlying passage changes
   materially. In Open threads, `Mark intentionally open` records a thread
   as deliberate so it stops nudging without being deleted from the list.
-* Immediate downstream propagation: saving a correction in the Story bible
+* Immediate downstream propagation: saving a correction in Story notes
   or Timeline immediately updates the canonical reference read by
   Continuity check and Character voice and re-evaluates affected findings.
   For example, changing a brass lantern from green glass to blue glass in
-  the Story bible clears the Chapter 2 flag and flags Chapter 1 instead so
+  Story notes clears the Chapter 2 flag and flags Chapter 1 instead so
   the writer can reconcile the earlier draft.
 
 ## Work sharing and chaining
@@ -375,20 +390,21 @@ violate ADR 0010's latency (75 to 92 seconds per manuscript pass) and power
    sequential passes gives better quality per watt.
 2. Incremental per-chapter extraction on settle: when a chapter settles,
    extraction reads only that changed chapter (about 8 to 17 seconds on
-   ADR 0010's chosen models) to emit incremental deltas for the Story
-   bible, Timeline, Reverse outline, and Open threads, merged into the
+   ADR 0010's chosen models) to emit incremental deltas for Story notes,
+   Timeline, Reverse outline, and Open threads, merged into the
    book's stored artifacts. Unchanged chapters are never re-extracted.
 3. Chained downstream readers: heavier checks read compact living artifacts
    instead of rereading the whole manuscript:
    * `Continuity check` compares the changed chapter against the merged
-     Story bible and Timeline (tested in backlog 56).
-   * `Character voice` reads the Story bible's character voice summaries
+     Story notes and Timeline (tested in backlog 56).
+   * `Character voice` reads Story notes' character voice summaries
      alongside the chapter's dialogue.
    * `Scene purpose and pacing` reads the book's Reverse outline alongside
      the chapter.
    * `Session recap` summarizes recent session change metadata together
      with the Reverse outline and Open threads rather than rereading full
-     chapters.
+     chapters, then rolls up file recaps through every ancestor directory
+     to the workspace root without duplicate activity.
 
 ## Staying quiet on non-applicable work
 
@@ -399,14 +415,14 @@ on a technical book, notes, or short fragments:
 * Zero-cost structural gates (before any model call):
   * Word-count floors skip scene checks on tiny fragments (under 150 words)
     and chapter-settled agents on unfinished stubs (under 400 words).
-  * Document-shape detection skips fiction-only agents (`Story bible`,
+  * Document-shape detection skips fiction-only agents (`Story notes`,
     `Continuity check`, `Timeline`, `Open threads`, `Reverse outline`,
     `Scene purpose and pacing`, `Point of view and tense`, `Character
     voice`, and `Reader reaction`) on documents marked by technical
     structure, such as fenced code blocks, technical tables, or expository
     section headings with no narrative dialogue.
   * `Character voice` skips any chapter with no dialogue or no character
-    established across scenes in the Story bible.
+    established across scenes in Story notes.
   * `The writer's own rules` runs zero model calls until the writer has at
     least one active rule.
 * Prompt-level restraint: every agent prompt explicitly states that the
@@ -427,7 +443,7 @@ book's Reference view.
 
 * Status line: the top bar of the Assistant pane shows a quiet, single-line
   status indicator (`Idle`, `Waiting for pause`, `Reviewing prose`,
-  `Updating story bible`, `Paused by you`, or `Auto-paused on low battery`)
+  `Updating story notes`, `Paused by you`, or `Auto-paused on low battery`)
   and, when collapsed, a small pulsing dot on the Assistant toggle button
   while work runs. Background agents never raise modal dialogs or toasts.
 * Global Pause: a one-click `Pause` / `Resume` button sits beside the
@@ -483,17 +499,18 @@ incorporated into this ADR:
   with muted line tokens. This added the explicit per-scene (at most 3) and
   per-chapter (at most 6) visible finding cap and non-overlapping underline
   rule so short drafts stay calm.
-* Plain Save instead of "Save & lock": labeling the Story bible inline edit
+* Plain Save instead of "Save & lock": labeling the Story notes inline edit
   button "Save & lock" immediately raised confusion over whether the writer
   would be locked out of editing their own entry. Changed to a plain `Save`
   button paired with an `Edited by you` badge and a `Revert to extracted`
   action.
-* Three-level Session recap instead of one mixed workspace banner: testing
+* Recursive Session recap instead of one mixed workspace banner: testing
   the on-open recap in a workspace holding both a novel and a technical
   book mixed unrelated changes from both books into one card. Changed
-  Session recap to three scopes: workspace root (when no document is
-  loaded), folder or subtree selection (recent activity for that book), and
-  returning to a document after an absence.
+  Session recap to follow the selected tree node: the workspace root
+  aggregates all root folders, any directory shows its entire subtree at
+  arbitrary depth, and a file shows only its own recap when returning
+  after an absence.
 * Responsive overlay docking and badge contrast: viewing the prototype at
   narrower widths showed that keeping both side panes docked compressed the
   writing column, and that white text on the dark-theme accent badge had
@@ -511,35 +528,38 @@ rather than starting another prototype.
   (backlog 38): design end-to-end journeys around the 15 shipping agents,
   the three-tab Assistant pane (`Findings`, `Reference`, `Chat`), always-on
   subtle underlines with density caps, the collapsed-pane badge, `Discuss
-  in Chat` and `Answer in Chat` handoffs, the three-level Session recap,
+  in Chat` and `Answer in Chat` handoffs, recursive Session recap at any depth,
   global Pause and low-battery override, and extend `.local/prototype/`
   rather than building a new prototype.
 * [Pair-writing agent architecture ADR](../backlog/0010-agent-architecture-adr.md)
   (backlog 10): support incremental per-chapter extraction, chained agent
-  execution (`Story bible` + `Timeline` feeding `Continuity check` and
+  execution (`Story notes` + `Timeline` feeding `Continuity check` and
   `Character voice`; `Reverse outline` feeding `Scene purpose and pacing`
   and `Session recap`), zero-cost structural quietness gates, immediate
   cancellation on new keystrokes or Pause, OS-level power and battery state
   reporting from the local service, finding density caps, and passage
-  anchors that survive edits.
+  anchors that survive edits. Roll up prepared file recaps through every
+  ancestor directory to the workspace root without rereading manuscripts
+  or issuing blocking model calls during navigation.
 * [Agent conversations ADR](../backlog/0037-agent-conversations-adr.md)
-  (backlog 37): persist book-scoped living artifacts (`Story bible`,
+  (backlog 37): persist book-scoped living artifacts (`Story notes`,
   `Timeline`, `Reverse outline`, `Open threads`, per-chapter `Reader
   reaction`, and `The writer's own rules`) alongside conversations, storing
   source passage citations, `Extracted` versus `Edited by you` provenance
   that survives re-extraction, `Intentionally open` thread states,
   dismissed findings keyed to unchanged text, and lightweight session
-  change records supporting workspace, folder, and document recaps.
+  change records supporting file recaps and directory-tree rollups at any
+  depth through the workspace root.
 * Delivery stories: all 15 shipping agents map cleanly to existing backlog
   stories (backlog 35 and 36 for the 5 pause-triggered prose and question
-  agents, backlog 49 for Story bible, Timeline, and Continuity check,
+  agents, backlog 49 for Story notes, Timeline, and Continuity check,
   backlog 50 for Open threads and Reverse outline, backlog 51 for Scene
   purpose and pacing, Character voice, and Reader reaction, backlog 52 for
   Session recap, and backlog 53 for The writer's own rules). No additional
   delivery story is required; backlog 51 drops deferred anachronisms and
   now depends on backlog 49 and backlog 50 for chained artifacts, backlog
   50 moves Open threads and Reverse outline into the Reference tab with
-  full-width Expand, and backlog 52 adopts three-level recaps.
+  full-width Expand, and backlog 52 adopts recursive tree-scoped recaps.
 
 ## Consequences
 
@@ -568,8 +588,8 @@ rather than starting another prototype.
 
 ## Revisit triggers
 
-* [Backlog 56](../backlog/0056-story-bible-continuity-test.md) finds that
-  story-bible-chained continuity checks still miss contradictions or raise
+* [Backlog 56](../backlog/0056-story-notes-continuity-test.md) finds that
+  story-notes-chained continuity checks still miss contradictions or raise
   too many false alarms on local models: defer `Continuity check` behind
   cloud fallback or stronger local models.
 * [Backlog 48](../backlog/0048-background-agent-evals.md) finds a shipping

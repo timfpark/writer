@@ -39,9 +39,9 @@ keep them for the writer to read later.
 The [agent architecture ADR](./0010-agent-architecture-adr.md) decides where
 the agent runs, how background reviews execute, and how agents chain.
 [ADR 0011](../adrs/0011-background-agents-ux.md) adds book-scoped living
-artifacts (story bible, timeline, reverse outline, open threads,
-per-chapter reader reaction, and the writer's own rules) plus three-level
-session recaps (workspace, folder, and document), which the agent keeps
+artifacts (story notes, timeline, reverse outline, open threads,
+per-chapter reader reaction, and the writer's own rules) plus recursive
+session recaps (workspace root, directory trees at any depth, and files), which the agent keeps
 current, other agents read, and the writer corrects; they need storage as
 durable as conversations.
 [ADR 0005](../adrs/0005-workspace-model.md) fixes the workspace model and
@@ -71,7 +71,8 @@ resources.
   by you` provenance (with `Revert to extracted`), deleted-entry
   suppression, `Intentionally open` thread states, per-chapter reader
   reactions, the writer's own rules, lightweight session-change records for
-  ADR 0011's three-level recaps, and how an entry is marked stale when its
+  ADR 0011's file recaps and ancestor-directory rollups through the workspace
+  root without duplicate activity, and how an entry is marked stale when its
   passages change.
 * Decide what the agent receives when a writer revives a conversation, such
   as the earlier text, the current text, or what changed in between.

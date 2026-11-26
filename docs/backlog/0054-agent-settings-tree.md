@@ -84,7 +84,7 @@ it will share the tree-inheritance mechanism this story builds.
 
 ## Prerequisites
 
-* [Keep a story bible and check continuity](./0049-story-bible-continuity.md)
+* [Keep story notes and check continuity](./0049-story-notes-continuity.md)
 * [Track open threads and keep a reverse outline](./0050-threads-and-outline.md)
 * [Review finished chapters](./0051-chapter-review.md)
 * [Recap the last session when Writer opens](./0052-session-recap.md)

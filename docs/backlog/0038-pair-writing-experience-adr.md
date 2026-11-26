@@ -57,7 +57,7 @@ the conversation prompt. [ADR 0011](../adrs/0011-background-agents-ux.md),
 the background agents UX ADR, picks the fifteen Wave 1 shipping agents,
 their shapes, triggers, always-on subtle passage underlines with density
 caps, the three-tab assistant pane (`Findings`, `Reference` with full-width
-Expand, and `Chat`), three-level session recaps, global Pause, and battery
+Expand, and `Chat`), tree-scoped session recaps at any depth, global Pause, and battery
 policy; this decision designs the journeys around those choices rather than
 making them again. Text never leaves the
 writer's machine; the
@@ -85,7 +85,8 @@ after writers have used the local pair writer.
 * Take the fifteen shipping agents, their shapes, triggers, surfaces
   (always-on hairline underlines with density caps, collapsed-pane badge,
   `Findings` / `Reference` / `Chat` tabs with full-width Expand, and
-  three-level session recaps), and interruption from
+  recursive session recaps for the workspace root, any directory tree, and
+  individual files), and interruption from
   [ADR 0011](../adrs/0011-background-agents-ux.md), and design the journeys
   and the assistant pane around them.
 * Decide what the agent pays attention to from the writer's point of view:

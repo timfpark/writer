@@ -37,7 +37,7 @@ this story extends. [Backlog 48](./0048-background-agent-evals.md) wrote
 cases and a first prompt for each agent and measured which are feasible, and
 [backlog 46](./0046-prompt-tuning-evals.md) added prompt sweeps to the
 harness. [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint
-conventions. Living artifacts such as the story bible, and chapter-level and
+conventions. Living artifacts such as story notes, and chapter-level and
 session agents, follow in backlog 49 to 53 on this plumbing, and each tunes
 its own prompts the way this story does. If building reveals a flaw in the
 agent ADR, amend it in the same pull request.

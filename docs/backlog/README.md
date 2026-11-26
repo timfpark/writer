@@ -37,7 +37,7 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | #  | Work item                                                                                     | Subsystems                       | Outcome                                                                                      | Prerequisite       |
 |----|-----------------------------------------------------------------------------------------------|----------------------------------|----------------------------------------------------------------------------------------------|--------------------|
 | 46 | [Tune the conversation prompt with the evaluation harness](./0046-prompt-tuning-evals.md)     | `evals`                          | Swept variants pick the conversation prompt, and the harness can sweep any prompt.           | None               |
-| 56 | [Test a story bible for continuity checking](./0056-story-bible-continuity-test.md)           | `evals`                          | Local models are measured on checking continuity against an extracted story bible.           | None               |
+| 56 | [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)             | `evals`                          | Local models are measured on checking continuity against extracted story notes.              | None               |
 | 44 | [Record the cloud model proxy ADR](./0044-cloud-model-proxy-adr.md)                           | `repository`, `evals`, `service` | An accepted ADR picks a local proxy to Azure AI Foundry with keyless auth and spending caps. | None               |
 | 45 | [Run the cloud model proxy with a first set of Foundry models](./0045-cloud-model-proxy.md)   | `repository`, `evals`            | The proxy runs with cheap and frontier Foundry models, and the harness calls it.             | 44                 |
 | 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)               | `service`, `webapp`              | An accepted ADR fixes the writer's experience of the agent, tested end to end.               | 46                 |
@@ -50,9 +50,9 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | 35 | [Review documents in the background in the service](./0035-service-background-review.md)      | `service`, `evals`               | The service returns the first background agents' findings, with tuned prompts.               | 12, 48             |
 | 36 | [Show background findings in the webapp](./0036-background-findings-view.md)                  | `webapp`                         | Findings appear beside the text while writing, linked to their passages.                     | 34, 35             |
 | 59 | [Measure battery drain and host typing during review](./0059-battery-and-typing-check.md)     | `evals`, `webapp`                | ADR 0010 records unplugged battery drain and host-browser typing during review.              | None               |
-| 49 | [Keep a story bible and check continuity](./0049-story-bible-continuity.md)                   | `service`, `webapp`, `evals`     | A story bible and timeline stay current, and contradictions are flagged against them.        | 35, 36             |
+| 49 | [Keep story notes and check continuity](./0049-story-notes-continuity.md)                     | `service`, `webapp`, `evals`     | Story notes and a timeline stay current, and contradictions are flagged against them.        | 35, 36             |
 | 50 | [Track open threads and keep a reverse outline](./0050-threads-and-outline.md)                | `service`, `webapp`, `evals`     | Writers see what each scene does and which setups have no payoff.                            | 49                 |
-| 51 | [Review finished chapters](./0051-chapter-review.md)                                          | `service`, `webapp`, `evals`     | Settled chapters get pacing, voice, and first-reader reviews from the bible and outline.     | 49, 50             |
+| 51 | [Review finished chapters](./0051-chapter-review.md)                                          | `service`, `webapp`, `evals`     | Settled chapters get pacing, voice, and first-reader reviews from story notes and outline.   | 49, 50             |
 | 53 | [Check the writer's own rules](./0053-writer-rules.md)                                        | `service`, `webapp`, `evals`     | Writers set style rules, and background review flags text that breaks them.                  | 35, 36             |
 | 52 | [Recap the last session when Writer opens](./0052-session-recap.md)                           | `service`, `webapp`, `evals`     | Returning writers get workspace, folder, and document recaps with a suggested next step.     | 34, 35             |
 | 54 | [Turn background agents on and off across the workspace tree](./0054-agent-settings-tree.md)  | `service`, `webapp`              | Writers turn agents on or off for folders and documents, inherited down the tree.            | 49, 50, 51, 52, 53 |
@@ -111,12 +111,12 @@ and the gaps it found, chiefly disconnects across passages.
 fifteen fiction-first background agents for Wave 1, their shapes, triggers,
 always-on subtle passage underlines with density caps, the three-tab
 assistant pane (`Findings`, `Reference` with full-width Expand, and
-`Chat`), three-level session recaps, global Pause, and OS power-state
+`Chat`), recursive session recaps at any tree depth, global Pause, and OS power-state
 battery policy, deferring anachronisms and the nonfiction agents.
 
 Next, items 46, 56, and 44 run in parallel. Item 46 tunes the conversation
 prompt and teaches the harness to sweep prompts. Item 56 tests whether
-checking continuity against a story bible, extracted chapter by chapter,
+checking continuity against story notes, extracted chapter by chapter,
 closes the disconnect gap, because the answer shapes the agent's
 architecture. Cloud models are hosted in Azure AI Foundry and reached only
 through a local proxy that holds the credentials and caps spending: item 44
@@ -138,7 +138,7 @@ review to the service, and item 36 shows its findings beside the text. Item
 59 runs the unplugged battery and host-browser typing check ADR 0010 left
 open without blocking the first agents, so battery targets can be adjusted
 before the full set runs. Items 49 to 53 add the remaining agents on that
-plumbing, each tuning its own prompts: the story bible and continuity checks,
+plumbing, each tuning its own prompts: story notes and continuity checks,
 open threads and a reverse outline, chapter reviews, the writer's own rules,
 and a session recap. Item 54 then lets writers turn each agent on or off for
 a folder or document, inherited down the tree, and item 58 adds the

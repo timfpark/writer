@@ -1,6 +1,6 @@
 ---
-title: Keep a story bible and check continuity
-description: Maintain a story bible and timeline from the writer's documents in the background, let the writer read and correct them, and flag contradictions against them.
+title: Keep story notes and check continuity
+description: Maintain story notes and a timeline from the writer's documents in the background, let the writer read and correct them, and flag contradictions against them.
 author: Tim Park
 ms.date: 2026-11-25
 ms.topic: reference
@@ -20,12 +20,12 @@ myself.
 
 ## Context
 
-[ADR 0011](../adrs/0011-background-agents-ux.md) defines the story bible's,
+[ADR 0011](../adrs/0011-background-agents-ux.md) defines story notes',
 timeline's, and continuity check's shapes, chapter-settled triggers,
 book-scoped `Reference` tab with full-width `Expand`, plain `Save` with
 `Edited by you` provenance and `Revert to extracted`, and immediate
-downstream continuity re-evaluation. [Backlog 56](./0056-story-bible-continuity-test.md) tested the
-story bible and continuity chain on local models, and
+downstream continuity re-evaluation. [Backlog 56](./0056-story-notes-continuity-test.md) tested the
+story notes and continuity chain on local models, and
 [backlog 48](./0048-background-agent-evals.md) added cases and a first
 prompt for the timeline. The service's
 background review from [backlog 35](./0035-service-background-review.md) and
@@ -36,19 +36,19 @@ stored.
 
 ## Scope
 
-* Extract story bible entries and timeline events from each document on the
+* Extract story notes entries and timeline events from each document on the
   background agents ADR's trigger, each citing the passages it came from, and
   update only what changed.
-* Store the story bible and timeline as the agent and conversations ADRs
+* Store story notes and the timeline as the agent and conversations ADRs
   decide, and expose them through the API under
   [ADR 0004](../adrs/0004-api-conventions.md).
-* Show the story bible and timeline in the Assistant pane's `Reference` tab
+* Show story notes and the timeline in the Assistant pane's `Reference` tab
   (scoped to the active book subtree, with an `Expand` action for full-width
   tables in the center region), keyboard operable and accessible, and let
   the writer edit (`Save` -> `Edited by you`), `Revert to extracted`, or
   delete an entry so later extractions keep the correction and immediately
   re-evaluate continuity findings.
-* Check new and changed text against the story bible and timeline, and raise
+* Check new and changed text against story notes and the timeline, and raise
   continuity findings that cite both passages, through backlog 36's view.
 * Tune the extraction, timeline, and continuity prompts on the cases from
   backlog 56 and backlog 48, as backlog 35 tunes its agents, and amend
@@ -57,7 +57,7 @@ stored.
 
 ## Acceptance criteria
 
-* [ ] For a synthetic manuscript, the story bible and timeline list the
+* [ ] For a synthetic manuscript, story notes and the timeline list the
   expected entries, each linked to its passages.
 * [ ] A contradiction planted in a new chapter is flagged with both passages.
 * [ ] A writer's correction to an entry survives later extractions.
