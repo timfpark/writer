@@ -50,40 +50,62 @@ export function scopeLabel(scope: ReadingScope): string {
 }
 
 // Extracts at most `maxWords` words centered around `focusOffset` in `text`,
-// snapped cleanly to word boundaries.
+// snapped cleanly to word boundaries, scanning only around `focusOffset` so a
+// 1 MiB document never allocates a full-document word array.
 export function windowAroundOffset(
   text: string,
   focusOffset: number,
   maxWords: number,
 ): string {
-  if (maxWords <= 0) return "";
-  const spans: [number, number][] = [];
-  const pattern = /\S+/g;
-  let match: RegExpExecArray | null;
-  while ((match = pattern.exec(text)) !== null) {
-    spans.push([match.index, match.index + match[0].length]);
-  }
-  if (spans.length <= maxWords) return text;
+  if (maxWords <= 0 || !text) return "";
+  const clamped = Math.max(0, Math.min(focusOffset, text.length));
 
-  const clampedFocus = Math.max(0, Math.min(focusOffset, text.length));
-  let focusWord = 0;
-  for (let i = 0; i < spans.length; i += 1) {
-    const span = spans[i];
-    if (span && span[0] <= clampedFocus) focusWord = i;
-    else break;
+  // Snap focus to the start of the word containing or following `clamped`.
+  let anchor = clamped;
+  while (anchor > 0 && !isSpaceAt(text, anchor - 1)) {
+    anchor -= 1;
   }
 
   const half = Math.floor(maxWords / 2);
-  let startWord = Math.max(0, focusWord - half);
-  let endWord = startWord + maxWords;
-  if (endWord > spans.length) {
-    endWord = spans.length;
-    startWord = Math.max(0, endWord - maxWords);
+
+  // Scan up to `half` words backward from `anchor`.
+  let start = anchor;
+  let backCount = 0;
+  let pos = anchor;
+  while (pos > 0 && backCount < half) {
+    while (pos > 0 && isSpaceAt(text, pos - 1)) pos -= 1;
+    if (pos === 0) break;
+    while (pos > 0 && !isSpaceAt(text, pos - 1)) pos -= 1;
+    start = pos;
+    backCount += 1;
   }
-  const first = spans[startWord];
-  const last = spans[endWord - 1];
-  if (!first || !last) return text;
-  return text.slice(first[0], last[1]);
+
+  // Scan forward from `start` until we have `maxWords` words (or reach EOF).
+  let end = start;
+  let forwardCount = 0;
+  let i = start;
+  while (i < text.length && forwardCount < maxWords) {
+    while (i < text.length && isSpaceAt(text, i)) i += 1;
+    if (i >= text.length) break;
+    while (i < text.length && !isSpaceAt(text, i)) i += 1;
+    end = i;
+    forwardCount += 1;
+  }
+
+  // If we hit EOF before `maxWords`, extend backward from `start` so the
+  // window still holds up to `maxWords` words near the end of the document.
+  pos = start;
+  while (pos > 0 && forwardCount < maxWords) {
+    while (pos > 0 && isSpaceAt(text, pos - 1)) pos -= 1;
+    if (pos === 0) break;
+    while (pos > 0 && !isSpaceAt(text, pos - 1)) pos -= 1;
+    start = pos;
+    forwardCount += 1;
+  }
+
+  // Trim any leading whitespace if anchor started inside leading spaces.
+  while (start < end && isSpaceAt(text, start)) start += 1;
+  return text.slice(start, end);
 }
 
 export interface ContextDocEntry {

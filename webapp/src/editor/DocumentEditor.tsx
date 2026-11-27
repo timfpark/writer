@@ -289,6 +289,7 @@ export default function DocumentEditor({
   // a 1 MiB document never blocks its first editable frame.
   useEffect(() => {
     if (editor.isDestroyed) return undefined;
+    const versionStamp = () => `${content.revision}:${versionRef.current}`;
 
     const pushSummary = (incrementVersion: boolean) => {
       if (editor.isDestroyed) return;
@@ -305,7 +306,7 @@ export default function DocumentEditor({
           editor.state.selection.head,
         ),
         selection,
-        version: versionRef.current,
+        version: versionStamp(),
       });
     };
 
@@ -356,6 +357,7 @@ export default function DocumentEditor({
             editor.state.selection.head,
           ),
           selection: activeSelection(editor),
+          version: versionStamp(),
         };
       },
       hasExactQuote: (quote) =>
@@ -379,7 +381,7 @@ export default function DocumentEditor({
           wordCount: countWords(content.markdown),
           cursorOffset: 0,
           selection: activeSelection(editor),
-          version: versionRef.current,
+          version: versionStamp(),
         });
       }, 0);
     });
@@ -393,7 +395,7 @@ export default function DocumentEditor({
       }
       unregister();
     };
-  }, [editor, documentId, content.markdown, bridge]);
+  }, [editor, documentId, content.markdown, content.revision, bridge]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {

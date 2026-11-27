@@ -66,6 +66,8 @@ async function closeAssistant(
   await expect(assistantPane(page)).toBeHidden();
 }
 
+const createdDocuments = new WeakMap<Page, string[]>();
+
 async function createDocument(
   page: Page,
   title: string,
@@ -76,8 +78,18 @@ async function createDocument(
     data: { documentId, parentId: null, beforeId: null, title, markdown },
   });
   expect(created.status()).toBe(201);
+  const list = createdDocuments.get(page) ?? [];
+  list.push(documentId);
+  createdDocuments.set(page, list);
   return documentId;
 }
+
+test.afterEach(async ({ page }) => {
+  const ids = createdDocuments.get(page) ?? [];
+  for (const id of ids) {
+    await page.request.delete(`/api/v1/documents/${id}`).catch(() => {});
+  }
+});
 
 test("answers about an open document with quote links, What it read, and no-document state", async ({
   page,

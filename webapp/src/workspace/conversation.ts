@@ -329,6 +329,9 @@ export interface WriterMessage {
   // Exact full markdown of the open document at the moment this turn was sent,
   // used to detect whether the document changed since this turn.
   openDocFullMarkdown: string;
+  // Editor revision and edit version when this turn was sent, so the banner
+  // check stays O(1) without serializing large documents during render.
+  openDocVersion: string;
   // Exact text read for the open document (whole or windowed), reopened by
   // "View text then".
   openDocReadMarkdown: string;
@@ -832,6 +835,7 @@ export class ConversationStore {
       selectionQuote: plan.selection,
       contextTitles: plan.contextDocuments.map((d) => d.title),
       openDocFullMarkdown: liveMarkdown,
+      openDocVersion: snapshot?.version ?? "",
       openDocReadMarkdown: plan.documentText,
       openDocScope: plan.documentScope,
       openDocWordCount: plan.documentWordCount,

@@ -17,6 +17,7 @@ export interface DocumentSnapshot {
   wordCount: number;
   cursorOffset: number;
   selection: EditorSelection | null;
+  version: string;
 }
 
 export interface EditorSummary {
@@ -24,10 +25,10 @@ export interface EditorSummary {
   wordCount: number;
   cursorOffset: number;
   selection: EditorSelection | null;
-  // Increments after debounced edits so Chat can re-check exact quote links
-  // and the "Document edited since this chat" banner without serializing on
-  // every keystroke.
-  version: number;
+  // Changes on revision change or after debounced edits so Chat can re-check
+  // exact quote links and the "Document edited since this chat" banner
+  // without serializing on every keystroke.
+  version: string;
 }
 
 export interface EditorHandle {

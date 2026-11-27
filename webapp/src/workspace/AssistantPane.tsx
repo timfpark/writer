@@ -237,20 +237,16 @@ export function AssistantPane({
       !lastWriter ||
       isStreamingHere ||
       !editorSummary ||
-      editorSummary.documentId !== openDocumentId ||
-      editorSummary.version < 0
+      editorSummary.documentId !== openDocumentId
     ) {
       return false;
     }
-    const current = bridge.readSnapshot(openDocumentId);
-    if (!current) return false;
-    return current.markdown !== lastWriter.openDocFullMarkdown;
+    return editorSummary.version !== lastWriter.openDocVersion;
   }, [
     activeThread,
     openDocumentId,
     lastWriter,
     isStreamingHere,
-    bridge,
     editorSummary,
   ]);
 
