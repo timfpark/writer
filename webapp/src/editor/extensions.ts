@@ -13,6 +13,7 @@ import type { Schema } from "@tiptap/pm/model";
 import { StarterKit } from "@tiptap/starter-kit";
 import { FormattingMarkers } from "./formattingMarkers";
 import { CaretAfterTyping, LineBreaks } from "./lineBreaks";
+import { PassageHighlights } from "./passageHighlights";
 
 export const TOP_LEVEL_BLOCKS = [
   "paragraph",
@@ -152,6 +153,7 @@ export function editorExtensions(): AnyExtension[] {
     LineBreaks,
     CaretAfterTyping,
     FormattingMarkers,
+    PassageHighlights,
   ];
 }
 

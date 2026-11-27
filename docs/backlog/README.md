@@ -36,9 +36,8 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                                     | Subsystems                       | Outcome                                                                                      | Prerequisite       |
 |----|-----------------------------------------------------------------------------------------------|----------------------------------|----------------------------------------------------------------------------------------------|--------------------|
-| 60 | [Try the Chat tab against a scripted pair writer](./0060-scripted-chat-tab.md)                | `service`, `webapp`              | ADR 0012's Chat tab runs in Writer against a scripted pair writer, tested end to end.        | None               |
-| 61 | [Answer in the Chat tab from the local model](./0061-local-model-chat.md)                     | `service`, `webapp`              | The Chat tab streams grounded advice from ADR 0010's local model through the service.        | 60                 |
-| 62 | [Try the Findings tab against scripted findings](./0062-scripted-findings-tab.md)             | `service`, `webapp`              | Findings, passage underlines, and Pause run in Writer against scripted findings.             | 60                 |
+| 61 | [Answer in the Chat tab from the local model](./0061-local-model-chat.md)                     | `service`, `webapp`              | The Chat tab streams grounded advice from ADR 0010's local model through the service.        | None               |
+| 62 | [Try the Findings tab against scripted findings](./0062-scripted-findings-tab.md)             | `service`, `webapp`              | Findings, passage underlines, and Pause run in Writer against scripted findings.             | None               |
 | 56 | [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)             | `evals`                          | Local models are measured on checking continuity against extracted story notes.              | None               |
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)            | `service`, `webapp`              | An accepted ADR fixes where the agent runs, how agents chain, and how it is built.           | 56, 61, 62         |
 | 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                       | `service`, `webapp`              | An accepted ADR fixes how conversations and living artifacts are stored and audited.         | 10                 |
@@ -129,16 +128,13 @@ findings that follow edits, an amended pause trigger, quiet signals with
 `F8` navigation, and latency, memory, battery, and typing targets from ADR
 0010's measurements.
 
-Next, items 60 to 62 put a running pair writer in the assistant pane, so
-writers try its experience in Writer itself and a design that fails is
-backed out cheaply, before the agent's architecture is fixed. They build a
-provisional path within what ADR 0001, ADR 0002, ADR 0004, and ADR 0010
-already decide: an agent crate in the Rust service, SSE streams, and ADR
-0010's model and prompt. Item 60 builds ADR 0012's `Chat` tab against a
-scripted pair writer in the service, so every conversation journey is
-tested mechanically. Item 61 answers it from the local model through the
+Item 60 built the `writer-agent` crate with a deterministic scripted pair
+writer, provisional readiness and SSE chat endpoints under
+`/api/v1/pair-writer`, and ADR 0012's in-memory `Chat` tab in the webapp,
+tested end to end. Next, item 61 answers it from the local model through the
 same endpoint, and item 62 builds ADR 0011's `Findings` tab, passage
-underlines, and `Pause` against scripted findings.
+underlines, and `Pause` against scripted findings, so writers try the
+experience in Writer itself before the agent's architecture is fixed.
 
 Item 56 then tests whether checking continuity against story notes,
 extracted chapter by chapter, closes the disconnect gap, because the answer

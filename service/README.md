@@ -26,12 +26,13 @@ workspace API, behind a verified OpenAPI contract. Coding agents start with
 
 The folder is a Cargo workspace whose members live under [crates/](./crates/):
 
-| Crate                                      | Kind       | Responsibility                                                                            |
-|--------------------------------------------|------------|-------------------------------------------------------------------------------------------|
-| [writer-server](./crates/writer-server/)   | Executable | Reads configuration, binds the loopback listener, serves the router, and stops gracefully |
-| [writer-api](./crates/writer-api/)         | Library    | Routes, handlers, transport types, problem details errors, and the OpenAPI document       |
-| [writer-storage](./crates/writer-storage/) | Library    | The storage interface, its conformance suite, and the filesystem backend                  |
-| [writer-domain](./crates/writer-domain/)   | Library    | Workspace types and rules: identifiers, titles, content, limits, and tree checks          |
+| Crate                                      | Kind       | Responsibility                                                                               |
+|--------------------------------------------|------------|----------------------------------------------------------------------------------------------|
+| [writer-server](./crates/writer-server/)   | Executable | Reads configuration, binds the loopback listener, serves the router, and stops gracefully    |
+| [writer-api](./crates/writer-api/)         | Library    | Routes, handlers, transport types, problem details errors, SSE streams, and OpenAPI document |
+| [writer-agent](./crates/writer-agent/)     | Library    | Pair-writer provider interface, 19,000-word reading assembly, and scripted provider          |
+| [writer-storage](./crates/writer-storage/) | Library    | The storage interface, its conformance suite, and the filesystem backend                     |
+| [writer-domain](./crates/writer-domain/)   | Library    | Workspace types and rules: identifiers, titles, content, limits, and tree checks             |
 
 [openapi.json](./openapi.json) is the API contract of record. It is generated
 from `writer-api`, so never edit it by hand.
@@ -80,16 +81,44 @@ lets in-flight requests finish for up to 10 seconds.
 The service reads settings from its process environment and does not load
 `.env` files. [.env.example](./.env.example) lists every setting.
 
-| Variable          | Default                          | Effect                                                                                |
-|-------------------|----------------------------------|---------------------------------------------------------------------------------------|
-| `WRITER_PORT`     | `8888`                           | Port from 1 to 65535 to listen on. The address is always `127.0.0.1`.                 |
-| `WRITER_DATA_DIR` | Per build, as [Data](#data) says | Folder holding Writer's data. A relative path resolves against the working directory. |
+| Variable                                  | Default                          | Effect                                                                                                      |
+|-------------------------------------------|----------------------------------|-------------------------------------------------------------------------------------------------------------|
+| `WRITER_PORT`                             | `8888`                           | Port from 1 to 65535 to listen on. The address is always `127.0.0.1`.                                       |
+| `WRITER_DATA_DIR`                         | Per build, as [Data](#data) says | Folder holding Writer's data. A relative path resolves against the working directory.                       |
+| `WRITER_PAIR_WRITER`                      | Unset (none)                     | Pair-writer provider. Set to `scripted` to run the deterministic scripted pair writer.                      |
+| `WRITER_SCRIPTED_MODE`                    | `ready`                          | Scripted provider mode: `ready`, `missing-model` (reports not ready and returns 503), or `fail-mid-stream`. |
+| `WRITER_SCRIPTED_FIRST_TOKEN_MS`          | `2000`                           | Base delay in milliseconds before the first token on a first read.                                          |
+| `WRITER_SCRIPTED_MS_PER_1000_WORDS`       | `3000`                           | Additional first-read delay in milliseconds per further 1,000 words beyond the first 1,000.                 |
+| `WRITER_SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS` | `450`                            | Delay in milliseconds before the first token on a follow-up turn.                                           |
+| `WRITER_SCRIPTED_TOKENS_PER_SEC`          | `30`                             | Streaming rate in tokens per second (`0` streams without delay).                                            |
 
 To run on another port, for example when another process already uses 8888:
 
 ```bash
 WRITER_PORT=8889 cargo run -p writer-server
 ```
+
+### Run with the scripted pair writer
+
+Without `WRITER_PAIR_WRITER`, the service starts with no pair writer and
+`GET /api/v1/pair-writer` reports `"ready":false` with `"issue":"notConfigured"`.
+To try ADR 0012's Chat tab against the deterministic scripted pair writer:
+
+```bash
+WRITER_PAIR_WRITER=scripted cargo run -p writer-server
+```
+
+Check readiness from another terminal:
+
+```bash
+curl http://127.0.0.1:8888/api/v1/pair-writer
+```
+
+The scripted provider paces replies like ADR 0010's local model by default
+(about 2 seconds plus 3 seconds per further 1,000 words on a first read, under
+a second on a follow-up, and 30 tokens a second). To exercise the setup notice
+or mid-stream failure states, set `WRITER_SCRIPTED_MODE=missing-model` or
+`WRITER_SCRIPTED_MODE=fail-mid-stream`.
 
 ## Data
 
@@ -273,8 +302,11 @@ test in the workspace with `--locked`. The tests include:
 
 * Router tests for each documented response, run without binding a socket
   against the filesystem backend in a temporary directory, which also
-  assert that a synthetic marker sent in titles and content appears in no
-  problem response and no log line
+  assert that a synthetic marker sent in titles, content, chat messages,
+  and context documents appears in no problem response and no log line
+* `writer-agent` tests of 19,000-word reading assembly, scripted reply
+  generation, pacing, fault modes, and immediate cancellation on client
+  disconnect
 * `writer-domain` tests of every workspace rule and limit, without storage
 * The storage conformance suite, run against the filesystem backend in
   temporary directories, and tests of the backend's own rules: names on disk,

@@ -36,7 +36,7 @@ passages, how reviews start, skip unchanged text, and stay within those
 targets, and how findings reach the webapp. The [conversations
 ADR](./0037-agent-conversations-adr.md) decides whether each review is stored
 as a conversation of its own and how it points to the version of the text it
-read. [Backlog 60](./0060-scripted-chat-tab.md) and
+read. Backlog 60 and
 [backlog 61](./0061-local-model-chat.md) build the agent crate, its scripted
 provider, and `service/prompts/`,
 [backlog 62](./0062-scripted-findings-tab.md) adds scripted findings behind a

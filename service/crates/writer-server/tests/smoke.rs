@@ -232,3 +232,55 @@ fn document_language_survives_a_service_restart() {
     let (status, stderr) = terminate(&mut restarted);
     assert_eq!(status.code(), Some(0), "writer-server stderr: {stderr}");
 }
+
+#[test]
+fn starts_unconfigured_by_default_and_supports_scripted_pair_writer_settings() {
+    let dir = TempDir::new().unwrap();
+    let data = dir.path().join("data");
+
+    // Default: unconfigured pair writer -> service starts, readiness is false.
+    let port = unused_port();
+    let mut server = Server::start(&port.to_string(), &data);
+    wait_for_health(&mut server, port);
+    let status = http_request(port, "GET", "/api/v1/pair-writer", None);
+    assert!(status.starts_with("HTTP/1.1 200 OK\r\n"), "{status}");
+    assert!(status.contains(r#""ready":false"#), "{status}");
+    assert!(status.contains(r#""issue":"notConfigured""#), "{status}");
+    let (exit, stderr) = terminate(&mut server);
+    assert_eq!(exit.code(), Some(0), "writer-server stderr: {stderr}");
+
+    // Configured scripted provider -> readiness is true.
+    let port = unused_port();
+    let child = Command::new(env!("CARGO_BIN_EXE_writer-server"))
+        .env("WRITER_PORT", port.to_string())
+        .env("WRITER_DATA_DIR", &data)
+        .env("WRITER_PAIR_WRITER", "scripted")
+        .env("WRITER_SCRIPTED_FIRST_TOKEN_MS", "5")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("writer-server starts");
+    let mut scripted = Server(child);
+    wait_for_health(&mut scripted, port);
+    let status = http_request(port, "GET", "/api/v1/pair-writer", None);
+    assert!(status.contains(r#""ready":true"#), "{status}");
+    assert!(status.contains(r#""provider":"scripted""#), "{status}");
+    let (exit, stderr) = terminate(&mut scripted);
+    assert_eq!(exit.code(), Some(0), "writer-server stderr: {stderr}");
+
+    // Invalid WRITER_PAIR_WRITER -> exit 2 naming the variable.
+    let invalid = Command::new(env!("CARGO_BIN_EXE_writer-server"))
+        .env("WRITER_PORT", unused_port().to_string())
+        .env("WRITER_DATA_DIR", &data)
+        .env("WRITER_PAIR_WRITER", "unknown-provider")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("writer-server starts");
+    let mut invalid = Server(invalid);
+    let (exit, stderr) = invalid.wait();
+    assert_eq!(exit.code(), Some(2));
+    assert!(stderr.contains("WRITER_PAIR_WRITER"), "{stderr}");
+}

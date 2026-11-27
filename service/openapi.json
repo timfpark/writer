@@ -1137,6 +1137,129 @@
         }
       }
     },
+    "/api/v1/pair-writer": {
+      "get": {
+        "tags": [
+          "pair-writer"
+        ],
+        "summary": "Report whether the pair writer is ready to answer and, if not, what is\nmissing.",
+        "operationId": "getPairWriter",
+        "responses": {
+          "200": {
+            "description": "Whether the pair writer is ready and, if not, what is missing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairWriterStatus"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The service failed unexpectedly.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pair-writer/replies": {
+      "post": {
+        "tags": [
+          "pair-writer"
+        ],
+        "summary": "Stream a pair-writer reply for one conversation turn.",
+        "description": "Streams `text/event-stream` with `delta` (`ChatReplyDelta`) events, ending\nin either a `done` (`ChatReplyDone`) event or an `error` (`Problem`) event.",
+        "operationId": "createPairWriterReply",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePairWriterReplyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Server-sent event stream (`text/event-stream`). Events: `delta` (`ChatReplyDelta`), ending with `done` (`ChatReplyDone`) or `error` (`Problem`).",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body is not valid JSON.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The request body exceeds the size limit.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The request body is not sent as application/json.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The request body breaks the schema or a workspace rule; `errors` names each field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The service failed unexpectedly.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The pair writer is not configured or not ready.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspace": {
       "get": {
         "tags": [
@@ -1171,6 +1294,205 @@
   },
   "components": {
     "schemas": {
+      "ChatContextDocument": {
+        "type": "object",
+        "description": "Another document added to the turn with `+ Context`.",
+        "required": [
+          "documentId",
+          "title",
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string"
+          },
+          "documentId": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChatDocumentInput": {
+        "type": "object",
+        "description": "The open document as it stands when the writer sends, unsaved edits\nincluded.",
+        "required": [
+          "documentId",
+          "title",
+          "content"
+        ],
+        "properties": {
+          "content": {
+            "type": "string",
+            "description": "Current Markdown or prose text of the open document (or its window\naround the selection or cursor when past the reading limit)."
+          },
+          "cursorOffset": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Approximate character offset of the caret in `content` when no\nselection is active.",
+            "minimum": 0
+          },
+          "documentId": {
+            "type": "string"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/ReadingScope",
+            "description": "Scope used if the caller already windowed a document past the limit."
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChatHistoryMessage": {
+        "type": "object",
+        "description": "One earlier message in the active thread.",
+        "required": [
+          "role",
+          "text"
+        ],
+        "properties": {
+          "role": {
+            "$ref": "#/components/schemas/ChatHistoryRole"
+          },
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChatHistoryRole": {
+        "type": "string",
+        "description": "Who spoke an earlier turn in a thread.",
+        "enum": [
+          "writer",
+          "assistant"
+        ]
+      },
+      "ChatReadSource": {
+        "type": "object",
+        "description": "One source recorded in a reply's `done` event for `What it read`.",
+        "required": [
+          "kind",
+          "documentId",
+          "title",
+          "scope",
+          "wordCount",
+          "label"
+        ],
+        "properties": {
+          "documentId": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChatSourceKind"
+          },
+          "label": {
+            "type": "string"
+          },
+          "scope": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ReadingScope"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "wordCount": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "ChatReplyDelta": {
+        "type": "object",
+        "description": "Payload of a `delta` SSE event carrying streamed reply text.",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "ChatReplyDone": {
+        "type": "object",
+        "description": "Payload of a `done` SSE event carrying the facts `What it read` shows.",
+        "required": [
+          "model",
+          "promptVersion",
+          "sources",
+          "totalWords",
+          "droppedHistoryTurns"
+        ],
+        "properties": {
+          "droppedHistoryTurns": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "model": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Prompt name and digest when a prompt is used, or `null` otherwise."
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatReadSource"
+            }
+          },
+          "totalWords": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "ChatSelectionInput": {
+        "type": "object",
+        "description": "The editor's active selection, used as the turn's focus.",
+        "required": [
+          "text"
+        ],
+        "properties": {
+          "text": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChatSourceKind": {
+        "type": "string",
+        "description": "The kind of source recorded in `What it read`.",
+        "enum": [
+          "document",
+          "selection",
+          "contextDocument",
+          "history"
+        ]
+      },
       "CreateDocumentRequest": {
         "type": "object",
         "description": "A document to create with a client-generated identifier.",
@@ -1245,6 +1567,43 @@
           "title": {
             "type": "string",
             "description": "1 to 200 characters with no surrounding whitespace or control\ncharacters."
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreatePairWriterReplyRequest": {
+        "type": "object",
+        "description": "A stateless conversation turn sent to the pair writer.",
+        "required": [
+          "message",
+          "document"
+        ],
+        "properties": {
+          "contextDocuments": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatContextDocument"
+            },
+            "description": "Additional documents added with `+ Context`."
+          },
+          "document": {
+            "$ref": "#/components/schemas/ChatDocumentInput",
+            "description": "The open document as it stands."
+          },
+          "history": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatHistoryMessage"
+            },
+            "description": "Earlier messages in the current thread, oldest first."
+          },
+          "message": {
+            "type": "string",
+            "description": "The writer's question or prompt for this turn."
+          },
+          "selection": {
+            "$ref": "#/components/schemas/ChatSelectionInput",
+            "description": "Optional active selection in the open document."
           }
         },
         "additionalProperties": false
@@ -1349,6 +1708,63 @@
           "document"
         ]
       },
+      "PairWriterIssue": {
+        "type": "string",
+        "description": "Why the pair writer is not ready to answer.",
+        "enum": [
+          "notConfigured",
+          "runtimeUnreachable",
+          "modelMissing"
+        ]
+      },
+      "PairWriterStatus": {
+        "type": "object",
+        "description": "Whether the pair writer can answer and, if not, what is missing.",
+        "required": [
+          "ready",
+          "provider",
+          "model",
+          "issue",
+          "detail"
+        ],
+        "properties": {
+          "detail": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Short service-authored explanation of what is missing; otherwise `null`."
+          },
+          "issue": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/PairWriterIssue",
+                "description": "Structured reason when `ready` is `false`; otherwise `null`."
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "model": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Configured model name, or `null` when none is configured."
+          },
+          "provider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Configured provider name, or `null` when none is configured."
+          },
+          "ready": {
+            "type": "boolean"
+          }
+        }
+      },
       "Problem": {
         "type": "object",
         "description": "An RFC 9457 problem details object describing why a request failed.",
@@ -1424,6 +1840,15 @@
             "description": "A JSON Pointer to the field, or `\"\"` for the whole body."
           }
         }
+      },
+      "ReadingScope": {
+        "type": "string",
+        "description": "How much of the open document a turn reads.",
+        "enum": [
+          "whole",
+          "aroundSelection",
+          "aroundCursor"
+        ]
       },
       "ReplaceContentRequest": {
         "type": "object",
@@ -1567,6 +1992,10 @@
     {
       "name": "documents",
       "description": "Documents and their Markdown content"
+    },
+    {
+      "name": "pair-writer",
+      "description": "Provisional pair-writer readiness and streamed replies"
     }
   ]
 }

@@ -14,8 +14,9 @@ start with [README.md](./README.md).
 
 | Crate                                      | Responsibility                                                                                          | May depend on                                                                                            |
 |--------------------------------------------|---------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
-| [writer-server](./crates/writer-server/)   | Reads configuration, logs, opens storage, binds `127.0.0.1`, serves, and shuts down; no routes or rules | `writer-api`, `writer-storage`, Tokio, axum                                                              |
-| [writer-api](./crates/writer-api/)         | Routes, handlers, transport types, `Problem` errors, and the OpenAPI document                           | Lower internal crates, axum, utoipa                                                                      |
+| [writer-server](./crates/writer-server/)   | Reads configuration, logs, opens storage, binds `127.0.0.1`, serves, and shuts down; no routes or rules | `writer-api`, `writer-storage`, `writer-agent`, Tokio, axum                                              |
+| [writer-api](./crates/writer-api/)         | Routes, handlers, transport types, `Problem` errors, SSE streams, and the OpenAPI document              | Lower internal crates, axum, `futures-core`, utoipa                                                      |
+| [writer-agent](./crates/writer-agent/)     | `ChatProvider`, 19,000-word reading assembly, `UnconfiguredProvider`, and `ScriptedProvider`            | Tokio; no axum, Tower, or utoipa                                                                         |
 | [writer-storage](./crates/writer-storage/) | `WorkspaceStore`, `StoreError`, revisions, the conformance suite, and the filesystem backend            | `writer-domain`, Tokio, serde, `sha2`, `tempfile`, `unicase`, `unicode-normalization`, `uuid`, `tracing` |
 | [writer-domain](./crates/writer-domain/)   | Workspace types, limits, and the `Tree` checks every backend applies; no I/O                            | Nothing internal; no runtime or framework                                                                |
 
@@ -41,10 +42,22 @@ start with [README.md](./README.md).
   `OpenApiRouter` with `routes!`, so it is served and documented together.
   Handler paths are relative to `/api/v1`.
 * Handlers reach storage only through the `State<Store>` (an
-  `Arc<dyn WorkspaceStore>`) that `writer_api::router(store)` takes, and map
-  transport types to `writer-domain` types before calling it. Raise a body
-  limit per route with `routes!(...).layer(DefaultBodyLimit::max(...))`, as
-  the two operations that carry content do.
+  `Arc<dyn WorkspaceStore>`) and the pair writer through `State<Agent>` (an
+  `Arc<dyn ChatProvider>`) supplied to `writer_api::router(store)` (defaulting
+  to `UnconfiguredProvider`) or `writer_api::router_with_agent(store, agent)`,
+  and map transport types to lower-crate types before calling them. Raise a
+  body limit per route with `routes!(...).layer(DefaultBodyLimit::max(...))`,
+  as the operations that carry document content do.
+* Provisional pair-writer routes live under `/api/v1/pair-writer`
+  (`getPairWriter` for readiness and `createPairWriterReply` on
+  `POST /api/v1/pair-writer/replies` for ADR 0004 SSE streams). Select the
+  provider via `WRITER_PAIR_WRITER=scripted` (and optional
+  `WRITER_SCRIPTED_*` settings in [.env.example](./.env.example)); when unset,
+  `writer-server` starts with `UnconfiguredProvider` and answers turns with
+  `503` `unavailable`.
+* Stop generating as soon as the SSE stream is dropped (client disconnect),
+  and never log request, document, or reply text. Verify with the synthetic
+  marker in [writer-api/tests/pair_writer.rs](./crates/writer-api/tests/pair_writer.rs).
 * Give every `#[utoipa::path]` an explicit camelCase `operation_id` (such as
   `getHealth`) and exactly one `tag` equal to the first path segment after the
   version, declared in `ApiDoc`'s `tags(...)`.

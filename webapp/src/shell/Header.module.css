@@ -174,3 +174,38 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 0;
 }
+
+.toggle {
+  position: relative;
+}
+
+.signalDot {
+  position: absolute;
+  inset-block-start: 4px;
+  inset-inline-end: 4px;
+  inline-size: 0.45rem;
+  block-size: 0.45rem;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 1.5px var(--color-chrome);
+}
+
+.signalDot[data-signal="streaming"] {
+  animation: toggle-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes toggle-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signalDot[data-signal="streaming"] {
+    animation: none;
+  }
+}

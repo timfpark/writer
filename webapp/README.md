@@ -21,8 +21,8 @@ left, the writing region in the center, and an assistant on the right. Both
 side panes collapse, so the writing region can take the whole width. The
 navigator shows the workspace's folders and documents as a tree, the writing
 region edits the open document as formatted text that saves itself, and the
-assistant holds a conversation answered by a stub until the pair-writing
-agent joins.
+assistant holds ADR 0012's in-memory `Chat` threads answered through the
+service's provisional pair-writer endpoints.
 Coding agents start with [AGENTS.md](./AGENTS.md); the architecture is
 recorded in [ADR 0003](../docs/adrs/0003-webapp-architecture.md), the API
 conventions in [ADR 0004](../docs/adrs/0004-api-conventions.md), the
@@ -41,6 +41,7 @@ browser tests in [ADR 0009](../docs/adrs/0009-browser-tests.md).
 | [src/saving/](./src/saving/)                                 | Autosave, retries, conflict recovery, and unsaved text in IndexedDB         |
 | [src/styles/](./src/styles/)                                 | Design tokens for both themes, global styles, and the token contrast test   |
 | [src/api/client.ts](./src/api/client.ts)                     | The only module that calls the service, through openapi-fetch               |
+| [src/api/sse.ts](./src/api/sse.ts)                           | ADR 0004 server-sent event parser over `openapi-fetch` streams              |
 | [src/api/languages.ts](./src/api/languages.ts)               | Supported document languages (`en`, `es`) and their own names               |
 | [src/api/queries.ts](./src/api/queries.ts)                   | The query client, retry policy, and query options components read through   |
 | [src/api/workspaceChanges.ts](./src/api/workspaceChanges.ts) | Tree changes queued in order, and the tree with pending changes applied     |
@@ -131,13 +132,29 @@ The header's title slot shows the open document's title, or Writer's name at
 When the service cannot be reached, the writing region says so and
 offers to try again.
 
-The assistant shows a conversation with the pair writer above a message box
-that grows with its text.
-`Enter` or the Send button sends, and `Shift+Enter` starts a new line. Until
-the pair-writing agent arrives, a stub in the browser answers that the
-assistant is not connected yet, so a message sends no request. The
-conversation lives only in memory: it stays while the pane closes and
-reopens, and a reload clears it.
+The assistant implements [ADR 0012](../docs/adrs/0012-pair-writing-experience.md)'s
+`Chat` experience. Threads belong to the document open when they started, stay
+in browser memory (a reload clears them), and reopen when you return to their
+document. From a thread, the `Chats` back button steps up to a full-pane
+`Chats` list ordered by last activity under `This document` and `All chats`,
+with `New chat` at the top and inline-confirmed deletion in both the thread
+header and the list.
+Above the message box, the composer shows what the next turn reads (the open
+document whole up to 19,000 words, or around the selection or cursor past
+that), a selection chip mirroring the editor's selection (kept highlighted
+while `Chat` has focus, with `×` to ignore it for the next message), and
+`+ Context` to add other documents up to the limit. `Enter` or the Send button
+sends, `Shift+Enter` starts a new line, and `Stop` appears immediately while a
+reply streams. Exact quotes of the current text link to their passage in the
+editor, and `What it read` reopens each document source read-only in the
+writing region (`Back to current draft` or `Escape` returns). When the open
+document changes since a thread's last turn, `Document edited since this chat`
+offers `View text then`, and sending adds `Continuing against the current
+draft`. One dot on the collapsed assistant toggle pulses while a reply streams
+and stays lit while a finished reply is unread. When the service has no pair
+writer configured, the pane names what is missing, points to
+`service/README.md`, keeps any typed message, and clears the notice without a
+reload once the service reports ready.
 
 ### Writing
 
@@ -223,13 +240,19 @@ run `npm config get registry` here.
 
 ## Run the webapp
 
-The page needs the service. Start it in one terminal, as the
-[service guide](../service/README.md#run-the-service) describes:
+The page needs the service. To try ADR 0012's Chat tab against the
+deterministic scripted pair writer, start the service with
+`WRITER_PAIR_WRITER=scripted` in one terminal, as the
+[service guide](../service/README.md#run-with-the-scripted-pair-writer)
+describes:
 
 ```bash
 cd service
-cargo run -p writer-server
+WRITER_PAIR_WRITER=scripted cargo run -p writer-server
 ```
+
+Leaving `WRITER_PAIR_WRITER` unset starts the service without a pair writer so
+you can verify the setup notice while writing and saving work normally.
 
 Then start the development server from this folder in another terminal:
 
@@ -308,7 +331,8 @@ Playwright tests from [e2e/](./e2e/) in real browsers, as
 | `npm run e2e:browsers` | Chromium and WebKit launch; exits 2, naming the fix, if one cannot     |
 | `npm run e2e`          | Every browser test, with WCAG 2.2 AA checks by axe-core in both themes |
 
-Each run starts the service with `cargo run` on loopback port 8898, with a
+Each run starts the service with `cargo run` and `WRITER_PAIR_WRITER=scripted`
+(with shortened scripted pacing) on loopback port 8898, with a
 new, empty data folder, `writer-e2e-8898` in the system's temporary
 directory, that it removes afterward, and this folder's development server
 on port 5198 in Vite's `e2e` mode, which serves packages' production

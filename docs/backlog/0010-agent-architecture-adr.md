@@ -43,7 +43,7 @@ power-state battery policy. [Backlog 56](./0056-story-notes-continuity-test.md)
 measures whether chaining story notes into a continuity check works and
 what it costs. This decision chooses an implementation that meets them.
 
-[Backlog 60](./0060-scripted-chat-tab.md),
+Backlog 60,
 [backlog 61](./0061-local-model-chat.md), and
 [backlog 62](./0062-scripted-findings-tab.md) come first, so writers try the
 pair writer in Writer and a design that fails is backed out cheaply. Within

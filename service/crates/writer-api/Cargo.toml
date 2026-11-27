@@ -8,12 +8,14 @@ publish.workspace = true
 
 [dependencies]
 axum.workspace = true
+futures-core.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tower-http.workspace = true
 tracing.workspace = true
 utoipa.workspace = true
 utoipa-axum.workspace = true
+writer-agent.workspace = true
 writer-domain.workspace = true
 writer-storage.workspace = true
 

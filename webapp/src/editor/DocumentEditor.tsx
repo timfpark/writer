@@ -1,20 +1,42 @@
 import { Extension } from "@tiptap/core";
 import { EditorState, Selection, TextSelection } from "@tiptap/pm/state";
 import { EditorContent, useEditor, type Editor } from "@tiptap/react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import type { DocumentContent } from "../api/client";
 import type { DocumentSaver } from "../saving/documentSaver";
 import type { SaveManager } from "../saving/saveManager";
 import { titleId } from "../shell/Header";
 import { regionElement } from "../shell/regions";
+import {
+  useEditorBridge,
+  type EditorSelection,
+} from "../workspace/editorBridge";
 import styles from "./DocumentEditor.module.css";
 import { editorExtensions } from "./extensions";
-import { LinkDialog, type LinkTarget } from "./LinkDialog";
+import type { LinkTarget } from "./LinkDialog";
 import {
   parseMarkdown,
   serializeMarkdown,
   type LoadedMarkdown,
 } from "./markdown";
+import {
+  docPosToTextOffset,
+  findQuoteRange,
+  highlightQuoteInEditor,
+  setSelectionIgnoredInEditor,
+} from "./passageHighlights";
+
+const LinkDialog = lazy(() =>
+  import("./LinkDialog").then((module) => ({ default: module.LinkDialog })),
+);
 
 interface DocumentEditorProps {
   documentId: string;
@@ -85,6 +107,43 @@ function toBoundary(editor: Editor, end: boolean, extend: boolean): boolean {
   return true;
 }
 
+function isAsciiSpace(code: number): boolean {
+  return (
+    code === 32 ||
+    code === 9 ||
+    code === 10 ||
+    code === 13 ||
+    code === 12 ||
+    code === 11
+  );
+}
+
+// Zero-allocation word count so measuring a 1 MiB manuscript never triggers a
+// GC pause during editor mount or typing.
+function countWords(text: string): number {
+  let count = 0;
+  let inWord = false;
+  for (let i = 0; i < text.length; i += 1) {
+    const code = text.charCodeAt(i);
+    const space = code <= 32 ? isAsciiSpace(code) : /\s/.test(text[i] ?? "");
+    if (space) {
+      inWord = false;
+    } else if (!inWord) {
+      inWord = true;
+      count += 1;
+    }
+  }
+  return count;
+}
+
+function activeSelection(editor: Editor): EditorSelection | null {
+  const { from, to, empty } = editor.state.selection;
+  if (empty) return null;
+  const text = editor.state.doc.textBetween(from, to, "\n").trim();
+  if (!text) return null;
+  return { text, from, to };
+}
+
 // The writing surface: ADR 0008's Tiptap editor over the open document's
 // Markdown, saved by the document's saver as the writer types.
 export default function DocumentEditor({
@@ -93,6 +152,7 @@ export default function DocumentEditor({
   content,
   manager,
 }: DocumentEditorProps) {
+  const bridge = useEditorBridge();
   const saverRef = useRef<DocumentSaver | null>(null);
   // The Markdown each editor instance was loaded from. Tiptap recreates the
   // editor when the surface is hidden and shown again, as Suspense may do,
@@ -100,7 +160,12 @@ export default function DocumentEditor({
   const loadedRef = useRef<{ editor: Editor; loaded: LoadedMarkdown } | null>(
     null,
   );
+  const versionRef = useRef(0);
+  const hadSelectionRef = useRef(false);
+  const summaryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const openLinkRef = useRef<() => void>(() => {});
+  const onUpdateRef = useRef<() => void>(() => {});
+  const onSelectionRef = useRef<() => void>(() => {});
   const [link, setLink] = useState<LinkTarget | null>(null);
 
   const extensions = useMemo(
@@ -153,7 +218,11 @@ export default function DocumentEditor({
         scrollThreshold: 80,
         scrollMargin: 80,
       },
-      onUpdate: () => saverRef.current?.change(),
+      onUpdate: () => {
+        saverRef.current?.change();
+        onUpdateRef.current();
+      },
+      onSelectionUpdate: () => onSelectionRef.current(),
       onBlur: () => saverRef.current?.flush(),
     }),
     [extensions],
@@ -185,7 +254,8 @@ export default function DocumentEditor({
   }, [editor]);
 
   // Shows the document's text without adding it to undo history or
-  // scheduling a save, then hands its serializer to the saver.
+  // scheduling a save, then hands its serializer to the saver and registers
+  // the editor handle with the assistant bridge.
   useLayoutEffect(() => {
     if (editor.isDestroyed) return undefined;
     const { saver, markdown } = manager.open(documentId, content);
@@ -208,11 +278,122 @@ export default function DocumentEditor({
       return text;
     });
     saverRef.current = saver;
+
     return () => {
       saverRef.current = null;
       saver.detach();
     };
   }, [editor, manager, documentId, content]);
+
+  // Connects the editor to the assistant bridge after layout/paint so opening
+  // a 1 MiB document never blocks its first editable frame.
+  useEffect(() => {
+    if (editor.isDestroyed) return undefined;
+
+    const pushSummary = (incrementVersion: boolean) => {
+      if (editor.isDestroyed) return;
+      if (incrementVersion) versionRef.current += 1;
+      const selection = activeSelection(editor);
+      hadSelectionRef.current = selection !== null;
+      bridge.updateSummary({
+        documentId,
+        wordCount: countWords(
+          editor.state.doc.textBetween(0, editor.state.doc.content.size, "\n"),
+        ),
+        cursorOffset: docPosToTextOffset(
+          editor.state.doc,
+          editor.state.selection.head,
+        ),
+        selection,
+        version: versionRef.current,
+      });
+    };
+
+    const scheduleSummary = (incrementVersion: boolean) => {
+      if (summaryTimerRef.current !== null) {
+        clearTimeout(summaryTimerRef.current);
+      }
+      summaryTimerRef.current = setTimeout(() => {
+        summaryTimerRef.current = null;
+        pushSummary(incrementVersion);
+      }, 300);
+    };
+
+    onUpdateRef.current = () => scheduleSummary(true);
+    onSelectionRef.current = () => {
+      if (editor.isDestroyed) return;
+      const selection = activeSelection(editor);
+      if (selection !== null || hadSelectionRef.current) {
+        // Mirror selection changes immediately so the selection chip appears
+        // or clears without lag.
+        pushSummary(false);
+      } else {
+        scheduleSummary(false);
+      }
+    };
+
+    const initialSelection = activeSelection(editor);
+    hadSelectionRef.current = initialSelection !== null;
+    const unregister = bridge.register({
+      documentId,
+      readSnapshot: () => {
+        const currentLoaded = loadedRef.current?.loaded;
+        const plainText = editor.state.doc.textBetween(
+          0,
+          editor.state.doc.content.size,
+          "\n",
+        );
+        const liveMarkdown = currentLoaded
+          ? serializeMarkdown(editor.state.doc, currentLoaded)
+          : plainText;
+        return {
+          documentId,
+          markdown: liveMarkdown,
+          plainText,
+          wordCount: countWords(liveMarkdown),
+          cursorOffset: docPosToTextOffset(
+            editor.state.doc,
+            editor.state.selection.head,
+          ),
+          selection: activeSelection(editor),
+        };
+      },
+      hasExactQuote: (quote) =>
+        !editor.isDestroyed && findQuoteRange(editor.state.doc, quote) !== null,
+      highlightQuote: (quote) => highlightQuoteInEditor(editor, quote),
+      setSelectionIgnored: (ignored) =>
+        setSelectionIgnoredInEditor(editor, ignored),
+    });
+
+    // Defer the initial word count and summary emission until after the first
+    // editable frame so opening a 1 MiB document never blocks its paint.
+    let summaryFrame: number | null = null;
+    let initialTimer: ReturnType<typeof setTimeout> | null = null;
+    summaryFrame = requestAnimationFrame(() => {
+      summaryFrame = null;
+      initialTimer = setTimeout(() => {
+        initialTimer = null;
+        if (editor.isDestroyed) return;
+        bridge.updateSummary({
+          documentId,
+          wordCount: countWords(content.markdown),
+          cursorOffset: 0,
+          selection: activeSelection(editor),
+          version: versionRef.current,
+        });
+      }, 0);
+    });
+
+    return () => {
+      if (summaryFrame !== null) cancelAnimationFrame(summaryFrame);
+      if (initialTimer !== null) clearTimeout(initialTimer);
+      if (summaryTimerRef.current !== null) {
+        clearTimeout(summaryTimerRef.current);
+        summaryTimerRef.current = null;
+      }
+      unregister();
+    };
+  }, [editor, documentId, content.markdown, bridge]);
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -232,39 +413,41 @@ export default function DocumentEditor({
         lang={language}
       />
       {link ? (
-        <LinkDialog
-          target={link}
-          onApply={(href) => {
-            const chain = editor
-              .chain()
-              .focus()
-              .setTextSelection({ from: link.from, to: link.to });
-            if (link.isLink) chain.extendMarkRange("link");
-            if (link.from === link.to && !link.isLink) {
-              return chain
-                .insertContent({
-                  type: "text",
-                  text: href,
-                  marks: [{ type: "link", attrs: { href } }],
-                })
+        <Suspense fallback={null}>
+          <LinkDialog
+            target={link}
+            onApply={(href) => {
+              const chain = editor
+                .chain()
+                .focus()
+                .setTextSelection({ from: link.from, to: link.to });
+              if (link.isLink) chain.extendMarkRange("link");
+              if (link.from === link.to && !link.isLink) {
+                return chain
+                  .insertContent({
+                    type: "text",
+                    text: href,
+                    marks: [{ type: "link", attrs: { href } }],
+                  })
+                  .run();
+              }
+              return chain.setLink({ href }).run();
+            }}
+            onRemove={() => {
+              editor
+                .chain()
+                .focus()
+                .setTextSelection({ from: link.from, to: link.to })
+                .extendMarkRange("link")
+                .unsetLink()
                 .run();
-            }
-            return chain.setLink({ href }).run();
-          }}
-          onRemove={() => {
-            editor
-              .chain()
-              .focus()
-              .setTextSelection({ from: link.from, to: link.to })
-              .extendMarkRange("link")
-              .unsetLink()
-              .run();
-          }}
-          onClose={() => {
-            setLink(null);
-            editor.commands.focus();
-          }}
-        />
+            }}
+            onClose={() => {
+              setLink(null);
+              editor.commands.focus();
+            }}
+          />
+        </Suspense>
       ) : null}
     </>
   );

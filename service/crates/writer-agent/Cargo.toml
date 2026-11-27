@@ -1,0 +1,13 @@
+[package]
+name = "writer-agent"
+description = "Pair-writer provider interface, reading assembly, and deterministic scripted provider"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+publish.workspace = true
+
+[dependencies]
+tokio.workspace = true
+
+[lints]
+workspace = true
