@@ -26,9 +26,11 @@ questions`, `Point of view and tense`, and `Repetition`), with their short
 typing-pause trigger, structural quietness gates, per-scene and per-chapter
 finding density caps, global Pause cancellation, and OS power-state battery
 cadence. [ADR 0012](../adrs/0012-pair-writing-experience.md) sets the
-targets for latency, memory, battery, and typing, yields GPU priority to
-active Chat turns, and requires `What it read` audit metadata and persisted
-dismissals on findings. The [agent
+targets for latency, memory, battery, and typing, amends ADR 0011's trigger
+so a keystroke cancels a review only when it changes the text under review,
+stops review while a chat reply streams, and requires `What it read` facts,
+findings persisted with their quoted text, and dismissals keyed by agent
+and exact text. The [agent
 ADR](./0010-agent-architecture-adr.md) decides how findings anchor to
 passages, how reviews start, skip unchanged text, and stay within those
 targets, and how findings reach the webapp. The [conversations
@@ -71,17 +73,18 @@ agent ADR, amend it in the same pull request.
   endpoint adds. Include coherent documents that should produce no finding
   of a kind, so the cases catch false alarms as well as misses.
 * Add the review endpoint or stream the agent ADR decides, returning
-  advice-only findings with their agent, text, passage anchors, and
-  [ADR 0012](../adrs/0012-pair-writing-experience.md)'s `What it read`
-  audit metadata, and regenerate `service/openapi.json` and the webapp's
-  client. Keep backlog 62's provisional review endpoint working until
+  advice-only findings with their agent, text, passage anchors and quoted
+  text, and the facts ADR 0012's `What it read` shows, plus timing and
+  tokens for the audit record, and regenerate `service/openapi.json` and
+  the webapp's client. Keep backlog 62's provisional review endpoint working until
   backlog 36 moves the webapp onto the new one.
-* Enforce [ADR 0011](../adrs/0011-background-agents-ux.md)'s triggers,
-  zero-cost structural quietness gates, finding density caps, and battery
-  policy, and ADR 0012's GPU priority for active Chat turns and resource
-  targets in the service as the agent ADR decides: skip text already
-  reviewed, pause or yield background review while Chat streams, and cap
-  reviews per document and per period.
+* Enforce [ADR 0011](../adrs/0011-background-agents-ux.md)'s triggers as
+  ADR 0012 amends them, its zero-cost structural quietness gates, finding
+  density caps, and battery policy, and ADR 0012's targets in the service
+  as the agent ADR decides: skip text already reviewed, cancel a review
+  only when its text changes, stop review while a chat reply streams and
+  resume it at the next pause after, and cap reviews per document and per
+  period.
 * Cancel in-flight reviews and stop sending text for review while the
   writer has paused background work or low-battery auto-pause is active
   (unless resumed), as ADR 0011 specifies, and expose OS power policy state
@@ -90,8 +93,9 @@ agent ADR, amend it in the same pull request.
   [backlog 57](./0057-model-settings.md) if it has landed.
 * Record each review and its findings as the conversations ADR decides,
   pointing to the version of the text it read.
-* Record dismissed findings as the experience ADR decides so that they do
-  not return for unchanged text.
+* Persist active findings with their quoted text, and dismissals keyed by
+  agent and exact passage text, as the conversations ADR decides, so a
+  dismissed finding does not return for unchanged text.
 * Keep the scripted provider returning findings of each shipped agent, so
   tests run without a model.
 * Extend the `service/README.md` walkthrough to review a synthetic document.
@@ -108,6 +112,9 @@ agent ADR, amend it in the same pull request.
   documents that must produce no finding of a kind.
 * [ ] Reviewing unchanged text again makes no model call, and a test proves
   it with the scripted provider.
+* [ ] An edit outside the text under review leaves the review running, an
+  edit inside it cancels it, and a chat turn stops review until its reply
+  ends, and tests with the scripted provider prove each.
 * [ ] No document or finding text appears in a log line or error response,
   and a test with a synthetic marker proves it.
 * [ ] `tools/check` exits 0 without provider credentials or network access to

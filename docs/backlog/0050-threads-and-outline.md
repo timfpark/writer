@@ -37,9 +37,11 @@ incremental updates, and corrections.
   full-width view in the center region), linked to their passages, keyboard
   operable and accessible, and let the writer edit an entry or mark a
   thread as `Intentionally open`.
-* Add the active book's reverse outline and open threads to the `Chat`
-  tab's default context, its context chip, and the `What it read` sources,
-  as [ADR 0012](../adrs/0012-pair-writing-experience.md) decides.
+* Add the active book's reverse outline and open threads to what each
+  `Chat` turn reads, the reading shown above the composer, and the `What it
+  read` sources, as
+  [ADR 0012](../adrs/0012-pair-writing-experience.md#what-the-agent-reads)
+  decides.
 * Tune the reverse outline and open threads prompts on backlog 48's cases,
   as backlog 35 tunes its agents, and amend
   [ADR 0010](../adrs/0010-pair-writing-models.md) with the chosen prompts.

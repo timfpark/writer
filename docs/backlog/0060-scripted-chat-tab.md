@@ -21,13 +21,13 @@ agent framework, or conversation storage is committed.
 ## Context
 
 [ADR 0012](../adrs/0012-pair-writing-experience.md) fixes the conversation
-experience: advice-only replies with clickable verbatim quotes, separate
-named threads, a default context of the open document and any captured
-selection with opt-in `+ Context` attachments, `Stop` from the moment a
-message is sent, collapsed `What it read` disclosures, per-turn snapshots
-for revived threads, quiet collapsed-pane signals, and calm not-set-up,
-offline, failure, and no-document states. It validated them in a throwaway
-prototype kept in ignored `.local/prototype/`. This story moves them into
+experience: advice-only replies whose exact quotes link to their passages,
+threads that belong to a document, a reading of the open document as it
+stands, up to about 19,000 words, with the selection as its focus and
+documents added with `+ Context`, `Stop` from the moment a message is sent,
+`What it read` sources that reopen exactly as read, one dot on the collapsed
+toggle, and setup, failure, and no-document states. It validated them in a
+throwaway prototype kept in ignored `.local/prototype/`. This story moves them into
 the webapp, where they meet the real editor, autosave, layout, keyboard
 model, and browser tests.
 
@@ -65,57 +65,77 @@ module.
   provider interface and a deterministic scripted provider, chosen by a
   setting documented in `service/.env.example` and
   [service/README.md](../../service/README.md). Without the setting, the
-  service starts with no provider configured.
+  service starts with no pair writer and reports it as not ready.
 * Add a provisional, stateless streaming endpoint under ADR 0004 that takes
-  the writer's message, the thread's earlier turns, the open document's
-  text, an optional selection, and any opt-in attachments, and streams the
-  reply as SSE events ending in `done` or `error`. Report ADR 0012's `What
-  it read` metadata: provider and model, prompt name and digest when one is
-  used, the sources sent, first-token and total time, and token counts.
-  Regenerate `service/openapi.json` and the webapp's client.
+  the writer's message and the turn's reading, and streams the reply as SSE
+  events ending in `done` or `error`, with the facts ADR 0012's `What it
+  read` shows: the sources read, the model, and the prompt version when a
+  prompt is used. Add a provisional readiness check that says whether the
+  pair writer can answer and, if not, what is missing, and answer a turn
+  that cannot start with `503` `unavailable` before the stream. Regenerate
+  `service/openapi.json` and the webapp's client.
+* Build each turn's reading as ADR 0012 defines it: the open document as it
+  stands, unsaved edits included, whole up to about 19,000 words or around
+  the selection or cursor beyond that, documents added with `+ Context`,
+  and the thread's earlier turns, the oldest dropping out first past the
+  limit.
 * Make the scripted provider derive advice-only replies from the request: a
   few numbered notes, each quoting a sentence of the document or selection
   verbatim in double quotes with a brief italicized alternative. Pace them
-  with a configurable first-token delay and token rate that default near
-  ADR 0010's measurements (about 2 seconds and 30 tokens per second) and
-  that tests shorten.
-* Answer with `503` `unavailable` before the stream when no provider is
-  configured, stop generating when the client disconnects, and log no
-  request or reply text.
+  like ADR 0010's model by default, with a first token after about 2
+  seconds plus about 3 seconds per further 1,000 words on a first read,
+  under a second on a follow-up, and about 30 tokens a second, all
+  configurable so tests shorten them. Let a setting make it report a
+  missing model or fail mid-stream, so tests reach those states.
+* Stop generating when the client disconnects, and log no request or reply
+  text.
 * Read the stream behind the `Assistant` interface, choosing how as
   ADR 0003 asks, and keep the conversation state in `WorkspaceShell`.
 * Build ADR 0012's first journey in the `Chat` tab: starter prompts in an
-  empty chat; a context chip naming the open document; a selection chip
-  captured from the editor that survives focus moving to the composer and
-  clears on a document edit or `+ New`; `+ Context` attachments of other
-  documents and earlier threads; `Enter` to send and `Shift+Enter` for a
-  new line; `Stop` from the moment of sending with no double sends; partial
-  text kept and marked `Stopped`; quoted excerpts that scroll the editor to
-  their passage and highlight it briefly; and a collapsed `What it read`
-  disclosure on each reply.
-* Hold separate named threads in browser memory with ADR 0012's switcher
-  button (title and thread count), inline drawer (`This document` and `All
-  chats`), `+ New`, and inline-confirmed `Delete`.
-* Capture a document snapshot with each turn in memory, and show the
-  revival banner with `View text then` opening a read-only snapshot in the
-  center region (`← Back to current draft` and `Escape`), the `Continuing
-  against the current draft` divider, and a per-turn `Text then` action.
-* Signal on the collapsed `Assistant` toggle with a pulsing dot while a
-  reply streams and a quiet unread dot when one finishes while `Chat` is
-  hidden, announce replies politely, never open the pane or move focus,
+  empty thread; the reading shown above the composer, such as `Chapter 1 ·
+  whole · 4,200 words`; a selection chip that mirrors the editor's
+  selection, with the editor keeping the passage highlighted while `Chat`
+  has focus and `×` ignoring it for the next message; `+ Context` adding
+  other documents up to the limit; `Enter` to send and `Shift+Enter` for a
+  new line; `Reading N words…` and `Stop` from the moment of sending, with
+  no double sends; partial text kept and marked `Stopped`; exact quotes of
+  the current text linking to their passage, and changed quotes left
+  plain; and a collapsed `What it read` disclosure on each reply.
+* Hold threads in browser memory as ADR 0012 decides: each belongs to the
+  document open when it started, titled from its first message; opening a
+  document reopens its last thread or a new one; a switcher lists threads
+  by last activity under `This document` and `All chats`, and a thread
+  about another document continues after `Open document`; `+ New` and
+  inline-confirmed `Delete`; and a deleted document's threads stay under
+  `All chats`, marked, as the navigator's delete confirmation says.
+* Stream one reply at a time, into its own thread, while the writer
+  switches threads or documents or collapses the pane, with `Send`
+  disabled elsewhere until it ends.
+* Keep what each turn read in memory, and open each document source in
+  `What it read` read-only in the writing region exactly as read, with
+  `Back to current draft` and `Escape` to return. Show the `Document edited
+  since this chat` banner with `View text then` on a thread whose document
+  changed, and the `Continuing against the current draft` divider.
+* Show ADR 0012's single dot on the collapsed assistant toggle and the
+  thread's switcher entry, pulsing while a reply streams and lit while a
+  finished reply is unread, with an accessible name that says which.
+  Announce finished replies politely, never open the pane or move focus,
   and keep every action operable from the keyboard.
-* Show the not-set-up state (sending disabled, draft kept, writing
-  unaffected), the offline note, an inline failure card with `Retry` that
-  keeps the message and any partial text, and the no-document state.
+* Show ADR 0012's setup notice, naming what is missing and pointing to
+  `service/README.md`, with `Send` disabled, the typed message kept, and a
+  fresh readiness check when the pane opens and before sending; an inline
+  error with `Retry` that keeps the message and any partial reply and sends
+  again with the current text; and the no-document state.
 * Replace the stub's browser tests with tests against the real service
   running the scripted provider that cover each behavior above, including
-  a mid-stream failure and the not-set-up state, and keep
+  a failure inside a stream, the setup notice, and a document past the
+  reading limit, and keep
   [responsiveness.spec.ts](../../webapp/e2e/responsiveness.spec.ts)
   passing while a reply streams.
 * Update the service and webapp READMEs with how to run Writer with the
   scripted pair writer, and both `AGENTS.md` files with the new crate,
   endpoint, setting, and rules.
-* Leave living artifacts in the context (backlog 49 and 50), the
+* Leave living artifacts in the reading (backlog 49, 50, and 53), the
   `Findings` tab (backlog 62) and `Reference` tab (backlog 49), threads that
   survive a reload (backlog 34), and any model (backlog 61) to later
   stories.
@@ -126,17 +146,22 @@ module.
   with the scripted pair writer and walks ADR 0012's conversation journeys
   on a synthetic document: asking about the document and a selection,
   switching and deleting threads, reviving a thread after editing,
-  inspecting `What it read`, and the not-set-up, offline, failure, and
-  no-document states.
+  inspecting `What it read`, and the setup, failure, and no-document
+  states.
 * [ ] A writer asks for ideas to improve a synthetic document and reads a
   streamed reply whose quotes come from that document and jump to their
   passages.
-* [ ] A message sent after switching documents carries the newly open
-  document.
+* [ ] Opening another document switches `Chat` to that document's last
+  thread, or a new one, and the next message reads that document.
+* [ ] A document longer than the reading limit is read around the selection
+  or cursor, and the composer says so before sending.
 * [ ] `Stop` appears as soon as a message is sent, and stopping keeps the
   partial reply marked `Stopped`.
-* [ ] With no provider configured, the pane says the pair writer is not set
-  up and keeps the writer's message.
+* [ ] A reply keeps streaming into its thread while the writer switches
+  threads or collapses the pane, and arrives there unread.
+* [ ] When the pair writer is not ready, the pane names what is missing and
+  keeps the writer's message, and the notice clears without a reload once
+  it is ready.
 * [ ] No message, document, or reply text appears in a service log line or
   error response, and a test with a synthetic marker proves it.
 * [ ] The browser, accessibility, and responsiveness tests pass in

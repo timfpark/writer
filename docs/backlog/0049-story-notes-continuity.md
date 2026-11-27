@@ -48,10 +48,12 @@ stored.
   accessible, and let the writer edit (`Save` -> `Edited by you`), `Revert
   to extracted`, or delete an entry so later extractions keep the
   correction and immediately re-evaluate continuity findings.
-* Add the active book's story notes and timeline to the `Chat` tab's
-  default context, its context chip, and the `What it read` sources, as
-  [ADR 0012](../adrs/0012-pair-writing-experience.md) decides, so a
-  conversation knows other chapters' facts without rereading them.
+* Add the active book's story notes and timeline to what each `Chat` turn
+  reads, the reading shown above the composer, and the `What it read`
+  sources, as
+  [ADR 0012](../adrs/0012-pair-writing-experience.md#what-the-agent-reads)
+  decides, so a conversation knows other chapters' facts without rereading
+  them.
 * Check new and changed text against story notes and the timeline, and raise
   continuity findings that cite both passages, through backlog 36's view.
 * Tune the extraction, timeline, and continuity prompts on the cases from

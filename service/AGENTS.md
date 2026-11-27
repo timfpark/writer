@@ -157,11 +157,12 @@ Consult these when changing architecture, dependencies, or conventions:
   first-wave background agents, their triggers, work sharing and chaining,
   living-artifact provenance, structural quietness gates, global pause, and
   OS power-state battery policy
-* [ADR 0012](../docs/adrs/0012-pair-writing-experience.md): end-to-end
-  pair-writing journeys, advice-only replies, separate chat threads with
-  per-turn document snapshots, artifact-backed default context, GPU priority
-  for active chat over background review, audit metadata, error states, and
-  resource targets
+* [ADR 0012](../docs/adrs/0012-pair-writing-experience.md): advice-only
+  pair-writing journeys, chat threads that record what each reply read, the
+  about 19,000-word reading limit, a review cancelled only when its text
+  changes and stopped while a reply streams, findings kept by exact quoted
+  text, audit metadata, setup and failure states, and first-token, memory,
+  battery, and typing targets
 
 ## Commands
 

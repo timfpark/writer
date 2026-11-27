@@ -1,6 +1,6 @@
 ---
 title: Try the Findings tab against scripted findings
-description: Build ADR 0011's Findings tab, passage underlines, Pause, and collapsed badge, with ADR 0012's edit-versus-delete lifecycle and Chat handoffs, against scripted findings from a provisional review endpoint, so background review can be tried while writing before any background agent exists.
+description: Build ADR 0011's Findings tab, passage underlines, Pause, and collapsed badge, with ADR 0012's amended pause trigger, edit-versus-delete lifecycle, F8 navigation, and Chat handoffs, against scripted findings from a provisional review endpoint, so background review can be tried while writing before any background agent exists.
 author: Tim Park
 ms.date: 2026-11-27
 ms.topic: reference
@@ -24,13 +24,17 @@ pane into `Findings`, `Reference`, and `Chat` tabs, underlines passages
 with active findings with subtle hairlines within per-scene and per-chapter
 density caps, starts pause-triggered review after a quiet window and never
 while keys arrive, and adds a status line, a global `Pause`
-(`Mod+Shift+P`), and a quiet count badge and running dot on the collapsed
-toggle. [ADR 0012](../adrs/0012-pair-writing-experience.md) adds journeys
-2 to 4: mapping anchors through ProseMirror transactions, an in-place edit
-drops a passage's underline and marks its card `Passage changed` with
-`Recheck now` and `Dismiss`, while a deletion resolves the finding quietly,
-and `Discuss in Chat` or `Answer in Chat` opens or resumes a thread
-anchored to the finding. Findings carry `What it read` disclosures.
+(`Mod+Shift+P`), and a quiet count badge on the collapsed toggle.
+[ADR 0012](../adrs/0012-pair-writing-experience.md) adds journeys 2 to 4
+and amends the trigger: a keystroke cancels a review only when it changes
+the text under review, other reviews finish and hold their underlines until
+the next pause, and a chat message stops review until its reply ends. An
+edit inside a flagged passage drops its underline and marks its card
+`Passage changed` until the next pause review replaces it, a deletion
+removes the finding quietly, `F8` and `Shift+F8` move between findings, and
+`Discuss in Chat` or `Answer in Chat` opens or resumes the finding's own
+thread. Findings carry `What it read` disclosures, and one dot on the
+collapsed toggle pulses while the pair writer works.
 
 [Backlog 60](./0060-scripted-chat-tab.md) builds the agent crate, its
 scripted provider, and the `Chat` tab this story hands findings to. Real
@@ -52,38 +56,50 @@ typing latency.
 * Add a provisional review endpoint under
   [ADR 0004](../adrs/0004-api-conventions.md) that takes the paragraphs or
   scenes that changed and returns advice-only findings from the scripted
-  provider, each with its agent, note, passage anchor, and `What it read`
-  metadata. Regenerate `service/openapi.json` and the webapp's client.
+  provider, each with its agent, note, passage anchor and quoted text, and
+  the facts `What it read` shows. Regenerate `service/openapi.json` and the
+  webapp's client.
 * Make the scripted provider find passages by deterministic rules over the
   text, such as a repeated word or an intensifier, so findings of
   ADR 0011's five pause-triggered kinds (`Weak prose`, `Clarity`, `Open
   questions`, `Point of view and tense`, and `Repetition`) appear on
   synthetic prose, paced by a configurable delay that tests shorten.
-* Add a tab bar to the assistant pane with `Findings` and `Chat`.
-  `Reference` joins with the first living artifact in
-  [backlog 49](./0049-story-notes-continuity.md).
+* Add a tab bar to the assistant pane with `Findings` and `Chat`, the
+  `Chat` tab carrying backlog 60's dot. `Reference` joins with the first
+  living artifact in [backlog 49](./0049-story-notes-continuity.md).
 * Request a review after ADR 0011's quiet window on AC power, never while
-  the writer types, sending only changed paragraphs or scenes, and cancel
-  an in-flight review on the next keystroke.
+  the writer types, sending only changed paragraphs or scenes. Cancel an
+  in-flight review only when an edit changes its text, hold a finished
+  review's underlines until the next pause, and stop review when a chat
+  message is sent until its reply ends.
 * Render ADR 0011's hairline underlines within its density caps as
   ProseMirror decorations, never mid-keystroke and without moving the
   caret or shifting layout, whether the pane is open or closed.
 * List findings in reading order in the `Findings` tab with ADR 0011's
   category filters, a collapsed `What it read` disclosure, `Dismiss`, and
-  `Discuss in Chat` or `Answer in Chat`, which opens or resumes a thread
-  with a pinned finding banner and a contextual composer placeholder.
+  `Discuss in Chat` or `Answer in Chat`, which opens or resumes the
+  finding's thread with the finding pinned and focus in the message box.
+  `Dismiss` keeps that agent's findings off the same exact text until it
+  changes.
 * Open the pane to a finding's card when its underline is clicked, and
-  scroll to and highlight a passage when its card is selected.
-* Map anchors through ProseMirror transactions so an in-place edit drops
-  the underline and marks the card `Passage changed` with `Recheck now` and
-  `Dismiss`, and a deletion resolves the finding quietly.
+  scroll to and highlight a passage when its card is selected. Make `F8`
+  and `Shift+F8` move the caret to the next or previous flagged passage,
+  highlight its card, and announce its agent and note, with `F6` then
+  reaching the card's actions.
+* Map each finding's range through the editor's transactions with
+  ProseMirror's position mapping, so an edit inside the passage drops its
+  underline and marks its card `Passage changed`, with only `Dismiss`,
+  until the next pause review replaces it, and a deletion removes the
+  finding quietly with a polite announcement.
 * Add the status line and `Pause` and `Resume` (`Mod+Shift+P`) to the pane
-  header, sending nothing for review while paused and keeping `Chat`
-  available, and list the shortcut in the shortcut reference and
+  header, sending nothing for review while paused, leaving changed cards
+  waiting, and keeping `Chat` available. List `Mod+Shift+P`, `F8`, and
+  `Shift+F8` in the shortcut reference and
   [webapp/README.md](../../webapp/README.md).
-* Show the quiet count badge and running dot on the collapsed `Assistant`
-  toggle, announce new findings politely, never open the pane or move
-  focus, and keep every action operable from the keyboard.
+* Show ADR 0011's count of active findings on the collapsed `Assistant`
+  toggle, pulse backlog 60's dot while a review runs, announce a review
+  that changes the count politely, never open the pane or move focus, and
+  keep every action operable from the keyboard.
 * Cover each behavior with browser and accessibility tests against the real
   service running the scripted provider, and keep `responsiveness.spec.ts`
   passing with underlines shown and a review in flight.
@@ -97,13 +113,19 @@ typing latency.
 * [ ] A writer types into a synthetic document, pauses, and sees scripted
   findings underlined within ADR 0011's caps, and continuous typing starts
   no review.
-* [ ] Editing an underlined passage marks its card `Passage changed` and
-  drops the underline, and deleting it resolves the finding quietly, and
-  browser tests prove both.
-* [ ] `Discuss in Chat` opens a thread anchored to the finding, and using
-  it again resumes that thread.
+* [ ] A review that finishes while the writer types in another paragraph
+  shows its underlines at the next pause, and typing in the reviewed
+  paragraph cancels it, and browser tests prove both.
+* [ ] Editing an underlined passage drops its underline and marks its card
+  `Passage changed` until the next pause review replaces it, deleting the
+  passage removes the finding quietly, and browser tests prove both.
+* [ ] `F8` and `Shift+F8` reach each finding from the keyboard and announce
+  its note.
+* [ ] `Discuss in Chat` opens the finding's thread with the finding pinned,
+  and using it again resumes that thread.
 * [ ] While background work is paused, a browser test confirms no review
-  request leaves the webapp, and `Chat` still answers.
+  request leaves the webapp and `Chat` still answers, and another confirms
+  none leaves while a reply streams.
 * [ ] The responsiveness tests pass with underlines shown and a review in
   flight.
 * [ ] The pull request records how the provisional anchors, trigger, and

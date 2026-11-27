@@ -1,6 +1,6 @@
 ---
 title: Keep the pair writer's conversations in the service
-description: Bring backlog 60 and 61's provisional conversation path in line with the agent architecture and conversations ADRs, store threads, turn snapshots, and audit records in the service, and run the conversation evaluation cases through it.
+description: Bring backlog 60 and 61's provisional conversation path in line with the agent architecture and conversations ADRs, store threads, what each turn read, and audit records in the service, and run the conversation evaluation cases through it.
 author: Tim Park
 ms.date: 2026-11-27
 ms.topic: reference
@@ -25,12 +25,12 @@ the agent ADRs decide and measured by the evaluation harness.
 path: an agent crate below `writer-api` with scripted and Ollama providers,
 `service/prompts/` with [ADR 0010](../adrs/0010-pair-writing-models.md)'s
 `conversation-grounded` prompt, and a stateless streaming endpoint, while
-the webapp holds threads and turn snapshots in memory. The agent ADR from
+the webapp holds threads and what each turn read in memory. The agent ADR from
 [backlog 10](./0010-agent-architecture-adr.md) decides which parts of that
 path stay, the framework or client, prompt loading, how evaluations run
 against the service, and the provider tests select. The conversations ADR
 from [backlog 37](./0037-agent-conversations-adr.md) decides how the
-service stores conversations, turn snapshots, and audit records, and the
+service stores threads, what each turn read, and audit records, and the
 resources that expose them.
 [ADR 0012](../adrs/0012-pair-writing-experience.md) fixes the conversation
 experience they must keep, [ADR 0002](../adrs/0002-service-architecture.md)
@@ -49,13 +49,14 @@ in either ADR, amend it in the same pull request.
   its framework or client, prompt loading, and provider selection, keeping
   every ADR 0012 behavior that backlog 60 and 61 deliver.
 * Add the conversation resources the conversations ADR defines: threads
-  with titles, document or book scope, and an optional finding link; turns
-  with their selection, attachments, lifecycle state, document snapshot,
-  and `What it read` audit record; listing and filtering by document or
-  workspace; and permanent deletion that removes unreferenced snapshots
-  without touching any document. Regenerate `service/openapi.json` and the
-  webapp's client, and keep backlog 60's provisional endpoint working until
-  backlog 34 moves the webapp onto these resources.
+  with their document, optional finding, title, last activity, and unread
+  state; turns with their selection, added documents, status, the document
+  sources they read, and audit record; listing by document or workspace;
+  threads kept, marked, when their document is deleted; and permanent
+  deletion of a thread with everything it recorded, without touching any
+  document. Regenerate `service/openapi.json` and the webapp's client, and
+  keep backlog 60's provisional endpoint working until backlog 34 moves the
+  webapp onto these resources.
 * Add synthetic evaluation cases to `evals/` for at least three requests
   about a passage: ideas to improve it, ideas to develop it further, and
   other ideas to explore. Run them through the service the way the agent
@@ -67,9 +68,9 @@ in either ADR, amend it in the same pull request.
 
 ## Acceptance criteria
 
-* [ ] Threads, turns, snapshots, and audit records survive a service
-  restart, and deleting a thread removes its unreferenced snapshots and
-  leaves every document unchanged.
+* [ ] Threads, turns, the sources each turn read, and audit records survive
+  a service restart, and deleting a thread removes everything it recorded
+  and leaves every document unchanged.
 * [ ] The conversation evaluation cases run through the service as the
   agent ADR decides, and their result summary is committed.
 * [ ] The conversation behaviors backlog 60 and 61 deliver still pass their

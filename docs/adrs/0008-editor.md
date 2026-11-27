@@ -744,7 +744,7 @@ Trade-offs and risks:
 * How the pair writer names passages for suggestions, with the
   [pair-writing agent decision](../backlog/0010-agent-architecture-adr.md);
   how suggestions are shown and accepted is settled in
-  [ADR 0012](./0012-pair-writing-experience.md#suggestions-stay-advice-never-automatic-rewrites)
+  [ADR 0012](./0012-pair-writing-experience.md#suggestions-stay-advice)
   (advice-only, never writing into the manuscript)
 * Image storage, if images join the subset
 * The link editing interface behind `Mod+K`, which backlog 23 designs

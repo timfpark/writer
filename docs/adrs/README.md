@@ -2,7 +2,7 @@
 title: Architecture Decision Records
 description: Index of architectural decisions for the Writer service and its clients
 author: Tim Park
-ms.date: 2026-11-26
+ms.date: 2026-11-27
 ms.topic: reference
 keywords:
   - adr
@@ -45,4 +45,4 @@ name it in a Governing decisions section, as
 | [0009](./0009-browser-tests.md)           | Browser end-to-end and accessibility tests                       | `webapp`, `repository`                     | Playwright and axe-core in `webapp/e2e/` on three engines and iPad WebKit, real service, `browser` gate phase.                                               | Accepted |
 | [0010](./0010-pair-writing-models.md)     | Local models for pair writing                                    | `service`, `evals`, `repository`           | Gemma 4 31B MLX with `conversation-grounded` for chat, Muse Glimmer MLX for review on Ollama, smaller tiers, committed `evals/`.                             | Accepted |
 | [0011](./0011-background-agents-ux.md)    | Background agents and their user experience                      | `service`, `webapp`                        | Fifteen fiction-first agents, subtle underlines, 3-tab assistant with expandable reference, N-level recaps, quietness gates, pause, and battery policy.      | Accepted |
-| [0012](./0012-pair-writing-experience.md) | Pair-writing experience                                          | `service`, `webapp`                        | Advice-only replies, separate chat threads with per-turn snapshots, artifact-backed context, stale-finding lifecycle, provenance, and ADR 0010 targets.      | Accepted |
+| [0012](./0012-pair-writing-experience.md) | Pair-writing experience                                          | `service`, `webapp`                        | Advice-only replies, chat threads that record what each reply read, a 19,000-word reading limit, changed-passage findings, and ADR 0010 targets.             | Accepted |

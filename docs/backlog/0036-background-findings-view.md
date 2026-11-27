@@ -29,8 +29,9 @@ sessions. [ADR 0011](../adrs/0011-background-agents-ux.md) picks the five
 pause-triggered agents, the battery cadence, and low-battery auto-pause
 with `Resume anyway`. [ADR 0012](../adrs/0012-pair-writing-experience.md)
 restores a document's active findings when it opens without waiting for a
-model, keeps a dismissed finding hidden while its text is unchanged, and
-resumes an existing handoff thread rather than starting another. The
+model, reattaching each only where its quoted text still appears exactly,
+keeps a dismissed finding hidden while its text is unchanged, and resumes
+an existing handoff thread rather than starting another. The
 [agent ADR](./0010-agent-architecture-adr.md) decides how reviews start and
 how findings reach the webapp, and
 [responsiveness.spec.ts](../../webapp/e2e/responsiveness.spec.ts) guards
@@ -41,15 +42,18 @@ typing latency, which a review must never degrade.
 * Move the webapp onto the review endpoint or stream backlog 35 adds,
   requesting reviews as the agent ADR decides and replacing backlog 62's
   provisional trigger, transport, and anchors where they differ, never
-  while the writer is typing, and cancel a review whose text has since
-  changed.
+  while the writer is typing, cancelling a review only when its text
+  changes and holding a finished review's underlines until the next
+  pause.
 * Remove backlog 62's provisional review endpoint once nothing uses it,
   unless the agent ADR keeps it, and regenerate `service/openapi.json` and
   the webapp's client.
 * Show the findings of each agent backlog 35 ships in place of the scripted
   findings, with their `What it read` disclosures.
 * Restore a document's active findings and underlines when it opens,
-  without waiting for a model call.
+  without waiting for a model call, reattaching each only where its quoted
+  text still appears exactly, including after the file changed outside
+  Writer, and dropping the rest.
 * Dismiss a finding so that it does not return for unchanged text, across
   reloads.
 * Keep `Discuss in Chat` and `Answer in Chat` resuming the same thread
@@ -66,8 +70,8 @@ typing latency, which a review must never degrade.
 * [ ] A writer types into a synthetic document, pauses, and sees a finding
   from each agent backlog 35 ships; selecting each highlights its passage.
 * [ ] Reopening a document restores its active findings and underlines
-  without a model call, and a dismissed finding stays dismissed after a
-  reload.
+  without a model call, a finding whose quoted text changed outside Writer
+  is dropped, and a dismissed finding stays dismissed after a reload.
 * [ ] With background work paused or auto-paused on low battery, a browser
   test confirms no review request leaves the webapp.
 * [ ] The responsiveness tests pass while a review is in flight.

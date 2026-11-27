@@ -1,6 +1,6 @@
 ---
 title: Keep chat threads across sessions in the assistant pane
-description: Move the Chat tab's threads, turn snapshots, and audit details from browser memory to the service's conversation resources, so writers return to, revive, and delete conversations after a reload or restart.
+description: Move the Chat tab's threads, and what each turn read, from browser memory to the service's conversation resources, so writers return to, revive, and delete conversations after a reload or restart.
 author: Tim Park
 ms.date: 2026-11-27
 ms.topic: reference
@@ -21,8 +21,8 @@ conversation for good.
 
 [Backlog 60](./0060-scripted-chat-tab.md) builds
 [ADR 0012](../adrs/0012-pair-writing-experience.md)'s `Chat` tab with its
-threads and per-turn snapshots held in browser memory, so a reload clears
-them, and [backlog 61](./0061-local-model-chat.md) answers it from the
+threads, and what each turn read, held in browser memory, so a reload
+clears them, and [backlog 61](./0061-local-model-chat.md) answers it from the
 local model. [Backlog 12](./0012-first-pair-writing-agent.md) adds the
 conversation resources the
 [conversations ADR](./0037-agent-conversations-adr.md) defines. ADR 0012's
@@ -38,14 +38,15 @@ service.
 * Replace the in-memory threads with the service's conversation resources
   behind the `Assistant` interface, keeping every `Chat` behavior backlog 60
   delivers.
-* Restore the thread switcher, each transcript with its `What it read`
-  disclosures and clickable quotes, and each turn's snapshot after a
-  reload, with the drawer defaulting to `This document`.
-* Show the revival banner, `View text then`, and per-turn `Text then` from
-  stored snapshots, including for a document renamed, moved, or deleted
-  since, as the conversations ADR decides.
-* Delete threads permanently through the service with ADR 0012's inline
-  confirmation.
+* Restore after a reload each document's last thread, the switcher, each
+  transcript with its `What it read` sources and quote links, and the dot on
+  a reply that finished unseen.
+* Open each turn's sources exactly as read, and show the revival banner
+  with `View text then`, from what the service stored, including for a
+  document renamed, moved, or deleted since.
+* Keep a deleted document's threads under `All chats`, marked, as the
+  navigator's delete confirmation says, and delete threads permanently
+  through the service with ADR 0012's inline confirmation.
 * Remove backlog 60's provisional endpoint once nothing uses it, unless the
   conversations ADR keeps it, and regenerate `service/openapi.json` and the
   webapp's client.
@@ -58,7 +59,8 @@ service.
   thread, reads its transcript and `What it read` disclosures, and views the
   text each turn discussed.
 * [ ] Deleting a thread removes it for good and leaves every document
-  unchanged.
+  unchanged, and a deleted document's threads stay under `All chats`,
+  marked, after a restart.
 * [ ] The browser and accessibility tests pass in `tools/check`.
 * [ ] `tools/check` exits 0.
 

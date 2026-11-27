@@ -23,15 +23,17 @@ rather than in whatever it happened to do.
 
 [ADR 0012](../adrs/0012-pair-writing-experience.md)
 describes how writers work with the agent, in conversation and in background
-review: advice-only replies (no automatic rewrite insertion into the
-manuscript), separate named chat threads with per-turn snapshots, default
-context combining the open document, active selection, and active book's
-compact living artifacts (with opt-in attachments for other documents or
-earlier chats), GPU priority for active chat over background review,
-collapsed `What it read` audit disclosures, ProseMirror-mappable finding
-anchors that distinguish in-place edits from deletions, and targets for
-latency, memory, battery, and typing grounded in
-[ADR 0010](../adrs/0010-pair-writing-models.md).
+review: advice-only replies that never put agent text in the document; chat
+threads that each belong to a document and record what each reply read; a
+reading of the open document as it stands, unsaved edits included, up to
+about 19,000 words, with the selection as its focus, plus the book's living
+artifacts and documents the writer adds; background review that stops while
+a reply streams and is cancelled only when an edit changes its text;
+collapsed `What it read` disclosures; findings that follow edits and
+reattach by exact quoted text; and targets for latency, memory, battery,
+and typing grounded in [ADR 0010](../adrs/0010-pair-writing-models.md). Its
+[requirements on this ADR](../adrs/0012-pair-writing-experience.md#agent-architecture-adr-backlog-10)
+list what the architecture must provide.
 [ADR 0011](../adrs/0011-background-agents-ux.md) picks
 the fifteen Wave 1 background agents, their pause and chapter-settled
 triggers, zero-cost structural quietness gates, living artifacts (story
@@ -132,9 +134,9 @@ what this ADR decides.
   [cloud fallback ADR](./0040-cloud-model-fallback-adr.md) may add later.
 * Decide how Ollama's address and the chosen models reach the service at run
   time, consistent with ADR 0001's safety rules and
-  a sanitized `.env.example`, and how the service reports a missing or
-  unreachable model so the webapp can show the experience ADR's no-provider
-  state.
+  a sanitized `.env.example`, and how the service reports its readiness,
+  such as whether Ollama is reachable and which configured models are
+  installed, so the webapp can show the experience ADR's setup notice.
 * Decide how prompts in `service/prompts/` are stored, versioned, and loaded:
   embedded at build time or read at run time, and how
   [ADR 0010](../adrs/0010-pair-writing-models.md#conversation-prompt)'s
@@ -150,27 +152,30 @@ what this ADR decides.
   configuration.
 * Name the agent's responsibility and its place in ADR 0002's dependency
   direction, or the boundary between the service and a separate agent.
-* Decide how the agent assembles [ADR 0012](../adrs/0012-pair-writing-experience.md)'s
-  default context (open document, active selection, and the active book's
-  compact living artifacts) plus opt-in extra documents and earlier chats
-  within the model's context window while keeping chat TTFT within ADR
-  0012's 3-second median target, and how it emits structured `What it read`
-  audit metadata (model, prompt digest, sources, timing, and tokens) and
-  distinct RFC 9457 `Problem` codes for no-provider, unreachable, and
-  mid-stream failure states.
+* Decide how the agent assembles [ADR 0012](../adrs/0012-pair-writing-experience.md#what-the-agent-reads)'s
+  reading (the open document as it stands, or the part around the
+  selection or cursor past the about 19,000-word limit, the book's living
+  artifacts, added documents, and the thread's earlier turns), how it keeps
+  the model's reading of unchanged text warm between turns so follow-ups
+  meet ADR 0012's first-token target, how it returns the facts `What it
+  read` shows and the audit record's timing and tokens, and how it maps
+  failures to ADR 0004's `unavailable`, `upstreamFailed`, and
+  `upstreamTimeout` codes.
 * Decide how a finding names the passages it concerns so the webapp maps
-  anchors accurately through ProseMirror transaction steps to distinguish
-  in-place edits (`Passage changed`) from deletions (quiet auto-resolve),
-  as ADR 0012 requires. Because ADR 0012 keeps suggestions advice-only, no
-  rewrite-application or inline-diff mutation path is needed in the editor.
+  them through edits, telling an in-place edit (`Passage changed`) from a
+  deletion, and reattaches them by exact quoted text in a later session or
+  after the file changes outside Writer, as ADR 0012 requires. Because
+  ADR 0012 keeps suggestions advice-only, nothing needs to apply agent text
+  to the document.
 * Decide how reviews start on [ADR 0011](../adrs/0011-background-agents-ux.md)'s
   pause, chapter-settled, and idle triggers, whether the webapp or the
   service starts them, how they skip unchanged text, enforce ADR 0011's
-  per-scene and per-chapter finding density caps, yield or pause GPU work
-  when an active Chat turn streams (per ADR 0012), cancel immediately on
-  new keystrokes, Pause, or Chat `Stop`, read OS power and battery state
-  from the local service (since Safari lacks the Web Battery API), and stay
-  within ADR 0012's resource and typing targets.
+  per-scene and per-chapter finding density caps, stop when a chat turn
+  starts and resume after its reply, cancel only when an edit changes the
+  text under review or on Pause, hold a finished review's underlines until
+  the next pause, read OS power and battery state from the local service
+  (since Safari lacks the Web Battery API), and stay within ADR 0012's
+  resource and typing targets.
 * Decide how findings reach the webapp under
   [ADR 0004](../adrs/0004-api-conventions.md): returned per request, polled,
   or streamed over SSE.
@@ -200,7 +205,8 @@ what this ADR decides.
 * [ ] The ADR states how agents chain and how living artifacts update,
   citing backlog 56.
 * [ ] The ADR shows how the implementation meets each of the experience
-  ADR's targets for latency, memory, and battery.
+  ADR's requirements on it and its targets for latency, memory, and
+  battery.
 * [ ] ADR 0008's follow-up decision on naming passages links to the ADR.
 * [ ] `tools/check` exits 0.
 

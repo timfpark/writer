@@ -42,8 +42,8 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | 56 | [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)             | `evals`                          | Local models are measured on checking continuity against extracted story notes.              | None               |
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)            | `service`, `webapp`              | An accepted ADR fixes where the agent runs, how agents chain, and how it is built.           | 56, 61, 62         |
 | 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                       | `service`, `webapp`              | An accepted ADR fixes how conversations and living artifacts are stored and audited.         | 10                 |
-| 12 | [Keep the pair writer's conversations in the service](./0012-first-pair-writing-agent.md)     | `service`, `webapp`, `evals`     | The service keeps chat threads, turn snapshots, and audit records, and evals run through it. | 10, 37             |
-| 34 | [Keep chat threads across sessions in the assistant pane](./0034-assistant-pane-agent.md)     | `service`, `webapp`              | Chat threads, their turn snapshots, and audit details survive reloads and restarts.          | 12                 |
+| 12 | [Keep the pair writer's conversations in the service](./0012-first-pair-writing-agent.md)     | `service`, `webapp`, `evals`     | The service keeps threads, what each turn read, and audit records, and evals run through it. | 10, 37             |
+| 34 | [Keep chat threads across sessions in the assistant pane](./0034-assistant-pane-agent.md)     | `service`, `webapp`              | Chat threads, and what each turn read, survive reloads and restarts.                         | 12                 |
 | 57 | [Choose the model for each mode in settings](./0057-model-settings.md)                        | `service`, `webapp`              | Writers switch the model behind each mode at run time from the models Ollama has pulled.     | 10, 61             |
 | 44 | [Record the cloud model proxy ADR](./0044-cloud-model-proxy-adr.md)                           | `repository`, `evals`, `service` | An accepted ADR picks a local proxy to Azure AI Foundry with keyless auth and spending caps. | None               |
 | 45 | [Run the cloud model proxy with a first set of Foundry models](./0045-cloud-model-proxy.md)   | `repository`, `evals`            | The proxy runs with cheap and frontier Foundry models, and the harness calls it.             | 44                 |
@@ -122,12 +122,12 @@ sheets in favor of LLM judging during offline sweeps, and amended
 `conversation-grounded` prompt while keeping `gemma4:31b-mlx`.
 
 [ADR 0012](../adrs/0012-pair-writing-experience.md) (item 38) designs the
-end-to-end writer journeys around ADR 0011's agents and ADR 0010's models,
-extending the throwaway prototype with conversation, fixing advice-only
-replies, separate named chat threads with per-turn snapshots,
-artifact-backed default context, stale-finding lifecycle, collapsed-pane
-signaling, inspectable provenance, and latency, memory, battery, and typing
-targets.
+writer's journeys around ADR 0011's agents and ADR 0010's models, tried in
+the throwaway prototype: advice-only replies, chat threads that record what
+each reply read, a reading of the open document up to about 19,000 words,
+findings that follow edits, an amended pause trigger, quiet signals with
+`F8` navigation, and latency, memory, battery, and typing targets from ADR
+0010's measurements.
 
 Next, items 60 to 62 put a running pair writer in the assistant pane, so
 writers try its experience in Writer itself and a design that fails is
@@ -145,7 +145,8 @@ extracted chapter by chapter, closes the disconnect gap, because the answer
 shapes how agents chain. Item 10 decides where the agent runs, how agents
 chain, and how it is built, keeping or replacing the provisional path on
 the strength of what items 60 to 62 showed, and item 37 decides how
-conversations, turn snapshots, and living artifacts are stored and audited.
+conversations, what each turn read, and living artifacts are stored and
+audited.
 Item 12 keeps conversations in the service as those decisions require, and
 item 34 restores chat threads across sessions. Item 57 lets writers switch
 the model behind each mode.

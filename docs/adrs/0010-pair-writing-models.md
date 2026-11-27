@@ -2,7 +2,7 @@
 title: "ADR 0010: Local models for pair writing"
 description: Measures local models served by Ollama on the reference laptop for conversation and background review with a committed evaluation harness, chooses the models Writer runs first, records where none is good enough, and decides how the service reaches Ollama
 author: Tim Park
-ms.date: 2026-11-26
+ms.date: 2026-11-27
 ms.topic: reference
 status: Accepted
 subsystems:
@@ -702,9 +702,10 @@ Trade-offs and risks:
   documented prompt sweeping in [evals/README.md](../../evals/README.md).
   Each background agent's delivery story tunes its own prompts the same way.
 * [ADR 0012](./0012-pair-writing-experience.md) (settled): set latency,
-  memory, battery, and typing targets from these measurements, and kept
-  suggestions advice-only, avoiding Muse Glimmer's usage-policy clause on
-  representing model output as human generated.
+  memory, battery, and typing targets and a reading limit of about 19,000
+  words a turn from these measurements, and kept suggestions advice-only,
+  avoiding Muse Glimmer's usage-policy clause on representing model output
+  as human generated.
 * [Backlog 10](../backlog/0010-agent-architecture-adr.md): configure a model
   per mode, since conversation and review use different models.
 * [Backlog 10](../backlog/0010-agent-architecture-adr.md): reuse cached

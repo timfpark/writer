@@ -194,11 +194,11 @@ Consult these when changing architecture, dependencies, or conventions:
   density caps, the collapsed assistant badge, the three-tab assistant pane
   with expandable Reference views, three-level session recaps, global pause,
   and battery status
-* [ADR 0012](../docs/adrs/0012-pair-writing-experience.md): end-to-end
-  pair-writing journeys, advice-only replies with clickable quotes, separate
-  chat threads with switcher and per-turn snapshots, selection capture,
-  edit-vs-delete finding lifecycle, collapsed unread chat dot, `What it
-  read` disclosures, and no-provider, offline, and failure states
+* [ADR 0012](../docs/adrs/0012-pair-writing-experience.md): advice-only
+  pair-writing journeys, chat threads in the assistant pane, the selection
+  chip and what the next turn reads, `Passage changed` findings, underlines
+  that wait for the next pause, the single working or unread dot, `F8`
+  navigation, `What it read` sources, and setup and failure states
 
 ## Commands
 
