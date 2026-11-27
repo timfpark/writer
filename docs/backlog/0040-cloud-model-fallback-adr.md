@@ -28,8 +28,8 @@ felt rather than on gaps assumed in advance.
 [Backlog 43](./0043-cloud-model-evals.md) has by then measured inexpensive and
 frontier cloud models on the same cases, with their price per task.
 
-A cloud fallback changes the promise the
-[experience ADR](./0038-pair-writing-experience-adr.md) makes that text never
+A cloud fallback changes the promise
+[ADR 0012](../adrs/0012-pair-writing-experience.md) makes that text never
 leaves the writer's machine, and it adds credentials, cost per call, and a
 network dependency to the service the
 [agent ADR](./0010-agent-architecture-adr.md) builds.

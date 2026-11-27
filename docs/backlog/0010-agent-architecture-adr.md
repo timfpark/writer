@@ -20,10 +20,18 @@ one after the fact.
 
 ## Context
 
-The [pair-writing experience ADR](./0038-pair-writing-experience-adr.md)
+[ADR 0012](../adrs/0012-pair-writing-experience.md)
 describes how writers work with the agent, in conversation and in background
-review, what the agent pays attention to, and the targets for latency,
-memory, and battery. [ADR 0011](../adrs/0011-background-agents-ux.md) picks
+review: advice-only replies (no automatic rewrite insertion into the
+manuscript), separate named chat threads with per-turn snapshots, default
+context combining the open document, active selection, and active book's
+compact living artifacts (with opt-in attachments for other documents or
+earlier chats), GPU priority for active chat over background review,
+collapsed `What it read` audit disclosures, ProseMirror-mappable finding
+anchors that distinguish in-place edits from deletions, and targets for
+latency, memory, battery, and typing grounded in
+[ADR 0010](../adrs/0010-pair-writing-models.md).
+[ADR 0011](../adrs/0011-background-agents-ux.md) picks
 the fifteen Wave 1 background agents, their pause and chapter-settled
 triggers, zero-cost structural quietness gates, living artifacts (story
 notes, timeline, reverse outline, open threads, chapter reader reaction,
@@ -124,24 +132,30 @@ what this ADR decides.
   configuration.
 * Name the agent's responsibility and its place in ADR 0002's dependency
   direction, or the boundary between the service and a separate agent.
-* Decide how the agent assembles what the experience ADR says it pays
-  attention to into each request, and how it fits long documents and
-  several documents into the model's context window.
-* Decide how a finding names the passages it concerns and how those anchors
-  follow the text as the writer edits, so the webapp can show the experience
-  ADR's behavior for edited and deleted passages.
+* Decide how the agent assembles [ADR 0012](../adrs/0012-pair-writing-experience.md)'s
+  default context (open document, active selection, and the active book's
+  compact living artifacts) plus opt-in extra documents and earlier chats
+  within the model's context window while keeping chat TTFT within ADR
+  0012's 3-second median target, and how it emits structured `What it read`
+  audit metadata (model, prompt digest, sources, timing, and tokens) and
+  distinct RFC 9457 `Problem` codes for no-provider, unreachable, and
+  mid-stream failure states.
+* Decide how a finding names the passages it concerns so the webapp maps
+  anchors accurately through ProseMirror transaction steps to distinguish
+  in-place edits (`Passage changed`) from deletions (quiet auto-resolve),
+  as ADR 0012 requires. Because ADR 0012 keeps suggestions advice-only, no
+  rewrite-application or inline-diff mutation path is needed in the editor.
 * Decide how reviews start on [ADR 0011](../adrs/0011-background-agents-ux.md)'s
   pause, chapter-settled, and idle triggers, whether the webapp or the
   service starts them, how they skip unchanged text, enforce ADR 0011's
-  per-scene and per-chapter finding density caps, cancel immediately on new
-  keystrokes or Pause, read OS power and battery state from the local
-  service (since Safari lacks the Web Battery API), and stay within the
-  experience ADR's resource targets.
+  per-scene and per-chapter finding density caps, yield or pause GPU work
+  when an active Chat turn streams (per ADR 0012), cancel immediately on
+  new keystrokes, Pause, or Chat `Stop`, read OS power and battery state
+  from the local service (since Safari lacks the Web Battery API), and stay
+  within ADR 0012's resource and typing targets.
 * Decide how findings reach the webapp under
   [ADR 0004](../adrs/0004-api-conventions.md): returned per request, polled,
   or streamed over SSE.
-* If the experience ADR lets writers accept rewrites, decide how an accepted
-  rewrite applies to the document under ADR 0008's undo and autosave.
 * Resolve ADR 0008's follow-up decision on naming passages, and link to this
   ADR from it.
 * Add the ADR to the ADR index with `service` and `webapp` in its
@@ -171,5 +185,4 @@ what this ADR decides.
 
 ## Prerequisites
 
-* [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)
 * [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)

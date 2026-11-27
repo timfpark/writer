@@ -157,6 +157,11 @@ Consult these when changing architecture, dependencies, or conventions:
   first-wave background agents, their triggers, work sharing and chaining,
   living-artifact provenance, structural quietness gates, global pause, and
   OS power-state battery policy
+* [ADR 0012](../docs/adrs/0012-pair-writing-experience.md): end-to-end
+  pair-writing journeys, advice-only replies, separate chat threads with
+  per-turn document snapshots, artifact-backed default context, GPU priority
+  for active chat over background review, audit metadata, error states, and
+  resource targets
 
 ## Commands
 

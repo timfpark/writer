@@ -24,8 +24,10 @@ pause-triggered agents that ship first (`Weak prose`, `Clarity`, `Open
 questions`, `Point of view and tense`, and `Repetition`), with their short
 typing-pause trigger, structural quietness gates, per-scene and per-chapter
 finding density caps, global Pause cancellation, and OS power-state battery
-cadence. The [experience ADR](./0038-pair-writing-experience-adr.md) sets the
-targets for memory and battery. The [agent
+cadence. [ADR 0012](../adrs/0012-pair-writing-experience.md) sets the
+targets for latency, memory, battery, and typing, yields GPU priority to
+active Chat turns, and requires `What it read` audit metadata and persisted
+dismissals on findings. The [agent
 ADR](./0010-agent-architecture-adr.md) decides how findings anchor to
 passages, how reviews start, skip unchanged text, and stay within those
 targets, and how findings reach the webapp. The [conversations
@@ -62,14 +64,16 @@ agent ADR, amend it in the same pull request.
   review endpoint, as the agent ADR decides, and add cases for anything the
   endpoint adds. Include coherent documents that should produce no finding
   of a kind, so the cases catch false alarms as well as misses.
-* Add the review endpoint or stream the agent ADR decides, returning findings
-  with their agent, text, and passage anchors, and regenerate
-  `service/openapi.json`.
+* Add the review endpoint or stream the agent ADR decides, returning
+  advice-only findings with their agent, text, passage anchors, and
+  [ADR 0012](../adrs/0012-pair-writing-experience.md)'s `What it read`
+  audit metadata, and regenerate `service/openapi.json`.
 * Enforce [ADR 0011](../adrs/0011-background-agents-ux.md)'s triggers,
   zero-cost structural quietness gates, finding density caps, and battery
-  policy, and the experience ADR's resource targets in the service as the
-  agent ADR decides: skip text already reviewed, and cap reviews per
-  document and per period.
+  policy, and ADR 0012's GPU priority for active Chat turns and resource
+  targets in the service as the agent ADR decides: skip text already
+  reviewed, pause or yield background review while Chat streams, and cap
+  reviews per document and per period.
 * Cancel in-flight reviews and stop sending text for review while the
   writer has paused background work or low-battery auto-pause is active
   (unless resumed), as ADR 0011 specifies, and expose OS power policy state

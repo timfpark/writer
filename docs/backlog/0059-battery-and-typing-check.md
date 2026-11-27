@@ -24,7 +24,7 @@ or performance warning, which estimates roughly 1.2 hours of continuous
 review on a 72 Wh battery. That AC measurement already bounded agent cost
 well enough to set the background agents and battery policy in
 [ADR 0011](../adrs/0011-background-agents-ux.md) and design the writer's
-journeys in [backlog 38](./0038-pair-writing-experience-adr.md).
+journeys in [ADR 0012](../adrs/0012-pair-writing-experience.md).
 
 Two measurements from ADR 0010 remain open:
 

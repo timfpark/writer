@@ -24,10 +24,14 @@ assistant pane to the service. [ADR 0011](../adrs/0011-background-agents-ux.md)
 picks the five pause-triggered agents, always-on subtle hairline passage
 underlines with density caps, the collapsed-pane badge and running dot, the
 three-tab assistant pane (`Findings`, `Reference`, `Chat`), and the global
-Pause and low-battery status bar. The
-[experience ADR](./0038-pair-writing-experience-adr.md) decides how findings
-are dismissed, what happens to a finding whose passage changed, and how
-unread results signal. The [agent ADR](./0010-agent-architecture-adr.md)
+Pause and low-battery status bar.
+[ADR 0012](../adrs/0012-pair-writing-experience.md) decides that
+suggestions stay advice-only, how findings are dismissed, how ProseMirror
+position mapping separates in-place edits (`Passage changed` with `Recheck
+now` and `Dismiss`, underline removed) from deletions (quiet auto-resolve),
+how `Answer in Chat` and `Discuss in Chat` hand off idempotently to
+dedicated Chat threads, collapsed `What it read` disclosures on findings,
+and how unread results signal without interrupting typing. The [agent ADR](./0010-agent-architecture-adr.md)
 decides how reviews start and how findings reach the webapp.
 [ADR 0008](../adrs/0008-editor.md) sets the editor that highlights passages,
 and [responsiveness.spec.ts](../../webapp/e2e/responsiveness.spec.ts) guards
@@ -39,14 +43,18 @@ typing latency, which a review must never degrade.
 * Request reviews as the background agents and agent ADRs decide, never
   while the writer is typing, and cancel a review whose text has since
   changed.
-* Show findings in the Assistant pane's `Findings` tab (distinct from
-  `Chat`, with category filters, `Discuss in Chat` / `Answer in Chat`
-  handoffs, and `Dismiss`) and render ADR 0011's subtle hairline passage
-  underlines on the writing surface whether the pane is open or closed,
-  never mid-keystroke.
+* Show advice-only findings in the Assistant pane's `Findings` tab
+  (distinct from `Chat`, with category filters, collapsed `What it read`
+  disclosures, idempotent `Discuss in Chat` / `Answer in Chat` handoffs to
+  dedicated Chat threads, and `Dismiss`) and render ADR 0011's subtle
+  hairline passage underlines on the writing surface whether the pane is
+  open or closed, never mid-keystroke.
 * Clicking an underlined passage opens the Assistant pane to that finding;
-  selecting a finding highlights and scrolls to its passage in the editor,
-  and marks or removes a finding whose passage has changed.
+  selecting a finding highlights and scrolls to its passage in the editor.
+  Map finding anchors through ProseMirror transactions so an in-place edit
+  drops the underline and marks the card `Passage changed` (with `Recheck
+  now` and `Dismiss`) until the next pause pass, while deleting the passage
+  auto-resolves the finding quietly.
 * Dismiss a finding so that it does not return.
 * Add ADR 0011's status line and global `Pause` / `Resume` control
   (`Mod+Shift+P`, plus low-battery `Resume anyway`) in the Assistant pane

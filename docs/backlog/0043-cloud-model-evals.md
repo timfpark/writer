@@ -28,8 +28,8 @@ providers, never a writer's text, so it does not change Writer's promise
 that manuscripts stay on the machine. The
 [cloud fallback ADR](./0040-cloud-model-fallback-adr.md) decides later, after
 writers use the local pair writer, whether any journey may use a cloud
-model and how writers consent; it cites these results. The
-[experience ADR](./0038-pair-writing-experience-adr.md) may cite them to
+model and how writers consent; it cites these results.
+[ADR 0012](../adrs/0012-pair-writing-experience.md) may cite them to
 show what local models give up.
 
 Cloud models are deployed in Azure AI Foundry and reached through the local

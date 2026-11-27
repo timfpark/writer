@@ -24,14 +24,19 @@ evaluations in the places
 ADR 0001 places agent prompts in `service/prompts/`, and backlog 6, the
 service foundation, left that folder to this story rather than creating it
 empty. The model ADR creates the top-level `evals/` subsystem, whose harness
-scores models and prompts against synthetic cases. The agent ADR from
+scores models and prompts against synthetic cases. [ADR 0012](../adrs/0012-pair-writing-experience.md) fixes the
+writer-facing conversation experience (advice-only replies, separate named
+threads, open document + selection + compact book living artifacts with
+opt-in attachments, streaming with immediate `Stop` cancellation, per-turn
+snapshots, `What it read` audit metadata, and distinct no-provider and
+failure states). The agent ADR from
 [backlog 10](./0010-agent-architecture-adr.md) chooses the framework, model
 provider, prompt loading, and evaluation running. It also decides what
 context a conversation request carries and how tests run without a model
 provider. The conversations ADR from
-[backlog 37](./0037-agent-conversations-adr.md) decides whether the service
-stores conversations, how they point to the text they discuss, and the
-resources that expose them.
+[backlog 37](./0037-agent-conversations-adr.md) decides how the service
+stores conversations, turn snapshots, and audit records, and the resources
+that expose them.
 [ADR 0002](../adrs/0002-service-architecture.md) sets the crate rules, the
 contract freshness test, and SSE for streamed results.
 [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint's path, field
@@ -58,10 +63,12 @@ the agent ADR, amend it in the same pull request.
 * Add the fake provider the agent ADR chooses for tests that run without a
   model provider.
 * Add the conversation endpoints the conversations ADR defines, which take
-  the writer's message with the document context the agent ADR decides and
-  return the reply, streamed or whole as the agent ADR decides. Store
-  conversations as the conversations ADR decides, and regenerate
-  `service/openapi.json`.
+  the writer's message with [ADR 0012](../adrs/0012-pair-writing-experience.md)'s
+  context (open document, optional selection, available book artifacts, and
+  opt-in attachments), stream advice-only replies over SSE with immediate
+  cancellation on disconnect/`Stop`, return `What it read` audit metadata,
+  store threads and per-turn snapshots, support permanent thread deletion,
+  and regenerate `service/openapi.json`.
 * Start the service without a reachable model, and answer conversation
   requests then with the problem details response the agent ADR names.
 * Add the model settings, such as Ollama's address and the chosen models, to

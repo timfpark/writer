@@ -132,7 +132,7 @@ ignored `.local/prototype/`), styled with
 containing both a synthetic novel (*The Salt Lantern*, three chapters) and a
 synthetic technical book (*Designing Local-First Systems*, two chapters).
 Its conversation module is separated cleanly so
-[backlog 38](../backlog/0038-pair-writing-experience-adr.md) can extend the
+[ADR 0012](./0012-pair-writing-experience.md) could extend the
 same prototype with conversation journeys instead of starting another.
 
 ## Decision drivers
@@ -308,8 +308,8 @@ The Assistant pane holds three tabs:
   reference artifact full-width in the center region for wide tables and
   outlines, with a `Back to document` button and `Escape` shortcut
   returning directly to the open document.
-* Chat: holds on-request conversation with the pair writer, extended in
-  [backlog 38](../backlog/0038-pair-writing-experience-adr.md). Chat
+* Chat: holds on-request conversation with the pair writer, decided in
+  [ADR 0012](./0012-pair-writing-experience.md). Chat
   accepts finding handoffs and stays available even while background agents
   are paused or auto-paused on low battery.
 
@@ -524,13 +524,13 @@ rather than starting another prototype.
 
 ## Requirements on downstream ADRs and backlog
 
-* [Pair-writing experience ADR](../backlog/0038-pair-writing-experience-adr.md)
-  (backlog 38): design end-to-end journeys around the 15 shipping agents,
-  the three-tab Assistant pane (`Findings`, `Reference`, `Chat`), always-on
-  subtle underlines with density caps, the collapsed-pane badge, `Discuss
-  in Chat` and `Answer in Chat` handoffs, recursive Session recap at any depth,
-  global Pause and low-battery override, and extend `.local/prototype/`
-  rather than building a new prototype.
+* [ADR 0012](./0012-pair-writing-experience.md) (settled): designs
+  end-to-end journeys around the 15 shipping agents, the three-tab
+  Assistant pane (`Findings`, `Reference`, `Chat`), always-on subtle
+  underlines with density caps, the collapsed-pane badge, `Discuss in
+  Chat` and `Answer in Chat` handoffs, recursive Session recap at any
+  depth, global Pause and low-battery override, extending
+  `.local/prototype/` rather than building a new prototype.
 * [Pair-writing agent architecture ADR](../backlog/0010-agent-architecture-adr.md)
   (backlog 10): support incremental per-chapter extraction, chained agent
   execution (`Story notes` + `Timeline` feeding `Continuity check` and

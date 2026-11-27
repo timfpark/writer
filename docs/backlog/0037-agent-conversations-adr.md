@@ -20,11 +20,15 @@ after the text has moved on.
 
 ## Context
 
-The [pair-writing experience ADR](./0038-pair-writing-experience-adr.md)
-decides how writers see and move between conversations, how background
-reviews appear, how writers revive a conversation and see the text as it
-was, and what they can see about why the agent said what it did. This
-decision chooses the data model and storage that make those journeys work.
+[ADR 0012](../adrs/0012-pair-writing-experience.md)
+decides that writers work with separate named chat threads inside the
+`Chat` tab (including dedicated finding handoff threads), revive past
+conversations with per-turn `Text then` document snapshots that remain
+accessible even after continuing a thread against the current draft,
+permanently delete individual threads without touching manuscripts, and
+inspect `What it read` audit metadata on every assistant reply and finding
+card. This decision chooses the data model and storage that make those
+journeys work.
 
 Backlog 25 holds the assistant pane's single conversation in browser memory,
 as [conversation.ts](../../webapp/src/workspace/conversation.ts) shows: it is
@@ -54,43 +58,55 @@ resources.
 
 ## Scope
 
-* Model a conversation and its messages: who started it, what it concerns,
-  and the lifecycle states the experience ADR requires.
+* Model separate named conversation threads and their messages: thread ID,
+  title, document/book scope, optional `findingId` link (supporting
+  idempotent `Answer in Chat` and `Discuss in Chat` handoffs), who started
+  each turn, selection and opt-in context attachments, and lifecycle states
+  (including `Stopped` and failed turns) that
+  [ADR 0012](../adrs/0012-pair-writing-experience.md) requires.
 * Compare at least three models: conversations kept only in the browser;
   conversations stored by the service with excerpts of the text copied in;
   and conversations stored by the service whose messages point to versioned
-  snapshots of the text they discussed.
-* Decide how a message records the text it discussed, and how that record
-  stays readable when the document is edited, renamed, moved, or deleted.
+  immutable snapshots of the text they discussed.
+* Decide how each turn records the text it discussed so both the top-level
+  revival banner (`View text then`) and per-turn `Text then` buttons stay
+  readable when the document is edited, renamed, moved, or deleted, and
+  even after the thread continues on a newer draft.
 * Reconcile with the change control ADR: whether conversations point to its
-  commits, to lighter snapshots taken for the agent, or to stored excerpts.
-  The change control ADR comes later, so choose a reference that works
-  without it, and state what that ADR must preserve.
+  commits, to lighter content-addressed snapshots taken for the agent, or
+  to stored excerpts. The change control ADR comes later, so choose a
+  reference that works without it, and state what that ADR must preserve.
 * Model living artifacts scoped to the top-level folder (book) subtree:
   their entries, the passages each entry cites, `Extracted` versus `Edited
   by you` provenance (with `Revert to extracted`), deleted-entry
   suppression, `Intentionally open` thread states, per-chapter reader
-  reactions, the writer's own rules, lightweight session-change records for
-  ADR 0011's file recaps and ancestor-directory rollups through the workspace
-  root without duplicate activity, and how an entry is marked stale when its
-  passages change.
-* Decide what the agent receives when a writer revives a conversation, such
-  as the earlier text, the current text, or what changed in between.
-* Decide what each agent turn records for audit, such as the prompt version,
-  provider and model, the context sent, timing, and token use.
+  reactions, the writer's own rules, dismissed findings keyed to unchanged
+  passage text, lightweight session-change records for ADR 0011's file
+  recaps and ancestor-directory rollups through the workspace root without
+  duplicate activity, and how an entry is marked stale when its passages
+  change.
+* Decide what the agent receives when a writer revives a conversation and
+  sends a follow-up (after the `Continuing against the current draft`
+  divider), such as the earlier turns, the current text, or what changed in
+  between.
+* Decide what each assistant turn and background finding records for
+  ADR 0012's `What it read` disclosure: prompt version and digest, provider
+  and model, exact source list (document/snapshot, selection, living
+  artifacts, explicit attachments), timing (TTFT and total), and token use.
 * Decide where conversations and living artifacts persist in every planned
   backend, whether they live in the workspace and travel with ADR 0006's
   copy command, and whether commits include them.
-* Define the API resources for conversations, messages, and living
-  artifacts, including listing, filtering by document, pagination,
-  corrections, and streaming, under ADR 0004.
+* Define the API resources for conversations, messages, turn snapshots, and
+  living artifacts, including listing, filtering by document or workspace,
+  pagination, permanent thread deletion (cleaning up unreferenced snapshots
+  without touching manuscripts), corrections, and streaming, under ADR 0004.
 * Decide how deletion and retention work, what happens to a deleted
   document's conversations, how conversations are exported, and that no
   conversation text appears in logs, since conversations hold manuscript
   text.
 * Amend ADR 0005 and ADR 0006 where the decision departs from them, revise
   backlog 12, 34, 35, 36, 49, and 50 to the chosen model, and add stories
-  for work they do not cover, such as a conversation list.
+  for work they do not cover.
 * Add the ADR to the ADR index with `service` and `webapp` in its
   `subsystems` field.
 
@@ -112,5 +128,4 @@ resources.
 
 ## Prerequisites
 
-* [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)
 * [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)

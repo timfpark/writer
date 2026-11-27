@@ -2,7 +2,7 @@
 title: Backlog
 description: Prioritized index of planned work for the Writer service and clients
 author: Tim Park
-ms.date: 2026-11-25
+ms.date: 2026-11-26
 ms.topic: reference
 keywords:
   - backlog
@@ -38,10 +38,9 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 |----|-----------------------------------------------------------------------------------------------|----------------------------------|----------------------------------------------------------------------------------------------|--------------------|
 | 56 | [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)             | `evals`                          | Local models are measured on checking continuity against extracted story notes.              | None               |
 | 44 | [Record the cloud model proxy ADR](./0044-cloud-model-proxy-adr.md)                           | `repository`, `evals`, `service` | An accepted ADR picks a local proxy to Azure AI Foundry with keyless auth and spending caps. | None               |
-| 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)               | `service`, `webapp`              | An accepted ADR fixes the writer's experience of the agent, tested end to end.               | None               |
 | 45 | [Run the cloud model proxy with a first set of Foundry models](./0045-cloud-model-proxy.md)   | `repository`, `evals`            | The proxy runs with cheap and frontier Foundry models, and the harness calls it.             | 44                 |
-| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)            | `service`, `webapp`              | An accepted ADR fixes where the agent runs, how agents chain, and how it is built.           | 38, 56             |
-| 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                       | `service`, `webapp`              | An accepted ADR fixes how conversations and living artifacts are stored and audited.         | 10, 38             |
+| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)            | `service`, `webapp`              | An accepted ADR fixes where the agent runs, how agents chain, and how it is built.           | 56                 |
+| 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                       | `service`, `webapp`              | An accepted ADR fixes how conversations and living artifacts are stored and audited.         | 10                 |
 | 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md)      | `service`                        | The service answers the writer about the open document, backed by prompts and evals.         | 10, 37             |
 | 34 | [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)               | `webapp`                         | The assistant pane streams the pair writer's answers about the open document.                | 12                 |
 | 57 | [Choose the model for each mode in settings](./0057-model-settings.md)                        | `service`, `webapp`              | Writers switch the model behind each mode at run time from the models Ollama has pulled.     | 34                 |
@@ -119,7 +118,15 @@ sheets in favor of LLM judging during offline sweeps, and amended
 [ADR 0010](../adrs/0010-pair-writing-models.md) with the chosen
 `conversation-grounded` prompt while keeping `gemma4:31b-mlx`.
 
-Next, items 56, 44, and 38 run in parallel. Item 56 tests whether
+[ADR 0012](../adrs/0012-pair-writing-experience.md) (item 38) designs the
+end-to-end writer journeys around ADR 0011's agents and ADR 0010's models,
+extending the throwaway prototype with conversation, fixing advice-only
+replies, separate named chat threads with per-turn snapshots,
+artifact-backed default context, stale-finding lifecycle, collapsed-pane
+signaling, inspectable provenance, and latency, memory, battery, and typing
+targets.
+
+Next, items 56 and 44 run in parallel. Item 56 tests whether
 checking continuity against story notes, extracted chapter by chapter,
 closes the disconnect gap, because the answer shapes the agent's
 architecture. Cloud models are hosted in Azure AI Foundry and reached only
@@ -127,14 +134,12 @@ through a local proxy that holds the credentials and caps spending: item 44
 chooses it, and item 45 runs it with a first set of models, which items 56
 and 48 use as a ceiling for local results.
 
-Item 38 then designs the writer's journeys around ADR 0011's agents,
-extending its prototype with conversation. Item 10 decides where the agent
-runs, how agents chain, and how it is built, and item 37 decides how
-conversations and living artifacts are stored, tied to versions of the text,
-and audited. Item 12 creates `service/prompts/` and the conversation
-endpoint, and item 34 connects the assistant pane to it, so writers use the
-agent for the first time. Item 57 lets them switch the model behind each
-mode.
+Item 10 then decides where the agent runs, how agents chain, and how it is
+built, and item 37 decides how conversations, turn snapshots, and living
+artifacts are stored and audited. Item 12 creates `service/prompts/` and the
+conversation endpoint, and item 34 connects the assistant pane to it, so
+writers use the agent for the first time. Item 57 lets them switch the
+model behind each mode.
 
 Background review follows. Item 48 measures each first-wave agent with a
 first prompt. Item 35 tunes the first agents' prompts and adds background
