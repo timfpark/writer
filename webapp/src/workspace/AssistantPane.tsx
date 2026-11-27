@@ -67,7 +67,9 @@ function setupHeading(status: PairWriterStatus): string {
         ? `Model “${status.model}” is not available`
         : "Pair-writer model is missing";
     case "runtimeUnreachable":
-      return "Pair writer is unreachable";
+      return status.provider === "ollama"
+        ? "Ollama is not reachable"
+        : "Pair writer is unreachable";
     default:
       return "Pair writer is not ready";
   }
@@ -265,6 +267,24 @@ export function AssistantPane({
     snapshot.readiness.checked &&
     snapshot.readiness.status !== null &&
     !snapshot.readiness.status.ready;
+
+  // When a setup notice is visible, recheck readiness whenever the window
+  // regains focus or becomes visible so starting Ollama or pulling the model
+  // clears the notice without reloading the page.
+  useEffect(() => {
+    if (!showSetupNotice) return undefined;
+    function recheck() {
+      if (document.visibilityState === "hidden") return;
+      if (store.getSnapshot().readiness.checking) return;
+      void store.checkReadiness();
+    }
+    globalThis.addEventListener("focus", recheck);
+    document.addEventListener("visibilitychange", recheck);
+    return () => {
+      globalThis.removeEventListener("focus", recheck);
+      document.removeEventListener("visibilitychange", recheck);
+    };
+  }, [showSetupNotice, store]);
 
   const canSendInCurrentContext =
     openDocumentId !== null && !isOtherDocThread && !isStreamingAny;

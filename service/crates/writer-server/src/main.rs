@@ -12,7 +12,8 @@ use std::time::Duration;
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
 use writer_agent::{
-    ChatProvider, ScriptedConfig, ScriptedMode, ScriptedProvider, UnconfiguredProvider,
+    ChatProvider, DEFAULT_CONVERSATION_MODEL, DEFAULT_OLLAMA_HOST, OllamaConfig, OllamaProvider,
+    ScriptedConfig, ScriptedMode, ScriptedProvider, UnconfiguredProvider, normalize_ollama_host,
 };
 use writer_storage::FilesystemStore;
 
@@ -21,8 +22,12 @@ const PORT_VAR: &str = "WRITER_PORT";
 const DEFAULT_PORT: u16 = 8888;
 /// Overrides the folder holding Writer's data.
 const DATA_DIR_VAR: &str = "WRITER_DATA_DIR";
-/// Selects the pair-writer provider (`scripted`, or unset for none).
+/// Selects the pair-writer provider (`ollama` by default, `scripted`, or `none`).
 const PAIR_WRITER_VAR: &str = "WRITER_PAIR_WRITER";
+/// Ollama server address, matching Ollama's own convention and ADR 0010.
+const OLLAMA_HOST_VAR: &str = "OLLAMA_HOST";
+/// Conversation model name for the Ollama provider.
+const CONVERSATION_MODEL_VAR: &str = "WRITER_CONVERSATION_MODEL";
 /// Configures the scripted provider's behavior (`ready`, `missing-model`, or `fail-mid-stream`).
 const SCRIPTED_MODE_VAR: &str = "WRITER_SCRIPTED_MODE";
 const SCRIPTED_FIRST_TOKEN_MS_VAR: &str = "WRITER_SCRIPTED_FIRST_TOKEN_MS";
@@ -127,42 +132,81 @@ fn scripted_mode_from_env() -> Result<ScriptedMode, String> {
     }
 }
 
-fn agent_from_env() -> Result<(Arc<dyn ChatProvider>, &'static str), String> {
-    let invalid = || format!("{PAIR_WRITER_VAR} must be 'scripted' or unset");
+fn ollama_host_from_env() -> Result<String, String> {
+    match std::env::var(OLLAMA_HOST_VAR) {
+        Err(std::env::VarError::NotPresent) => Ok(DEFAULT_OLLAMA_HOST.to_owned()),
+        Ok(value) => normalize_ollama_host(&value),
+        Err(std::env::VarError::NotUnicode(_)) => {
+            Err(format!("{OLLAMA_HOST_VAR} must be valid Unicode"))
+        }
+    }
+}
+
+fn conversation_model_from_env() -> Result<String, String> {
+    let invalid = || format!("{CONVERSATION_MODEL_VAR} must be a non-empty model name");
+    match std::env::var(CONVERSATION_MODEL_VAR) {
+        Err(std::env::VarError::NotPresent) => Ok(DEFAULT_CONVERSATION_MODEL.to_owned()),
+        Ok(value) if value.is_empty() => Ok(DEFAULT_CONVERSATION_MODEL.to_owned()),
+        Ok(value) if !value.trim().is_empty() => Ok(value.trim().to_owned()),
+        _ => Err(invalid()),
+    }
+}
+
+fn agent_from_env() -> Result<(Arc<dyn ChatProvider>, String), String> {
+    let invalid = || format!("{PAIR_WRITER_VAR} must be 'ollama', 'scripted', 'none', or unset");
     let provider = match std::env::var(PAIR_WRITER_VAR) {
-        Err(std::env::VarError::NotPresent) => return Ok((Arc::new(UnconfiguredProvider), "none")),
-        Ok(value) if value.is_empty() => return Ok((Arc::new(UnconfiguredProvider), "none")),
+        Err(std::env::VarError::NotPresent) => "ollama".to_owned(),
+        Ok(value) if value.is_empty() => "ollama".to_owned(),
         Ok(value) => value,
         Err(std::env::VarError::NotUnicode(_)) => return Err(invalid()),
     };
 
-    if provider != "scripted" {
-        return Err(invalid());
+    match provider.as_str() {
+        "none" => Ok((Arc::new(UnconfiguredProvider), "none".to_owned())),
+        "ollama" => {
+            let host = ollama_host_from_env()?;
+            let model = conversation_model_from_env()?;
+            let config = OllamaConfig {
+                host: host.clone(),
+                model: model.clone(),
+                ..OllamaConfig::default()
+            };
+            let provider = OllamaProvider::new(config)?;
+            Ok((
+                Arc::new(provider),
+                format!("ollama ({host}, model {model})"),
+            ))
+        }
+        "scripted" => {
+            let defaults = ScriptedConfig::default();
+            let config = ScriptedConfig {
+                first_token_delay: Duration::from_millis(optional_u64_env(
+                    SCRIPTED_FIRST_TOKEN_MS_VAR,
+                    u64::try_from(defaults.first_token_delay.as_millis()).unwrap_or(2_000),
+                )?),
+                per_1000_words_delay: Duration::from_millis(optional_u64_env(
+                    SCRIPTED_MS_PER_1000_WORDS_VAR,
+                    u64::try_from(defaults.per_1000_words_delay.as_millis()).unwrap_or(3_000),
+                )?),
+                followup_first_token_delay: Duration::from_millis(optional_u64_env(
+                    SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS_VAR,
+                    u64::try_from(defaults.followup_first_token_delay.as_millis()).unwrap_or(450),
+                )?),
+                tokens_per_second: optional_u32_env(
+                    SCRIPTED_TOKENS_PER_SEC_VAR,
+                    defaults.tokens_per_second,
+                )?,
+                mode: scripted_mode_from_env()?,
+                model: defaults.model,
+            };
+
+            Ok((
+                Arc::new(ScriptedProvider::new(config)),
+                "scripted".to_owned(),
+            ))
+        }
+        _ => Err(invalid()),
     }
-
-    let defaults = ScriptedConfig::default();
-    let config = ScriptedConfig {
-        first_token_delay: Duration::from_millis(optional_u64_env(
-            SCRIPTED_FIRST_TOKEN_MS_VAR,
-            u64::try_from(defaults.first_token_delay.as_millis()).unwrap_or(2_000),
-        )?),
-        per_1000_words_delay: Duration::from_millis(optional_u64_env(
-            SCRIPTED_MS_PER_1000_WORDS_VAR,
-            u64::try_from(defaults.per_1000_words_delay.as_millis()).unwrap_or(3_000),
-        )?),
-        followup_first_token_delay: Duration::from_millis(optional_u64_env(
-            SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS_VAR,
-            u64::try_from(defaults.followup_first_token_delay.as_millis()).unwrap_or(450),
-        )?),
-        tokens_per_second: optional_u32_env(
-            SCRIPTED_TOKENS_PER_SEC_VAR,
-            defaults.tokens_per_second,
-        )?,
-        mode: scripted_mode_from_env()?,
-        model: defaults.model,
-    };
-
-    Ok((Arc::new(ScriptedProvider::new(config)), "scripted"))
 }
 
 #[tokio::main]

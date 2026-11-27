@@ -22,7 +22,7 @@ conversation for good.
 Backlog 60 built
 [ADR 0012](../adrs/0012-pair-writing-experience.md)'s `Chat` tab with its
 threads, and what each turn read, held in browser memory, so a reload
-clears them, and [backlog 61](./0061-local-model-chat.md) answers it from the
+clears them, and backlog 61 answered it from the
 local model. [Backlog 12](./0012-first-pair-writing-agent.md) adds the
 conversation resources the
 [conversations ADR](./0037-agent-conversations-adr.md) defines. ADR 0012's

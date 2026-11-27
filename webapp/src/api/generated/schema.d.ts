@@ -313,16 +313,58 @@ export interface components {
         ChatReplyDelta: {
             text: string;
         };
-        /** @description Payload of a `done` SSE event carrying the facts `What it read` shows. */
+        /**
+         * @description Payload of a `done` SSE event carrying the facts `What it read` shows and
+         *     runtime timing and token counts for audit and measurement.
+         */
         ChatReplyDone: {
             /** Format: int32 */
             droppedHistoryTurns: number;
+            metrics: components["schemas"]["ChatReplyMetrics"] | null;
             model: string;
             /** @description Prompt name and digest when a prompt is used, or `null` otherwise. */
             promptVersion: string | null;
             sources: components["schemas"]["ChatReadSource"][];
             /** Format: int32 */
             totalWords: number;
+        };
+        /** @description Timing and token counts reported by the model runtime for one reply. */
+        ChatReplyMetrics: {
+            /**
+             * Format: int64
+             * @description Milliseconds spent generating output tokens, when reported.
+             */
+            evalMs: number | null;
+            /**
+             * Format: int64
+             * @description Milliseconds from sending the model request to the first visible reply token.
+             */
+            firstTokenMs: number | null;
+            /**
+             * Format: int64
+             * @description Milliseconds spent loading the model into memory, when reported.
+             */
+            loadMs: number | null;
+            /**
+             * Format: int64
+             * @description Number of output tokens generated, when reported.
+             */
+            outputTokens: number | null;
+            /**
+             * Format: int64
+             * @description Milliseconds spent evaluating the prompt, when reported.
+             */
+            promptEvalMs: number | null;
+            /**
+             * Format: int64
+             * @description Number of prompt tokens evaluated, when reported.
+             */
+            promptTokens: number | null;
+            /**
+             * Format: int64
+             * @description Total milliseconds reported by the model runtime for the reply.
+             */
+            totalMs: number | null;
         };
         /** @description The editor's active selection, used as the turn's focus. */
         ChatSelectionInput: {

@@ -21,7 +21,7 @@ writer-storage.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
-tokio.workspace = true
+tokio = { workspace = true, features = ["io-util"] }
 tower.workspace = true
 tracing-subscriber.workspace = true
 

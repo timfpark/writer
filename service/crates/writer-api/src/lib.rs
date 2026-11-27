@@ -29,8 +29,8 @@ pub use folders::Folder;
 pub use health::{Health, HealthStatus};
 pub use pair_writer::{
     Agent, ChatContextDocument, ChatDocumentInput, ChatHistoryMessage, ChatHistoryRole,
-    ChatReadSource, ChatReplyDelta, ChatReplyDone, ChatSelectionInput, ChatSourceKind,
-    CreatePairWriterReplyRequest, PairWriterIssue, PairWriterStatus, ReadingScope,
+    ChatReadSource, ChatReplyDelta, ChatReplyDone, ChatReplyMetrics, ChatSelectionInput,
+    ChatSourceKind, CreatePairWriterReplyRequest, PairWriterIssue, PairWriterStatus, ReadingScope,
 };
 pub use problem::{Problem, ProblemCode, ProblemFieldError};
 pub use workspace::{ItemKind, Store, Workspace, WorkspaceItem};
@@ -74,6 +74,7 @@ impl FromRef<AppState> for Agent {
     components(schemas(
         ChatReplyDelta,
         ChatReplyDone,
+        ChatReplyMetrics,
         ChatReadSource,
         ChatSourceKind,
         ReadingScope

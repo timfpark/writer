@@ -251,7 +251,49 @@ pub struct ChatReplyDelta {
     pub text: String,
 }
 
-/// Payload of a `done` SSE event carrying the facts `What it read` shows.
+/// Timing and token counts reported by the model runtime for one reply.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ChatReplyMetrics {
+    /// Milliseconds from sending the model request to the first visible reply token.
+    #[schema(required = true)]
+    pub first_token_ms: Option<u64>,
+    /// Total milliseconds reported by the model runtime for the reply.
+    #[schema(required = true)]
+    pub total_ms: Option<u64>,
+    /// Milliseconds spent loading the model into memory, when reported.
+    #[schema(required = true)]
+    pub load_ms: Option<u64>,
+    /// Milliseconds spent evaluating the prompt, when reported.
+    #[schema(required = true)]
+    pub prompt_eval_ms: Option<u64>,
+    /// Milliseconds spent generating output tokens, when reported.
+    #[schema(required = true)]
+    pub eval_ms: Option<u64>,
+    /// Number of prompt tokens evaluated, when reported.
+    #[schema(required = true)]
+    pub prompt_tokens: Option<u64>,
+    /// Number of output tokens generated, when reported.
+    #[schema(required = true)]
+    pub output_tokens: Option<u64>,
+}
+
+impl From<agent::ReplyMetrics> for ChatReplyMetrics {
+    fn from(metrics: agent::ReplyMetrics) -> Self {
+        Self {
+            first_token_ms: metrics.first_token_ms,
+            total_ms: metrics.total_ms,
+            load_ms: metrics.load_ms,
+            prompt_eval_ms: metrics.prompt_eval_ms,
+            eval_ms: metrics.eval_ms,
+            prompt_tokens: metrics.prompt_tokens,
+            output_tokens: metrics.output_tokens,
+        }
+    }
+}
+
+/// Payload of a `done` SSE event carrying the facts `What it read` shows and
+/// runtime timing and token counts for audit and measurement.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase")]
 pub struct ChatReplyDone {
@@ -262,6 +304,10 @@ pub struct ChatReplyDone {
     pub sources: Vec<ChatReadSource>,
     pub total_words: u32,
     pub dropped_history_turns: u32,
+    /// Timing and token counts reported by the model runtime, or `null` when
+    /// none are reported.
+    #[schema(required = true)]
+    pub metrics: Option<ChatReplyMetrics>,
 }
 
 impl From<agent::ReplyDone> for ChatReplyDone {
@@ -272,6 +318,7 @@ impl From<agent::ReplyDone> for ChatReplyDone {
             sources: done.sources.into_iter().map(Into::into).collect(),
             total_words: done.total_words,
             dropped_history_turns: done.dropped_history_turns,
+            metrics: done.metrics.map(Into::into),
         }
     }
 }

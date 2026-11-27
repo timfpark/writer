@@ -2,7 +2,7 @@
 title: Writer service
 description: How to build, run, configure, back up, and check the Writer service, a Rust Cargo workspace serving the HTTP API and storing the workspace
 author: Tim Park
-ms.date: 2026-11-20
+ms.date: 2026-11-27
 ms.topic: overview
 keywords:
   - service
@@ -26,13 +26,13 @@ workspace API, behind a verified OpenAPI contract. Coding agents start with
 
 The folder is a Cargo workspace whose members live under [crates/](./crates/):
 
-| Crate                                      | Kind       | Responsibility                                                                               |
-|--------------------------------------------|------------|----------------------------------------------------------------------------------------------|
-| [writer-server](./crates/writer-server/)   | Executable | Reads configuration, binds the loopback listener, serves the router, and stops gracefully    |
-| [writer-api](./crates/writer-api/)         | Library    | Routes, handlers, transport types, problem details errors, SSE streams, and OpenAPI document |
-| [writer-agent](./crates/writer-agent/)     | Library    | Pair-writer provider interface, 19,000-word reading assembly, and scripted provider          |
-| [writer-storage](./crates/writer-storage/) | Library    | The storage interface, its conformance suite, and the filesystem backend                     |
-| [writer-domain](./crates/writer-domain/)   | Library    | Workspace types and rules: identifiers, titles, content, limits, and tree checks             |
+| Crate                                      | Kind       | Responsibility                                                                                                                              |
+|--------------------------------------------|------------|---------------------------------------------------------------------------------------------------------------------------------------------|
+| [writer-server](./crates/writer-server/)   | Executable | Reads configuration, binds the loopback listener, serves the router, and stops gracefully                                                   |
+| [writer-api](./crates/writer-api/)         | Library    | Routes, handlers, transport types, problem details errors, SSE streams, and OpenAPI document                                                |
+| [writer-agent](./crates/writer-agent/)     | Library    | Pair-writer provider interface, 19,000-word reading assembly, prompt templates in [prompts/](./prompts/), and Ollama and scripted providers |
+| [writer-storage](./crates/writer-storage/) | Library    | The storage interface, its conformance suite, and the filesystem backend                                                                    |
+| [writer-domain](./crates/writer-domain/)   | Library    | Workspace types and rules: identifiers, titles, content, limits, and tree checks                                                            |
 
 [openapi.json](./openapi.json) is the API contract of record. It is generated
 from `writer-api`, so never edit it by hand.
@@ -81,16 +81,18 @@ lets in-flight requests finish for up to 10 seconds.
 The service reads settings from its process environment and does not load
 `.env` files. [.env.example](./.env.example) lists every setting.
 
-| Variable                                  | Default                          | Effect                                                                                                      |
-|-------------------------------------------|----------------------------------|-------------------------------------------------------------------------------------------------------------|
-| `WRITER_PORT`                             | `8888`                           | Port from 1 to 65535 to listen on. The address is always `127.0.0.1`.                                       |
-| `WRITER_DATA_DIR`                         | Per build, as [Data](#data) says | Folder holding Writer's data. A relative path resolves against the working directory.                       |
-| `WRITER_PAIR_WRITER`                      | Unset (none)                     | Pair-writer provider. Set to `scripted` to run the deterministic scripted pair writer.                      |
-| `WRITER_SCRIPTED_MODE`                    | `ready`                          | Scripted provider mode: `ready`, `missing-model` (reports not ready and returns 503), or `fail-mid-stream`. |
-| `WRITER_SCRIPTED_FIRST_TOKEN_MS`          | `2000`                           | Base delay in milliseconds before the first token on a first read.                                          |
-| `WRITER_SCRIPTED_MS_PER_1000_WORDS`       | `3000`                           | Additional first-read delay in milliseconds per further 1,000 words beyond the first 1,000.                 |
-| `WRITER_SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS` | `450`                            | Delay in milliseconds before the first token on a follow-up turn.                                           |
-| `WRITER_SCRIPTED_TOKENS_PER_SEC`          | `30`                             | Streaming rate in tokens per second (`0` streams without delay).                                            |
+| Variable                                  | Default                          | Effect                                                                                                                     |
+|-------------------------------------------|----------------------------------|----------------------------------------------------------------------------------------------------------------------------|
+| `WRITER_PORT`                             | `8888`                           | Port from 1 to 65535 to listen on. The address is always `127.0.0.1`.                                                      |
+| `WRITER_DATA_DIR`                         | Per build, as [Data](#data) says | Folder holding Writer's data. A relative path resolves against the working directory.                                      |
+| `WRITER_PAIR_WRITER`                      | `ollama`                         | Pair-writer provider: `ollama`, `scripted` (deterministic replies), or `none` (disabled).                                  |
+| `OLLAMA_HOST`                             | `http://127.0.0.1:11434`         | Local Ollama server URL when using `ollama`. Use `http://host.docker.internal:11434` from the dev container.               |
+| `WRITER_CONVERSATION_MODEL`               | `gemma4:31b-mlx`                 | Conversation model requested from Ollama, defaulting to [ADR 0010](../docs/adrs/0010-pair-writing-models.md)'s choice.     |
+| `WRITER_SCRIPTED_MODE`                    | `ready`                          | Scripted provider mode: `ready`, `missing-model` (reports not ready and returns 503), or `fail-mid-stream`.                |
+| `WRITER_SCRIPTED_FIRST_TOKEN_MS`          | `2000`                           | Base delay in milliseconds before the first token on a first read.                                                         |
+| `WRITER_SCRIPTED_MS_PER_1000_WORDS`       | `3000`                           | Additional first-read delay in milliseconds per further 1,000 words beyond the first 1,000.                                |
+| `WRITER_SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS` | `450`                            | Delay in milliseconds before the first token on a follow-up turn.                                                          |
+| `WRITER_SCRIPTED_TOKENS_PER_SEC`          | `30`                             | Streaming rate in tokens per second (`0` streams without delay).                                                           |
 
 To run on another port, for example when another process already uses 8888:
 
@@ -98,11 +100,92 @@ To run on another port, for example when another process already uses 8888:
 WRITER_PORT=8889 cargo run -p writer-server
 ```
 
+### Run with the local Ollama model
+
+By default (`WRITER_PAIR_WRITER=ollama`), the service streams chat replies from
+a local Ollama instance using [ADR 0010](../docs/adrs/0010-pair-writing-models.md)'s
+`gemma4:31b-mlx` model and the
+[conversation-grounded](./prompts/conversation-grounded.txt) prompt. If Ollama
+is stopped or the model is not installed, the service still starts cleanly so
+writing and saving keep working, and `GET /api/v1/pair-writer` reports what is
+missing.
+
+1. Install [Ollama](https://ollama.com/) on the host machine and make sure it
+   is running on loopback (`http://127.0.0.1:11434`):
+
+   ```bash
+   ollama --version
+   ollama serve
+   ```
+
+   If the Ollama desktop application is already running, `ollama serve` is not
+   needed.
+
+2. Pull ADR 0010's default conversation model (or another tier model from ADR
+   0010 if your machine has less memory, passing its name in
+   `WRITER_CONVERSATION_MODEL`):
+
+   ```bash
+   ollama pull gemma4:31b-mlx
+   ```
+
+3. Start the Writer service from `service/`. On the host:
+
+   ```bash
+   cargo run -p writer-server
+   ```
+
+   Inside the development container, point `OLLAMA_HOST` at the host's Ollama
+   server through Docker Desktop:
+
+   ```bash
+   OLLAMA_HOST=http://host.docker.internal:11434 cargo run -p writer-server
+   ```
+
+4. Check readiness from a second terminal:
+
+   ```bash
+   curl http://127.0.0.1:8888/api/v1/pair-writer
+   ```
+
+   Expect `"ready":true`, `"provider":"ollama"`, and `"model":"gemma4:31b-mlx"`.
+
+5. Ask each of the Chat tab's three starter prompts against a synthetic passage
+   (or start the webapp with `npm run dev` in `webapp/` and click each starter
+   button in the Chat tab):
+
+   ```bash
+   passage='The keeper climbed the stairs twice before lighting the lamp. Cold rain rattled against the window pane while the harbor bells counted nine.'
+   for prompt in \
+     "Give me some ideas about how I can improve this text" \
+     "How can I further develop this text?" \
+     "What other ideas should I explore?"; do
+     echo "=== $prompt ==="
+     curl -sS -N -X POST http://127.0.0.1:8888/api/v1/pair-writer/replies \
+       -H 'Content-Type: application/json' \
+       -d "$(python3 -c 'import json, sys; print(json.dumps({
+         "message": sys.argv[1],
+         "document": {
+           "documentId": "c7e5b3a1-9d2f-4e8c-a6b4-1f3e5d7c9b2a",
+           "title": "Harbor Scene",
+           "content": sys.argv[2]
+         }
+       }))' "$prompt" "$passage")"
+     echo
+   done
+   ```
+
+   Each response streams `delta` events containing advice-only notes quoting
+   the synthetic passage verbatim, followed by a `done` event carrying
+   `"model":"gemma4:31b-mlx"`,
+   `"promptVersion":"conversation-grounded@c0a3c0b9f874"`, the sources read,
+   and Ollama's timing and token `metrics`.
+
 ### Run with the scripted pair writer
 
-Without `WRITER_PAIR_WRITER`, the service starts with no pair writer and
-`GET /api/v1/pair-writer` reports `"ready":false` with `"issue":"notConfigured"`.
-To try ADR 0012's Chat tab against the deterministic scripted pair writer:
+To try ADR 0012's Chat tab without Ollama or a local model, select the
+deterministic scripted pair writer (or pass `WRITER_PAIR_WRITER=none` to start
+with no pair writer configured):
 
 ```bash
 WRITER_PAIR_WRITER=scripted cargo run -p writer-server
@@ -304,9 +387,11 @@ test in the workspace with `--locked`. The tests include:
   against the filesystem backend in a temporary directory, which also
   assert that a synthetic marker sent in titles, content, chat messages,
   and context documents appears in no problem response and no log line
-* `writer-agent` tests of 19,000-word reading assembly, scripted reply
-  generation, pacing, fault modes, and immediate cancellation on client
-  disconnect
+* `writer-agent` tests of 19,000-word reading assembly, prompt loading and
+  prefix-cached message layout, the Ollama provider against a local fake
+  Ollama API (streaming, metrics, readiness, failures, timeouts, and TCP
+  cancellation on disconnect), and the scripted provider's pacing, fault
+  modes, and cancellation
 * `writer-domain` tests of every workspace rule and limit, without storage
 * The storage conformance suite, run against the filesystem backend in
   temporary directories, and tests of the backend's own rules: names on disk,

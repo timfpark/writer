@@ -167,6 +167,7 @@ impl ChatProvider for ScriptedProvider {
                 total_words: u32::try_from(reading.total_words).unwrap_or(u32::MAX),
                 dropped_history_turns: u32::try_from(reading.dropped_history_turns)
                     .unwrap_or(u32::MAX),
+                metrics: None,
             };
             let fail_mid_stream = config.mode == ScriptedMode::FailMidStream;
 

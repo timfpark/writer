@@ -4,6 +4,8 @@
 //! No type here comes from axum, Tower, or utoipa, and nothing logs request,
 //! document, or reply text.
 
+pub mod ollama;
+pub mod prompt;
 pub mod reading;
 pub mod scripted;
 
@@ -13,6 +15,13 @@ use std::task::{Context, Poll};
 
 use tokio::sync::mpsc;
 
+pub use ollama::{
+    DEFAULT_CONVERSATION_MODEL, DEFAULT_OLLAMA_HOST, OllamaConfig, OllamaProvider,
+    normalize_ollama_host,
+};
+pub use prompt::{
+    CONVERSATION_GROUNDED_NAME, PromptMessage, PromptTemplate, conversation_grounded_prompt,
+};
 pub use reading::{
     AssembledReading, READING_LIMIT_WORDS, assemble_reading, count_words, strip_markdown_inline,
 };
@@ -114,6 +123,18 @@ pub struct ReadSource {
     pub label: String,
 }
 
+/// Timing and token counts reported by the model runtime for one reply.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReplyMetrics {
+    pub first_token_ms: Option<u64>,
+    pub total_ms: Option<u64>,
+    pub load_ms: Option<u64>,
+    pub prompt_eval_ms: Option<u64>,
+    pub eval_ms: Option<u64>,
+    pub prompt_tokens: Option<u64>,
+    pub output_tokens: Option<u64>,
+}
+
 /// Facts reported when a streamed reply finishes.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ReplyDone {
@@ -122,6 +143,7 @@ pub struct ReplyDone {
     pub sources: Vec<ReadSource>,
     pub total_words: u32,
     pub dropped_history_turns: u32,
+    pub metrics: Option<ReplyMetrics>,
 }
 
 /// The failure kind for a reply that could not start or failed mid-stream.

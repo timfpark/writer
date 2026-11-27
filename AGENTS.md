@@ -30,7 +30,7 @@ Writer is a local-first writing workspace and AI pair writer (see
   [service/openapi.json](./service/openapi.json) contract; never import across
   subsystems. Only `service/` and `evals/` call model runtimes.
 * Keep coding-agent files (`AGENTS.md` and `.github/`) separate from product
-  pair-writer prompts (`service/prompts/`, planned) and evaluations
+  pair-writer prompts ([service/prompts/](./service/prompts/)) and evaluations
   ([evals/](./evals/)). Commit evaluation run summaries, never raw model
   output, which stays in `.local/evals/raw/`.
 * Target [tools/check](./tools/check), [tools/check_docs.py](./tools/check_docs.py),

@@ -21,7 +21,7 @@ machine when I decide the gain is worth it.
 The [model ADR](../adrs/0010-pair-writing-models.md) chooses local models served
 by Ollama and records any mode or kind of finding where none is good enough.
 Writer ships its first pair writer on those local models alone, through
-[backlog 61](./0061-local-model-chat.md) and
+backlog 61 and
 [backlog 36](./0036-background-findings-view.md). This decision waits until
 writers have used it, so the case for a cloud model rests on the gaps they
 felt rather than on gaps assumed in advance.
@@ -75,5 +75,4 @@ network dependency to the service the
 ## Prerequisites
 
 * [Measure cloud models for pair writing](./0043-cloud-model-evals.md)
-* [Answer in the Chat tab from the local model](./0061-local-model-chat.md)
 * [Show background findings in the webapp](./0036-background-findings-view.md)

@@ -562,7 +562,7 @@ cheap:
 * Backlog 60 built the `Chat` tab
   and every conversation journey against a scripted pair writer, holding
   threads in browser memory.
-* [Backlog 61](../backlog/0061-local-model-chat.md) answers it from ADR
+* Backlog 61 answered it from ADR
   0010's local model, reading as this record defines and measuring the
   first-token targets.
 * [Backlog 62](../backlog/0062-scripted-findings-tab.md) builds the

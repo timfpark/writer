@@ -36,14 +36,13 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                                     | Subsystems                       | Outcome                                                                                      | Prerequisite       |
 |----|-----------------------------------------------------------------------------------------------|----------------------------------|----------------------------------------------------------------------------------------------|--------------------|
-| 61 | [Answer in the Chat tab from the local model](./0061-local-model-chat.md)                     | `service`, `webapp`              | The Chat tab streams grounded advice from ADR 0010's local model through the service.        | None               |
 | 62 | [Try the Findings tab against scripted findings](./0062-scripted-findings-tab.md)             | `service`, `webapp`              | Findings, passage underlines, and Pause run in Writer against scripted findings.             | None               |
 | 56 | [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)             | `evals`                          | Local models are measured on checking continuity against extracted story notes.              | None               |
-| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)            | `service`, `webapp`              | An accepted ADR fixes where the agent runs, how agents chain, and how it is built.           | 56, 61, 62         |
+| 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)            | `service`, `webapp`              | An accepted ADR fixes where the agent runs, how agents chain, and how it is built.           | 56, 62             |
 | 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                       | `service`, `webapp`              | An accepted ADR fixes how conversations and living artifacts are stored and audited.         | 10                 |
 | 12 | [Keep the pair writer's conversations in the service](./0012-first-pair-writing-agent.md)     | `service`, `webapp`, `evals`     | The service keeps threads, what each turn read, and audit records, and evals run through it. | 10, 37             |
 | 34 | [Keep chat threads across sessions in the assistant pane](./0034-assistant-pane-agent.md)     | `service`, `webapp`              | Chat threads, and what each turn read, survive reloads and restarts.                         | 12                 |
-| 57 | [Choose the model for each mode in settings](./0057-model-settings.md)                        | `service`, `webapp`              | Writers switch the model behind each mode at run time from the models Ollama has pulled.     | 10, 61             |
+| 57 | [Choose the model for each mode in settings](./0057-model-settings.md)                        | `service`, `webapp`              | Writers switch the model behind each mode at run time from the models Ollama has pulled.     | 10                 |
 | 44 | [Record the cloud model proxy ADR](./0044-cloud-model-proxy-adr.md)                           | `repository`, `evals`, `service` | An accepted ADR picks a local proxy to Azure AI Foundry with keyless auth and spending caps. | None               |
 | 45 | [Run the cloud model proxy with a first set of Foundry models](./0045-cloud-model-proxy.md)   | `repository`, `evals`            | The proxy runs with cheap and frontier Foundry models, and the harness calls it.             | 44                 |
 | 48 | [Measure the background agents with the evaluation harness](./0048-background-agent-evals.md) | `evals`                          | Each first-wave background agent is measured on local models with a first prompt.            | 56                 |
@@ -54,12 +53,12 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | 50 | [Track open threads and keep a reverse outline](./0050-threads-and-outline.md)                | `service`, `webapp`, `evals`     | Writers see what each scene does and which setups have no payoff.                            | 49                 |
 | 51 | [Review finished chapters](./0051-chapter-review.md)                                          | `service`, `webapp`, `evals`     | Settled chapters get pacing, voice, and first-reader reviews from story notes and outline.   | 49, 50             |
 | 53 | [Check the writer's own rules](./0053-writer-rules.md)                                        | `service`, `webapp`, `evals`     | Writers set style rules, and background review flags text that breaks them.                  | 35, 36             |
-| 52 | [Recap the last session when Writer opens](./0052-session-recap.md)                           | `service`, `webapp`, `evals`     | Returning writers get workspace, folder, and document recaps with a suggested next step.     | 35, 61             |
+| 52 | [Recap the last session when Writer opens](./0052-session-recap.md)                           | `service`, `webapp`, `evals`     | Returning writers get workspace, folder, and document recaps with a suggested next step.     | 35                 |
 | 54 | [Turn background agents on and off across the workspace tree](./0054-agent-settings-tree.md)  | `service`, `webapp`              | Writers turn agents on or off for folders and documents, inherited down the tree.            | 49, 50, 51, 52, 53 |
 | 58 | [Check technical nonfiction](./0058-nonfiction-agents.md)                                     | `service`, `webapp`, `evals`     | Technical books get terminology, concept order, code, and cross-reference checks.            | 54                 |
 | 55 | [Compare models while writing](./0055-compare-models-in-use.md)                               | `service`, `webapp`, `evals`     | Writers trial new models side by side on their own work and adopt the better one.            | 36, 57             |
 | 43 | [Measure cloud models for pair writing](./0043-cloud-model-evals.md)                          | `evals`                          | Cheap and frontier cloud models are measured beside local ones for quality and price.        | 35, 45             |
-| 40 | [Record the cloud model fallback ADR](./0040-cloud-model-fallback-adr.md)                     | `service`, `webapp`              | An accepted ADR decides whether and where a cloud model backs up the local one.              | 36, 43, 61         |
+| 40 | [Record the cloud model fallback ADR](./0040-cloud-model-fallback-adr.md)                     | `service`, `webapp`              | An accepted ADR decides whether and where a cloud model backs up the local one.              | 36, 43             |
 | 27 | [Record the change control ADR](./0027-change-control-adr.md)                                 | `service`, `webapp`              | An accepted ADR fixes the commit model, commit timing, restore, and progress measures.       | None               |
 | 28 | [Build the SQLite backend and copy command](./0028-sqlite-backend.md)                         | `service`                        | The workspace persists in SQLite and copies between backends intact.                         | None               |
 | 29 | [Record and restore commits in the service](./0029-service-history.md)                        | `service`                        | The contract records commits, reads earlier versions, and restores them.                     | 27                 |
@@ -131,10 +130,13 @@ findings that follow edits, an amended pause trigger, quiet signals with
 Item 60 built the `writer-agent` crate with a deterministic scripted pair
 writer, provisional readiness and SSE chat endpoints under
 `/api/v1/pair-writer`, and ADR 0012's in-memory `Chat` tab in the webapp,
-tested end to end. Next, item 61 answers it from the local model through the
-same endpoint, and item 62 builds ADR 0011's `Findings` tab, passage
-underlines, and `Pause` against scripted findings, so writers try the
-experience in Writer itself before the agent's architecture is fixed.
+tested end to end. Item 61 then added `service/prompts/` with ADR 0010's
+`conversation-grounded` prompt and a direct Tokio `OllamaProvider` behind the
+same endpoint, making local Ollama the default while keeping the scripted
+provider for tests and demonstrations. Next, item 62 builds ADR 0011's
+`Findings` tab, passage underlines, and `Pause` against scripted findings, so
+writers try the experience in Writer itself before the agent's architecture is
+fixed.
 
 Item 56 then tests whether checking continuity against story notes,
 extracted chapter by chapter, closes the disconnect gap, because the answer
