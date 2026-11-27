@@ -1,4 +1,4 @@
-import { inCI } from "./environment.js";
+import { inCI, throttle } from "./environment.js";
 import { expect, test } from "./fixtures";
 
 declare global {
@@ -14,7 +14,7 @@ declare global {
 // against the same targets and ADR 0008's unthrottled 33 ms for keystrokes,
 // which still catches a regression.
 const contentLimit = 1024 * 1024;
-const throttling = inCI ? 1 : 4;
+const throttling = throttle;
 const editableWithin = 1_000;
 const keystrokeP95 = inCI ? 33 : 50;
 const serializeWithin = 25;
