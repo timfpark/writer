@@ -1,22 +1,23 @@
 ---
 title: Record the pair-writing agent architecture ADR
-description: Decide where the pair-writing agent runs and how it is built, including its framework, model provider, prompts, evaluations, and background execution, to serve the experience ADR.
+description: Decide where the pair-writing agent runs and how it is built, including its framework, model provider, prompts, evaluations, and background execution, to serve the experience ADR, keeping or replacing the provisional path that backlog 60 to 62 built.
 author: Tim Park
-ms.date: 2026-11-25
+ms.date: 2026-11-27
 ms.topic: reference
 subsystems:
   - service
   - webapp
-estimated_reading_time: 3
+estimated_reading_time: 4
 ---
 
 ## Story
 
 As a contributor or coding agent, I want where the pair-writing agent runs,
 and its framework, model provider, prompts, and evaluations, decided and
-accepted before any agent code exists so that the agent stories implement a
-deliberate choice that serves the writer's experience rather than justifying
-one after the fact.
+accepted before the agent grows past its provisional first path so that
+background review and the stories after it build on a deliberate choice
+that serves the writer's experience, grounded in what that path showed
+rather than in whatever it happened to do.
 
 ## Context
 
@@ -39,6 +40,18 @@ and session recaps) that downstream agents read, global Pause, and OS
 power-state battery policy. [Backlog 56](./0056-story-notes-continuity-test.md)
 measures whether chaining story notes into a continuity check works and
 what it costs. This decision chooses an implementation that meets them.
+
+[Backlog 60](./0060-scripted-chat-tab.md),
+[backlog 61](./0061-local-model-chat.md), and
+[backlog 62](./0062-scripted-findings-tab.md) come first, so writers try the
+pair writer in Writer and a design that fails is backed out cheaply. Within
+what ADR 0001, ADR 0002, ADR 0004, and ADR 0010 already decide, they add an
+agent crate in the Rust service with a scripted provider, a stateless
+streaming conversation endpoint, a direct Ollama client with the
+`conversation-grounded` prompt, and a scripted review endpoint with
+provisional passage anchors. They record first-token time and streaming
+rate through the service, cancellation, and how the anchors mapped through
+edits. This decision starts from that path and its measurements.
 
 [ADR 0001](../adrs/0001-monorepo-structure.md#coding-agents-and-the-product-agent)
 makes the agent service behavior. It places prompts in `service/prompts/`
@@ -67,8 +80,8 @@ it.
 
 The [agent conversations ADR](./0037-agent-conversations-adr.md) decides how
 conversations are stored. [Backlog 12](./0012-first-pair-writing-agent.md)
-and [backlog 34](./0034-assistant-pane-agent.md) build the conversation, and
-[backlog 35](./0035-service-background-review.md) and
+and [backlog 34](./0034-assistant-pane-agent.md) keep conversations across
+sessions, and [backlog 35](./0035-service-background-review.md) and
 [backlog 36](./0036-background-findings-view.md) build background review, on
 what this ADR decides.
 
@@ -85,7 +98,12 @@ what this ADR decides.
   harness. For each, record whether a maintained Rust crate covers it or
   what building and maintaining it in Rust with coding agents would take,
   against adopting at least one established Python agent framework. Ground
-  the comparison in throwaway spikes rather than estimates alone.
+  the comparison in the provisional path's measurements and in throwaway
+  spikes rather than estimates alone.
+* State which parts of the provisional path stay, change, or go: the agent
+  crate and its provider interface, the HTTP client, prompt loading, the
+  scripted provider that tests select, the stateless conversation and
+  review endpoints, and the passage anchors.
 * Weigh the cost of a second runtime: a contract between the service and the
   agent, another toolchain in the development container and `tools/check`,
   packaging for local use, and the repository rule that keeps Python tooling
@@ -93,8 +111,8 @@ what this ADR decides.
 * If the agent leaves the Rust service, amend ADR 0001's rejected `agent/`
   subsystem and ADR 0002's agent crate and runtime decisions, follow ADR
   0001's [Adding a subsystem](../adrs/0001-monorepo-structure.md#adding-a-subsystem)
-  checklist, and revise backlog 12 and backlog 35 to build in the new
-  location.
+  checklist, and revise backlog 12 and backlog 35 to move the provisional
+  path and build in the new location.
 * Decide where background reviews execute, as tasks on the service's Tokio
   runtime or in a separate worker, and how a review is scheduled, cancelled,
   and recovered after a restart.
@@ -161,14 +179,17 @@ what this ADR decides.
 * Add the ADR to the ADR index with `service` and `webapp` in its
   `subsystems` field.
 * Keep any prototype or spike used to inform the decision out of the
-  repository.
+  repository, apart from the provisional path backlog 60 to 62 delivered.
 
 ## Acceptance criteria
 
 * [ ] The agent ADR is accepted and listed in the ADR index.
 * [ ] The ADR states where the agent and its background reviews run, and
   records the capability-by-capability comparison of building in Rust
-  against adopting a Python agent framework, with what the spikes showed.
+  against adopting a Python agent framework, with what the provisional path
+  and the spikes showed.
+* [ ] The ADR states which parts of the provisional path from backlog 60 to
+  62 stay, and backlog 12 and backlog 35 change the rest.
 * [ ] If the agent leaves the Rust service, ADR 0001 and ADR 0002 are
   amended in the same pull request, and backlog 12 and backlog 35 describe
   the new location.
@@ -186,3 +207,5 @@ what this ADR decides.
 ## Prerequisites
 
 * [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)
+* [Answer in the Chat tab from the local model](./0061-local-model-chat.md)
+* [Try the Findings tab against scripted findings](./0062-scripted-findings-tab.md)

@@ -28,8 +28,8 @@ start with [README.md](./README.md).
   `writer-api` uses utoipa. Lower crates expose none of them.
 * Add a crate under `crates/` only with the behavior that needs it, named as
   its folder, inheriting `[workspace.package]` and `[lints] workspace = true`.
-* `service/prompts/` (planned) arrives with backlog 12, the first
-  pair-writing agent story; do not create it empty. Evaluation cases live in
+* `service/prompts/` (planned) arrives with backlog 61, the first story
+  that answers from a model; do not create it empty. Evaluation cases live in
   the top-level [evals/](../evals/) subsystem, not in `service/`.
 
 ## Operational rules

@@ -2,7 +2,7 @@
 title: Record the agent conversations ADR
 description: Decide how the service keeps the pair writer's conversations and living artifacts, ties them to the versions of text they discuss, and exposes them so writers can revive, view, correct, and audit them later.
 author: Tim Park
-ms.date: 2026-11-25
+ms.date: 2026-11-27
 ms.topic: reference
 subsystems:
   - service
@@ -30,9 +30,10 @@ inspect `What it read` audit metadata on every assistant reply and finding
 card. This decision chooses the data model and storage that make those
 journeys work.
 
-Backlog 25 holds the assistant pane's single conversation in browser memory,
-as [conversation.ts](../../webapp/src/workspace/conversation.ts) shows: it is
-never sent to the service or saved, and a reload clears it.
+[Backlog 60](./0060-scripted-chat-tab.md) holds the `Chat` tab's threads
+and per-turn snapshots in browser memory and sends each turn to a
+provisional, stateless endpoint that stores nothing, so a reload clears
+them.
 
 One idea, recorded here as an option to weigh rather than a decision: each
 conversation is a thread the service stores, and each message points to the

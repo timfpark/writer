@@ -2,10 +2,11 @@
 title: Review documents in the background in the service
 description: Add background review that runs the first paragraph- and scene-level background agents on a document, with prompts tuned on their evaluation cases, and returns findings anchored to the passages they concern.
 author: Tim Park
-ms.date: 2026-11-25
+ms.date: 2026-11-27
 ms.topic: reference
 subsystems:
   - service
+  - webapp
   - evals
 estimated_reading_time: 3
 ---
@@ -33,9 +34,14 @@ passages, how reviews start, skip unchanged text, and stay within those
 targets, and how findings reach the webapp. The [conversations
 ADR](./0037-agent-conversations-adr.md) decides whether each review is stored
 as a conversation of its own and how it points to the version of the text it
-read. [Backlog 12](./0012-first-pair-writing-agent.md) builds the agent crate,
-`service/prompts/`, the conversation cases in `evals/`, and the fake provider
-this story extends. [Backlog 48](./0048-background-agent-evals.md) wrote
+read. [Backlog 60](./0060-scripted-chat-tab.md) and
+[backlog 61](./0061-local-model-chat.md) build the agent crate, its scripted
+provider, and `service/prompts/`,
+[backlog 62](./0062-scripted-findings-tab.md) adds scripted findings behind a
+provisional review endpoint, and
+[backlog 12](./0012-first-pair-writing-agent.md) aligns them with the agent
+ADR and adds the conversation cases in `evals/`, all of which this story
+extends. [Backlog 48](./0048-background-agent-evals.md) wrote
 cases and a first prompt for each agent and measured which are feasible, and
 [evals/README.md](../../evals/README.md#sweeping-prompt-variants) documents
 how to sweep prompt variants in the harness. [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint
@@ -67,7 +73,9 @@ agent ADR, amend it in the same pull request.
 * Add the review endpoint or stream the agent ADR decides, returning
   advice-only findings with their agent, text, passage anchors, and
   [ADR 0012](../adrs/0012-pair-writing-experience.md)'s `What it read`
-  audit metadata, and regenerate `service/openapi.json`.
+  audit metadata, and regenerate `service/openapi.json` and the webapp's
+  client. Keep backlog 62's provisional review endpoint working until
+  backlog 36 moves the webapp onto the new one.
 * Enforce [ADR 0011](../adrs/0011-background-agents-ux.md)'s triggers,
   zero-cost structural quietness gates, finding density caps, and battery
   policy, and ADR 0012's GPU priority for active Chat turns and resource
@@ -84,7 +92,8 @@ agent ADR, amend it in the same pull request.
   pointing to the version of the text it read.
 * Record dismissed findings as the experience ADR decides so that they do
   not return for unchanged text.
-* Extend the fake provider to return findings of each shipped agent.
+* Keep the scripted provider returning findings of each shipped agent, so
+  tests run without a model.
 * Extend the `service/README.md` walkthrough to review a synthetic document.
 
 ## Acceptance criteria
@@ -98,7 +107,7 @@ agent ADR, amend it in the same pull request.
 * [ ] The evaluation cases run as the agent ADR decides and include coherent
   documents that must produce no finding of a kind.
 * [ ] Reviewing unchanged text again makes no model call, and a test proves
-  it with the fake provider.
+  it with the scripted provider.
 * [ ] No document or finding text appears in a log line or error response,
   and a test with a synthetic marker proves it.
 * [ ] `tools/check` exits 0 without provider credentials or network access to
@@ -106,5 +115,5 @@ agent ADR, amend it in the same pull request.
 
 ## Prerequisites
 
-* [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md)
+* [Keep the pair writer's conversations in the service](./0012-first-pair-writing-agent.md)
 * [Measure the background agents with the evaluation harness](./0048-background-agent-evals.md)

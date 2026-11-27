@@ -2,7 +2,7 @@
 title: Track open threads and keep a reverse outline
 description: Maintain a list of open threads and a reverse outline of the writer's scenes in the background, and show them in the Reference tab with full-width expand.
 author: Tim Park
-ms.date: 2026-11-25
+ms.date: 2026-11-27
 ms.topic: reference
 subsystems:
   - service
@@ -37,6 +37,9 @@ incremental updates, and corrections.
   full-width view in the center region), linked to their passages, keyboard
   operable and accessible, and let the writer edit an entry or mark a
   thread as `Intentionally open`.
+* Add the active book's reverse outline and open threads to the `Chat`
+  tab's default context, its context chip, and the `What it read` sources,
+  as [ADR 0012](../adrs/0012-pair-writing-experience.md) decides.
 * Tune the reverse outline and open threads prompts on backlog 48's cases,
   as backlog 35 tunes its agents, and amend
   [ADR 0010](../adrs/0010-pair-writing-models.md) with the chosen prompts.
@@ -48,6 +51,8 @@ incremental updates, and corrections.
   and the open threads include each planted setup without a payoff.
 * [ ] A thread the writer marks as intentionally open stays closed after
   later updates.
+* [ ] A chat message about one chapter carries the active book's reverse
+  outline and open threads, and `What it read` lists them.
 * [ ] No document text appears in a log line or error response.
 * [ ] `tools/check` exits 0.
 

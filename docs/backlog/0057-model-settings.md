@@ -2,7 +2,7 @@
 title: Choose the model for each mode in settings
 description: Let the writer choose, from the models Ollama has pulled, the model behind conversation and later background review, switched at run time without a code change or restart.
 author: Tim Park
-ms.date: 2026-11-25
+ms.date: 2026-11-27
 ms.topic: reference
 subsystems:
   - service
@@ -23,11 +23,10 @@ smaller tiers for smaller machines, and expects new open-weight releases
 about every six months. The
 [agent architecture ADR](./0010-agent-architecture-adr.md) decides how the
 service is configured with a model per mode, and
-[backlog 12](./0012-first-pair-writing-agent.md) reads the model from
-settings at start. [Backlog 34](./0034-assistant-pane-agent.md) connects
-the assistant pane. Background review arrives with
-[backlog 35](./0035-service-background-review.md), which adds its mode to
-these settings. Comparing models side by side on the writer's own work
+[backlog 61](./0061-local-model-chat.md) reads the conversation model from
+settings at start and answers in the `Chat` tab. Background review arrives
+with [backlog 35](./0035-service-background-review.md), which adds its mode
+to these settings. Comparing models side by side on the writer's own work
 follows in [backlog 55](./0055-compare-models-in-use.md).
 
 ## Scope
@@ -57,4 +56,5 @@ follows in [backlog 55](./0055-compare-models-in-use.md).
 
 ## Prerequisites
 
-* [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)
+* [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)
+* [Answer in the Chat tab from the local model](./0061-local-model-chat.md)
