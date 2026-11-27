@@ -6,8 +6,8 @@ export interface Message {
   text: string;
 }
 
-// What answers the writer in the assistant pane. Backlog 12's pair-writing
-// agent replaces the stub with calls to the service behind this interface.
+// What answers the writer in the assistant pane. Backlog 60 replaces the stub
+// with calls to the service's scripted pair writer behind this interface.
 export interface Assistant {
   reply(conversation: readonly Message[]): Promise<string>;
 }

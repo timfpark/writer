@@ -2,7 +2,7 @@
 title: Record the cloud model fallback ADR
 description: After writers have used the local pair writer, decide whether and where Writer falls back to a cloud model, and how writers consent before any text leaves their machine.
 author: Tim Park
-ms.date: 2026-11-22
+ms.date: 2026-11-27
 ms.topic: reference
 subsystems:
   - service
@@ -21,15 +21,15 @@ machine when I decide the gain is worth it.
 The [model ADR](../adrs/0010-pair-writing-models.md) chooses local models served
 by Ollama and records any mode or kind of finding where none is good enough.
 Writer ships its first pair writer on those local models alone, through
-[backlog 34](./0034-assistant-pane-agent.md) and
+[backlog 61](./0061-local-model-chat.md) and
 [backlog 36](./0036-background-findings-view.md). This decision waits until
 writers have used it, so the case for a cloud model rests on the gaps they
 felt rather than on gaps assumed in advance.
 [Backlog 43](./0043-cloud-model-evals.md) has by then measured inexpensive and
 frontier cloud models on the same cases, with their price per task.
 
-A cloud fallback changes the promise the
-[experience ADR](./0038-pair-writing-experience-adr.md) makes that text never
+A cloud fallback changes the promise
+[ADR 0012](../adrs/0012-pair-writing-experience.md) makes that text never
 leaves the writer's machine, and it adds credentials, cost per call, and a
 network dependency to the service the
 [agent ADR](./0010-agent-architecture-adr.md) builds.
@@ -75,5 +75,5 @@ network dependency to the service the
 ## Prerequisites
 
 * [Measure cloud models for pair writing](./0043-cloud-model-evals.md)
-* [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)
+* [Answer in the Chat tab from the local model](./0061-local-model-chat.md)
 * [Show background findings in the webapp](./0036-background-findings-view.md)

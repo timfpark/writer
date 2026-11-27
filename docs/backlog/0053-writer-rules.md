@@ -2,7 +2,7 @@
 title: Check the writer's own rules
 description: Let writers state their own style rules, and have background review flag text that breaks them.
 author: Tim Park
-ms.date: 2026-11-25
+ms.date: 2026-11-27
 ms.topic: reference
 subsystems:
   - service
@@ -40,6 +40,10 @@ models follow them. Background review from
   rules.
 * Check text against the rules on the ADR's trigger, and raise findings that
   name the rule and the passage.
+* Add the writer's rules to what each `Chat` turn reads, the reading shown
+  above the composer, and the `What it read` sources, as
+  [ADR 0012](../adrs/0012-pair-writing-experience.md#what-the-agent-reads)
+  decides.
 * Tune the rules prompt on backlog 48's cases, as backlog 35 tunes its
   agents, and amend [ADR 0010](../adrs/0010-pair-writing-models.md) with the
   chosen prompt. Add the prompt and cases, and extend the fake provider.
@@ -49,6 +53,8 @@ models follow them. Background review from
 * [ ] A rule added in the webapp produces a finding on a synthetic passage
   that breaks it, and none on one that keeps it.
 * [ ] Removing the rule stops its findings.
+* [ ] A chat message carries the writer's rules, and `What it read` lists
+  them.
 * [ ] No rule or document text appears in a log line or error response.
 * [ ] `tools/check` exits 0.
 

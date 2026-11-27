@@ -2,7 +2,7 @@
 title: Keep story notes and check continuity
 description: Maintain story notes and a timeline from the writer's documents in the background, let the writer read and correct them, and flag contradictions against them.
 author: Tim Park
-ms.date: 2026-11-25
+ms.date: 2026-11-27
 ms.topic: reference
 subsystems:
   - service
@@ -42,12 +42,18 @@ stored.
 * Store story notes and the timeline as the agent and conversations ADRs
   decide, and expose them through the API under
   [ADR 0004](../adrs/0004-api-conventions.md).
-* Show story notes and the timeline in the Assistant pane's `Reference` tab
-  (scoped to the active book subtree, with an `Expand` action for full-width
-  tables in the center region), keyboard operable and accessible, and let
-  the writer edit (`Save` -> `Edited by you`), `Revert to extracted`, or
-  delete an entry so later extractions keep the correction and immediately
-  re-evaluate continuity findings.
+* Add the Assistant pane's `Reference` tab and show story notes and the
+  timeline in it (scoped to the active book subtree, with an `Expand` action
+  for full-width tables in the center region), keyboard operable and
+  accessible, and let the writer edit (`Save` -> `Edited by you`), `Revert
+  to extracted`, or delete an entry so later extractions keep the
+  correction and immediately re-evaluate continuity findings.
+* Add the active book's story notes and timeline to what each `Chat` turn
+  reads, the reading shown above the composer, and the `What it read`
+  sources, as
+  [ADR 0012](../adrs/0012-pair-writing-experience.md#what-the-agent-reads)
+  decides, so a conversation knows other chapters' facts without rereading
+  them.
 * Check new and changed text against story notes and the timeline, and raise
   continuity findings that cite both passages, through backlog 36's view.
 * Tune the extraction, timeline, and continuity prompts on the cases from
@@ -61,6 +67,8 @@ stored.
   expected entries, each linked to its passages.
 * [ ] A contradiction planted in a new chapter is flagged with both passages.
 * [ ] A writer's correction to an entry survives later extractions.
+* [ ] A chat message about one chapter carries the active book's story notes
+  and timeline, and `What it read` lists them.
 * [ ] No document text appears in a log line or error response.
 * [ ] `tools/check` exits 0.
 

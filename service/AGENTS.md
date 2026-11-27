@@ -28,8 +28,8 @@ start with [README.md](./README.md).
   `writer-api` uses utoipa. Lower crates expose none of them.
 * Add a crate under `crates/` only with the behavior that needs it, named as
   its folder, inheriting `[workspace.package]` and `[lints] workspace = true`.
-* `service/prompts/` (planned) arrives with backlog 12, the first
-  pair-writing agent story; do not create it empty. Evaluation cases live in
+* `service/prompts/` (planned) arrives with backlog 61, the first story
+  that answers from a model; do not create it empty. Evaluation cases live in
   the top-level [evals/](../evals/) subsystem, not in `service/`.
 
 ## Operational rules
@@ -157,6 +157,12 @@ Consult these when changing architecture, dependencies, or conventions:
   first-wave background agents, their triggers, work sharing and chaining,
   living-artifact provenance, structural quietness gates, global pause, and
   OS power-state battery policy
+* [ADR 0012](../docs/adrs/0012-pair-writing-experience.md): advice-only
+  pair-writing journeys, chat threads that record what each reply read, the
+  about 19,000-word reading limit, a review cancelled only when its text
+  changes and stopped while a reply streams, findings kept by exact quoted
+  text, audit metadata, setup and failure states, and first-token, memory,
+  battery, and typing targets
 
 ## Commands
 

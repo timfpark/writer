@@ -2,7 +2,7 @@
 title: "ADR 0011: Background agents and their user experience"
 description: Picks the fifteen fiction-first background agents that ship in Wave 1, defers anachronisms and the five nonfiction agents, fixes each shipping agent's shape, scope, trigger, surface, interruption, ranking, living-artifact trust model, work sharing, quietness gates, pause control, and battery policy, and records what a throwaway prototype changed
 author: Tim Park
-ms.date: 2026-11-25
+ms.date: 2026-11-27
 ms.topic: reference
 status: Accepted
 subsystems:
@@ -22,7 +22,10 @@ estimated_reading_time: 16
 
 ## Status
 
-Accepted on 2026-11-25.
+Accepted on 2026-11-25; amended on 2026-11-27 by
+[ADR 0012](./0012-pair-writing-experience.md#pause-reviews-keep-running-while-the-writer-types-elsewhere),
+which lets a pause review finish while the writer types outside the text
+under review.
 
 This record settles the background agent selection, user experience, work
 sharing, quietness rules, pause control, and battery policy for the pair
@@ -132,7 +135,7 @@ ignored `.local/prototype/`), styled with
 containing both a synthetic novel (*The Salt Lantern*, three chapters) and a
 synthetic technical book (*Designing Local-First Systems*, two chapters).
 Its conversation module is separated cleanly so
-[backlog 38](../backlog/0038-pair-writing-experience-adr.md) can extend the
+[ADR 0012](./0012-pair-writing-experience.md) could extend the
 same prototype with conversation journeys instead of starting another.
 
 ## Decision drivers
@@ -241,8 +244,10 @@ the delivery stories build them in order.
 * Short typing pause: begins only after typing stops for a quiet window
   (about 2.5 to 3 seconds on AC power, stretched to 10 to 15 seconds on
   battery) and only for paragraphs or scenes whose content hash changed
-  since the last review. Any new keystroke immediately cancels an in-flight
-  pause review before its decorations touch the editor.
+  since the last review. A keystroke cancels an in-flight pause review only
+  when it changes the text under review; any other review finishes and holds
+  its decorations until the next pause, so none touch the editor while the
+  writer types, as ADR 0012 amended.
 * Chapter settled: fires once a document meets the chapter minimum length
   and editing stops at a natural boundary: navigating away to another
   document, remaining idle for 5 minutes after substantive edits on AC, or
@@ -308,8 +313,8 @@ The Assistant pane holds three tabs:
   reference artifact full-width in the center region for wide tables and
   outlines, with a `Back to document` button and `Escape` shortcut
   returning directly to the open document.
-* Chat: holds on-request conversation with the pair writer, extended in
-  [backlog 38](../backlog/0038-pair-writing-experience-adr.md). Chat
+* Chat: holds on-request conversation with the pair writer, decided in
+  [ADR 0012](./0012-pair-writing-experience.md). Chat
   accepts finding handoffs and stays available even while background agents
   are paused or auto-paused on low battery.
 
@@ -519,24 +524,27 @@ incorporated into this ADR:
   and contrast-tested token pairs (`--color-page` text on `--color-accent`).
 
 The prototype's `chat.js` and `workspace.js` modules stay in place outside
-the repository so backlog 38 can extend them with the conversation journeys
-rather than starting another prototype.
+the repository, where
+[ADR 0012](./0012-pair-writing-experience.md#what-the-prototype-showed)
+extended them with the conversation journeys rather than starting another
+prototype.
 
 ## Requirements on downstream ADRs and backlog
 
-* [Pair-writing experience ADR](../backlog/0038-pair-writing-experience-adr.md)
-  (backlog 38): design end-to-end journeys around the 15 shipping agents,
-  the three-tab Assistant pane (`Findings`, `Reference`, `Chat`), always-on
-  subtle underlines with density caps, the collapsed-pane badge, `Discuss
-  in Chat` and `Answer in Chat` handoffs, recursive Session recap at any depth,
-  global Pause and low-battery override, and extend `.local/prototype/`
-  rather than building a new prototype.
+* [ADR 0012](./0012-pair-writing-experience.md) (settled): designs
+  end-to-end journeys around the 15 shipping agents, the three-tab
+  Assistant pane (`Findings`, `Reference`, `Chat`), always-on subtle
+  underlines with density caps, the collapsed-pane badge, `Discuss in
+  Chat` and `Answer in Chat` handoffs, recursive Session recap at any
+  depth, global Pause and low-battery override, extending
+  `.local/prototype/` rather than building a new prototype.
 * [Pair-writing agent architecture ADR](../backlog/0010-agent-architecture-adr.md)
   (backlog 10): support incremental per-chapter extraction, chained agent
   execution (`Story notes` + `Timeline` feeding `Continuity check` and
   `Character voice`; `Reverse outline` feeding `Scene purpose and pacing`
-  and `Session recap`), zero-cost structural quietness gates, immediate
-  cancellation on new keystrokes or Pause, OS-level power and battery state
+  and `Session recap`), zero-cost structural quietness gates, cancellation
+  when a keystroke changes the text under review (as ADR 0012 amended) or on
+  Pause, OS-level power and battery state
   reporting from the local service, finding density caps, and passage
   anchors that survive edits. Roll up prepared file recaps through every
   ancestor directory to the workspace root without rereading manuscripts
