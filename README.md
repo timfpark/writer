@@ -90,6 +90,13 @@ deliver the workspace, followed by the pair-writing agent.
 * The [backlog](./docs/backlog/README.md) orders planned work.
 * [tools/check](./tools/check) is the validation gate. Run it before every
   commit, as described under [Development setup](#development-setup).
+* [tools/create-worktree](./tools/create-worktree) and
+  [tools/delete-worktree](./tools/delete-worktree) create and remove sibling
+  Git worktrees for branch work, deleting a worktree and its local branch once
+  merged into `origin/HEAD` (including squash and rebase merges).
+* [tools/implement-story](./tools/implement-story) drives a backlog story in a
+  new sibling worktree through implementation, review, feedback assessment,
+  merging `origin/main`, and pushing the branch with GitHub Copilot CLI.
 
 ## Development setup
 

@@ -34,11 +34,14 @@ Writer is a local-first writing workspace and AI pair writer (see
   ([evals/](./evals/)). Commit evaluation run summaries, never raw model
   output, which stays in `.local/evals/raw/`.
 * Target [tools/check](./tools/check), [tools/check_docs.py](./tools/check_docs.py),
-  and `tools/tests/` directly when inspecting repository tooling; avoid broad
-  globs under `tools/` because `tools/node_modules/` holds installed lint
-  packages. Skip `service/target/`, which holds Cargo build output, and
-  `webapp/node_modules/`, `webapp/dist/`, and `webapp/test-results/`, which
-  hold installed packages, build output, and browser test traces.
+  [tools/create-worktree](./tools/create-worktree),
+  [tools/delete-worktree](./tools/delete-worktree),
+  [tools/implement-story](./tools/implement-story), and `tools/tests/` directly
+  when inspecting repository tooling; avoid broad globs under `tools/` because
+  `tools/node_modules/` holds installed lint packages. Skip `service/target/`,
+  which holds Cargo build output, and `webapp/node_modules/`, `webapp/dist/`,
+  and `webapp/test-results/`, which hold installed packages, build output, and
+  browser test traces.
 * Treat [.devcontainer/](./.devcontainer/) as the canonical source of pinned
   toolchain versions and global registry proxies, and keep local scratch or
   manuscripts inside ignored `.local/`.
