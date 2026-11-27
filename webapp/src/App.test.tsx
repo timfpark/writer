@@ -172,8 +172,18 @@ function toggle(name: "Navigator" | "Assistant") {
 }
 
 beforeEach(() => {
-  // The router resets scroll on navigation, which jsdom does not implement.
+  // The router resets scroll on navigation and ProseMirror measures Ranges on
+  // selectionchange, neither of which jsdom implements.
   vi.stubGlobal("scrollTo", () => {});
+  if (
+    typeof Range !== "undefined" &&
+    typeof Range.prototype.getClientRects !== "function"
+  ) {
+    Range.prototype.getClientRects = () =>
+      document.createElement("div").getClientRects();
+    Range.prototype.getBoundingClientRect = () =>
+      document.createElement("div").getBoundingClientRect();
+  }
 });
 
 afterEach(() => {
