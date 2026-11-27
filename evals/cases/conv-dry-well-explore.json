@@ -1,0 +1,10 @@
+{
+  "id": "conv-dry-well-explore",
+  "task": "conversation",
+  "split": "tune",
+  "length": "scene",
+  "documents": [
+    "dry-well"
+  ],
+  "request": "explore"
+}

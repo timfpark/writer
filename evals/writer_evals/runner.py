@@ -43,12 +43,43 @@ class Config:
     tasks: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
     def task(self, task: str) -> Dict[str, Any]:
-        """The think setting and options for one task, defaults merged under overrides."""
+        """The prompt, think setting, and options for one task, defaults merged under overrides."""
         settings = copy.deepcopy(self.tasks.get(task, {}))
+        settings.setdefault("prompt", task)
         options = dict(self.options)
         options.update(settings.get("options", {}))
         settings["options"] = options
         return settings
+
+    def with_prompts(self, overrides: Dict[str, str]) -> "Config":
+        """Return a copy of this configuration with prompt overrides applied per task."""
+        if not overrides:
+            return self
+        tasks = copy.deepcopy(self.tasks)
+        for task_name, prompt_name in overrides.items():
+            tasks.setdefault(task_name, {})["prompt"] = prompt_name
+        return Config(
+            name=self.name, runtime=self.runtime, model=self.model,
+            hypothesis=self.hypothesis, options=copy.deepcopy(self.options), tasks=tasks,
+        )
+
+
+def prompt_for(config: Config, task: str, templates: Dict[str, Template]) -> Template:
+    """Resolve the prompt template a configuration names for one task."""
+    name = config.task(task).get("prompt") or task
+    if not isinstance(name, str) or name not in templates:
+        available = ", ".join(sorted(templates))
+        raise ConfigError(
+            f"config '{config.name}' names unknown {task} prompt {name!r}; available: {available}"
+        )
+    return templates[name]
+
+
+def validate_config_prompts(configs: Dict[str, Config], templates: Dict[str, Template]) -> None:
+    """Verify every configuration names existing prompt templates for every task."""
+    for config in configs.values():
+        for task in ("conversation", "review"):
+            prompt_for(config, task, templates)
 
 
 def _merge(base: Dict[str, Any], over: Dict[str, Any]) -> Dict[str, Any]:
@@ -158,24 +189,34 @@ def _header(env: Environment, kind: str, slug: str) -> Dict[str, Any]:
     }
 
 
-def _messages(env: Environment, case: Case) -> List[dict]:
-    return env.templates[case.task].render(case_values(case))
+def _task_summary(config: Config, task: str, templates: Dict[str, Template]) -> Dict[str, Any]:
+    template = prompt_for(config, task, templates)
+    settings = config.task(task)
+    settings["prompt"] = template.name
+    settings["promptDigest"] = template.digest
+    return settings
+
+
+def _messages(env: Environment, config: Config, case: Case) -> List[dict]:
+    return prompt_for(config, case.task, env.templates).render(case_values(case))
 
 
 def generate(env: Environment, config: Config, case: Case, info: Any,
              run_id: str) -> Dict[str, Any]:
     """Run one case and return its result item; raw output goes to the raw folder."""
     settings = config.task(case.task)
+    template = prompt_for(config, case.task, env.templates)
     options = dict(settings["options"])
     options["num_ctx"] = context_for(case, int(options.get("num_predict", 2048)), info.context_length)
     think = resolve_think(settings.get("think"), info)
     fmt = REVIEW_SCHEMA if case.task == "review" and settings.get("structured", True) else None
     item: Dict[str, Any] = {"case": case.id, "task": case.task, "split": case.split,
                             "length": case.length, "words": case.words,
+                            "prompt": template.name, "promptDigest": template.digest,
                             "numCtx": options["num_ctx"], "think": think}
     with env.sampler() as sampler:
         try:
-            gen = env.runtime.chat(config.model, _messages(env, case), options=options,
+            gen = env.runtime.chat(config.model, _messages(env, config, case), options=options,
                                    think=think, fmt=fmt)
         except Exception as err:  # a failed case is recorded, and the run continues
             item["error"] = str(err)[:300]
@@ -205,18 +246,30 @@ def generate(env: Environment, config: Config, case: Case, info: Any,
     item["scores"] = score_review(case, gen.text) if case.task == "review" else score_conversation(case, gen.text)
     raw = env.raw_dir / run_id / f"{case.id}.json"
     raw.parent.mkdir(parents=True, exist_ok=True)
-    raw.write_text(json.dumps({"case": case.id, "model": config.model, "text": gen.text,
-                               "thinking": gen.thinking}, indent=2) + "\n", encoding="utf-8")
+    raw.write_text(json.dumps({"case": case.id, "model": config.model,
+                               "prompt": template.name, "promptDigest": template.digest,
+                               "text": gen.text, "thinking": gen.thinking}, indent=2) + "\n", encoding="utf-8")
     env.log(f"  {case.id}: ttft {item['ttftSeconds']}s, {item['tokensPerSecond']} tok/s, "
-            f"total {item['totalSeconds']}s")
+            f"{item['outputTokens']} tok, total {item['totalSeconds']}s")
     return item
+
+
+def _run_slug(config: Config, cases: List[Case]) -> str:
+    tasks = sorted({c.task for c in cases})
+    if len(tasks) == 1:
+        prompt = config.task(tasks[0]).get("prompt") or tasks[0]
+        if prompt != tasks[0] and prompt not in config.name:
+            return f"{config.name}-{prompt}"
+    return config.name
 
 
 def run_config(env: Environment, config: Config, cases: List[Case]) -> Path:
     info = env.runtime.info(config.model)
-    result = _header(env, "run", config.name)
+    conv_summary = _task_summary(config, "conversation", env.templates)
+    review_summary = _task_summary(config, "review", env.templates)
+    result = _header(env, "run", _run_slug(config, cases))
     result["config"] = {"name": config.name, "model": asdict(info), "hypothesis": config.hypothesis,
-                        "conversation": config.task("conversation"), "review": config.task("review")}
+                        "conversation": conv_summary, "review": review_summary}
     env.log(f"{config.name}: unloading models, then loading {config.model}")
     env.runtime.unload_all()
     first_ctx = min(context_for(c, int(config.task(c.task)["options"].get("num_predict", 2048)),
@@ -239,9 +292,15 @@ def run_pair(env: Environment, chat: Config, reviewer: Config, chat_cases: List[
              review_case: Case) -> Path:
     """Keep a conversation model and a reviewer loaded together and measure contention."""
     chat_info, review_info = env.runtime.info(chat.model), env.runtime.info(reviewer.model)
+    chat_prompt = prompt_for(chat, "conversation", env.templates)
+    review_prompt = prompt_for(reviewer, "review", env.templates)
     result = _header(env, "pair", f"{chat.name}+{reviewer.name}")
-    result["config"] = {"chat": {"name": chat.name, "model": asdict(chat_info)},
-                        "reviewer": {"name": reviewer.name, "model": asdict(review_info)}}
+    result["config"] = {
+        "chat": {"name": chat.name, "model": asdict(chat_info),
+                 "prompt": chat_prompt.name, "promptDigest": chat_prompt.digest},
+        "reviewer": {"name": reviewer.name, "model": asdict(review_info),
+                     "prompt": review_prompt.name, "promptDigest": review_prompt.digest},
+    }
     env.runtime.unload_all()
     review_ctx = context_for(review_case, int(reviewer.task("review")["options"].get("num_predict", 2048)),
                              review_info.context_length)
@@ -274,8 +333,10 @@ def run_pair(env: Environment, chat: Config, reviewer: Config, chat_cases: List[
 def run_sustained(env: Environment, config: Config, case: Case, minutes: float) -> Path:
     """Review one case repeatedly for a period, sampling power and thermal state throughout."""
     info = env.runtime.info(config.model)
+    template = prompt_for(config, case.task, env.templates)
     result = _header(env, "sustained", config.name)
-    result["config"] = {"name": config.name, "model": asdict(info)}
+    result["config"] = {"name": config.name, "model": asdict(info),
+                        "prompt": template.name, "promptDigest": template.digest}
     result["onBattery"] = monitor.on_battery()
     result["batteryStart"] = monitor.battery_percent()
     result["chargeStart"] = monitor.battery_charge()

@@ -1,0 +1,11 @@
+{
+  "id": "conv-grafting-ending",
+  "task": "conversation",
+  "split": "tune",
+  "length": "scene",
+  "documents": [
+    "grafting"
+  ],
+  "request": "Does the ending earn its quietness, or does it feel too abrupt?",
+  "note": "Coherent, restrained scene; tests restraint and respect for the writer's voice."
+}

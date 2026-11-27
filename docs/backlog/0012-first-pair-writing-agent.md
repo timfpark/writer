@@ -49,7 +49,8 @@ the agent ADR, amend it in the same pull request.
 * Add the agent crate below `writer-api`, following the agent ADR and ADR
   0002's dependency direction.
 * Create `service/prompts/` with the conversation prompt, starting from the
-  one [backlog 46](./0046-prompt-tuning-evals.md) chose.
+  one [ADR 0010](../adrs/0010-pair-writing-models.md#conversation-prompt)
+  chose (`conversation-grounded`).
 * Add synthetic evaluation cases to `evals/` for at least three requests
   about a passage: ideas to improve it, ideas to develop it further, and
   other ideas to explore. Run them against the conversation endpoint the way
@@ -90,4 +91,3 @@ the agent ADR, amend it in the same pull request.
 
 * [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)
 * [Record the agent conversations ADR](./0037-agent-conversations-adr.md)
-* [Tune the conversation prompt with the evaluation harness](./0046-prompt-tuning-evals.md)

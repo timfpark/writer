@@ -1,0 +1,12 @@
+{
+  "id": "conv-watchmaker-selection",
+  "task": "conversation",
+  "split": "tune",
+  "length": "scene",
+  "documents": [
+    "watchmaker"
+  ],
+  "request": "improve",
+  "selection": "\"I thought it was just dry.\" He shifted his weight from one shoe to the other. \"Solange, I came because I've felt guilty ever since the funeral and I want us to reconcile. I know I handled your father's estate poorly, and I have carried a lot of regret about shutting you out of the workshop decisions when you were the one who actually loved the trade.\"\n\nSolange set the watch down on the green mat. \"You stayed away for six years because you couldn't face what you did to my father's shop,\" she said. \"You sold his lathe and his spare movements to a dealer in Lyon without telling me because you wanted the money quickly, and now you're angry with yourself, so you brought his watch here hoping a repair bill will settle everything.\"",
+  "note": "Deliberately on-the-nose reconciliation exchange; tests focused selection critique without rewriting the whole scene."
+}

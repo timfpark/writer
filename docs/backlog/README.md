@@ -36,14 +36,13 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 
 | #  | Work item                                                                                     | Subsystems                       | Outcome                                                                                      | Prerequisite       |
 |----|-----------------------------------------------------------------------------------------------|----------------------------------|----------------------------------------------------------------------------------------------|--------------------|
-| 46 | [Tune the conversation prompt with the evaluation harness](./0046-prompt-tuning-evals.md)     | `evals`                          | Swept variants pick the conversation prompt, and the harness can sweep any prompt.           | None               |
 | 56 | [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)             | `evals`                          | Local models are measured on checking continuity against extracted story notes.              | None               |
 | 44 | [Record the cloud model proxy ADR](./0044-cloud-model-proxy-adr.md)                           | `repository`, `evals`, `service` | An accepted ADR picks a local proxy to Azure AI Foundry with keyless auth and spending caps. | None               |
+| 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)               | `service`, `webapp`              | An accepted ADR fixes the writer's experience of the agent, tested end to end.               | None               |
 | 45 | [Run the cloud model proxy with a first set of Foundry models](./0045-cloud-model-proxy.md)   | `repository`, `evals`            | The proxy runs with cheap and frontier Foundry models, and the harness calls it.             | 44                 |
-| 38 | [Record the pair-writing experience ADR](./0038-pair-writing-experience-adr.md)               | `service`, `webapp`              | An accepted ADR fixes the writer's experience of the agent, tested end to end.               | 46                 |
 | 10 | [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)            | `service`, `webapp`              | An accepted ADR fixes where the agent runs, how agents chain, and how it is built.           | 38, 56             |
 | 37 | [Record the agent conversations ADR](./0037-agent-conversations-adr.md)                       | `service`, `webapp`              | An accepted ADR fixes how conversations and living artifacts are stored and audited.         | 10, 38             |
-| 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md)      | `service`                        | The service answers the writer about the open document, backed by prompts and evals.         | 10, 37, 46         |
+| 12 | [Answer the writer in conversation from the service](./0012-first-pair-writing-agent.md)      | `service`                        | The service answers the writer about the open document, backed by prompts and evals.         | 10, 37             |
 | 34 | [Connect the assistant pane to the pair writer](./0034-assistant-pane-agent.md)               | `webapp`                         | The assistant pane streams the pair writer's answers about the open document.                | 12                 |
 | 57 | [Choose the model for each mode in settings](./0057-model-settings.md)                        | `service`, `webapp`              | Writers switch the model behind each mode at run time from the models Ollama has pulled.     | 34                 |
 | 48 | [Measure the background agents with the evaluation harness](./0048-background-agent-evals.md) | `evals`                          | Each first-wave background agent is measured on local models with a first prompt.            | 56                 |
@@ -114,8 +113,13 @@ assistant pane (`Findings`, `Reference` with full-width Expand, and
 `Chat`), recursive session recaps at any tree depth, global Pause, and OS power-state
 battery policy, deferring anachronisms and the nonfiction agents.
 
-Next, items 46, 56, and 44 run in parallel. Item 46 tunes the conversation
-prompt and teaches the harness to sweep prompts. Item 56 tests whether
+Item 46 added per-task prompt selection and prompt sweeps to `evals/`,
+expanded the conversation tuning and holdout cases, removed offline blind
+sheets in favor of LLM judging during offline sweeps, and amended
+[ADR 0010](../adrs/0010-pair-writing-models.md) with the chosen
+`conversation-grounded` prompt while keeping `gemma4:31b-mlx`.
+
+Next, items 56, 44, and 38 run in parallel. Item 56 tests whether
 checking continuity against story notes, extracted chapter by chapter,
 closes the disconnect gap, because the answer shapes the agent's
 architecture. Cloud models are hosted in Azure AI Foundry and reached only

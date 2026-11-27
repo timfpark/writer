@@ -4,12 +4,14 @@
       "seed": 39
     },
     "conversation": {
+      "prompt": "conversation",
       "think": "lowest",
       "options": {
         "num_predict": 2000
       }
     },
     "review": {
+      "prompt": "review",
       "think": "lowest",
       "options": {
         "num_predict": 4000
@@ -178,6 +180,42 @@
       "runtime": "ollama",
       "model": "gpt-oss:120b",
       "hypothesis": "Control: large model tuned for tools rather than prose"
+    },
+    {
+      "name": "gemma4-31b-mlx-grounded",
+      "runtime": "ollama",
+      "model": "gemma4:31b-mlx",
+      "hypothesis": "Chosen conversation prompt on ADR 0010's 2-second model: strict verbatim quoting, italics for suggestions, and voice restraint",
+      "conversation": {
+        "prompt": "conversation-grounded"
+      }
+    },
+    {
+      "name": "muse-glimmer-30b-mlx-sharp",
+      "runtime": "ollama",
+      "model": "muse-glimmer:30b-mlx",
+      "hypothesis": "Finalist on the shared reviewer model: direct diagnosis with explicit anti-redundancy checks",
+      "conversation": {
+        "prompt": "conversation-sharp"
+      }
+    },
+    {
+      "name": "qwen3.8-27b-mlx-grounded",
+      "runtime": "ollama",
+      "model": "qwen3.8:27b-mlx",
+      "hypothesis": "Finalist on Qwen 3.8 MLX: exact quoting and voice preservation",
+      "conversation": {
+        "prompt": "conversation-grounded"
+      }
+    },
+    {
+      "name": "qwen3.8-27b-mlx-concise",
+      "runtime": "ollama",
+      "model": "qwen3.8:27b-mlx",
+      "hypothesis": "Finalist on Qwen 3.8 MLX: tight length and format limits cut thinking time and reply tokens nearly in half",
+      "conversation": {
+        "prompt": "conversation-concise"
+      }
     },
     {
       "name": "judge-qwen3.8-flash-next",

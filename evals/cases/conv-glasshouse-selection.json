@@ -1,0 +1,12 @@
+{
+  "id": "conv-glasshouse-selection",
+  "task": "conversation",
+  "split": "holdout",
+  "length": "scene",
+  "documents": [
+    "glasshouse"
+  ],
+  "request": "This paragraph feels like an info-dump. How can I fold these facts into the scene without slowing it down?",
+  "selection": "Dr. Beatriz Ramos was born in 1948 in Valparaíso, earned her doctorate in alpine ecology at Zurich in 1974, spent twenty-two years teaching botany at the university in Coimbra, and published four major monographs on high-altitude sedges before retiring to this estate in 2006. She had been famous for her 1989 survey of the Rio Claro basin, a steep glacial valley forty miles east of here that the national power authority had flooded in 1996 to build the San Ignacio hydroelectric dam, submerging every documented colony of *Carex clarina* under ninety feet of cold reservoir water. Since 1996, no botanist had recorded a live specimen anywhere in the range, and the institute assumed the species survived only as pressed sheets in the university vault.",
+  "note": "Holdout selection written without inspecting any prompt variant output."
+}

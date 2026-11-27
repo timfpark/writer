@@ -1,0 +1,11 @@
+{
+  "id": "conv-night-train-dialogue",
+  "task": "conversation",
+  "split": "holdout",
+  "length": "scene",
+  "documents": [
+    "night-train"
+  ],
+  "request": "Does the dialogue carry enough unspoken tension, or am I spelling too much out?",
+  "note": "Holdout scene written without inspecting any prompt variant output."
+}

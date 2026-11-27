@@ -44,6 +44,7 @@ export default defineConfig({
       name: "responsiveness",
       use: { ...devices["Desktop Chrome"] },
       testMatch: timed,
+      fullyParallel: false,
       dependencies: ["chromium", "webkit", "ipad-portrait", "ipad-landscape"],
     },
   ],

@@ -32,8 +32,34 @@ def _table(header: List[str], rows: List[List[str]]) -> str:
                       *(line(r) for r in rows)])
 
 
-def summarize_run(result: Dict) -> Dict[str, object]:
-    items = [i for i in result.get("items", []) if "error" not in i]
+def _item_prompt(result: Dict, item: Dict) -> str:
+    if item.get("prompt"):
+        return str(item["prompt"])
+    task = item.get("task", "")
+    return str(result.get("config", {}).get(task, {}).get("prompt") or task)
+
+
+def _item_prompt_digest(result: Dict, item: Dict) -> str:
+    if item.get("promptDigest"):
+        return str(item["promptDigest"])
+    task = item.get("task", "")
+    prompt_name = _item_prompt(result, item)
+    return str(
+        result.get("config", {}).get(task, {}).get("promptDigest")
+        or result.get("prompts", {}).get(prompt_name, "")
+    )
+
+
+def summarize_run(result: Dict, split: Optional[str] = None,
+                  task: Optional[str] = None) -> Optional[Dict[str, object]]:
+    raw_items = [
+        i for i in result.get("items", [])
+        if (split is None or i.get("split") == split)
+        and (task is None or i.get("task") == task)
+    ]
+    if (split is not None or task is not None) and not raw_items:
+        return None
+    items = [i for i in raw_items if "error" not in i]
     conv = [i for i in items if i["task"] == "conversation"]
     review = [i for i in items if i["task"] == "review"]
     scored = [i["scores"] for i in review]
@@ -43,23 +69,29 @@ def summarize_run(result: Dict) -> Dict[str, object]:
     false_alarms = sum(sum(s.get("falseAlarms", {}).values()) for s in valid)
     anchors = sum(s.get("anchors", 0) for s in valid)
     resolved = sum(s.get("anchorsResolved", 0) for s in valid)
+    prompts = sorted({_item_prompt(result, i) for i in raw_items})
+    prompt_digests = sorted({d for d in (_item_prompt_digest(result, i) for i in raw_items) if d})
 
     def by_length(length: str) -> Optional[float]:
         return _median(i.get("totalSeconds") for i in review if i["length"] == length)
 
-    def judged(block: str, task: Optional[str] = None) -> Optional[float]:
+    def judged(block: str, only_task: Optional[str] = None) -> Optional[float]:
         scores = [statistics.mean(i[block][c] for c in CRITERIA) for i in items
-                  if block in i and (task is None or i["task"] == task)]
+                  if block in i and (only_task is None or i["task"] == only_task)]
         return _mean(scores)
 
     model = result["config"]["model"]
     return {
         "config": result["config"]["name"],
+        "prompt": ", ".join(prompts) if prompts else "",
+        "promptDigest": ", ".join(prompt_digests) if prompt_digests else "",
         "quant": model.get("quantization") or model.get("runner") or "",
         "load": result.get("coldLoadSeconds"),
         "runnerGb": max(((i.get("resources") or {}).get("maxRunnerGb") or 0 for i in items), default=None) or None,
         "ttft": _median(i.get("ttftSeconds") for i in conv),
         "tps": _median(i.get("tokensPerSecond") for i in items),
+        "tokensPerReply": _median(i.get("outputTokens") for i in conv),
+        "wordsPerReply": _median((i.get("scores") or {}).get("words") for i in conv),
         "scene": by_length("scene"), "chapter": by_length("chapter"), "manuscript": by_length("manuscript"),
         "valid": f"{len(valid)}/{len(scored)}",
         "anchored": (resolved / anchors) if anchors else None,
@@ -68,9 +100,10 @@ def summarize_run(result: Dict) -> Dict[str, object]:
         "grounded": _mean((i["scores"]["quotesGrounded"] / i["scores"]["quotes"]) for i in conv
                           if i["scores"].get("quotes")),
         "judgeConv": judged("judge", "conversation"), "judgeReview": judged("judge", "review"),
-        "human": judged("human"),
         "watts": _median((i.get("resources") or {}).get("meanWatts") for i in items),
-        "errors": len(result.get("items", [])) - len(items),
+        "errors": len(raw_items) - len(items),
+        "hasReview": bool(review),
+        "cases": len(items),
     }
 
 
@@ -82,29 +115,51 @@ def battery_used_wh(result: Dict) -> Optional[float]:
     return (start["mAh"] - end["mAh"]) * (start["mV"] + end["mV"]) / 2 / 1e6
 
 
-def report(paths: List[Path]) -> str:
+def report(paths: List[Path], split: Optional[str] = None,
+           task: Optional[str] = None) -> str:
     runs, pairs, sustained = [], [], []
     for path in sorted(paths):
         result = json.loads(path.read_text(encoding="utf-8"))
         {"run": runs, "pair": pairs, "sustained": sustained}.get(result.get("kind"), []).append(result)
     sections = []
     if runs:
-        rows = []
-        for result in runs:
-            s = summarize_run(result)
-            rows.append([
-                str(s["config"]), str(s["quant"]), _fmt(s["load"]), _fmt(s["runnerGb"]), _fmt(s["ttft"]),
-                _fmt(s["tps"]), _fmt(s["scene"], 0), _fmt(s["chapter"], 0), _fmt(s["manuscript"], 0),
-                str(s["valid"]), _fmt(s["anchored"] * 100 if s["anchored"] is not None else None, 0),
-                str(s["planted"]), str(s["falseAlarms"]),
-                _fmt(s["grounded"] * 100 if s["grounded"] is not None else None, 0),
-                _fmt(s["judgeConv"]), _fmt(s["judgeReview"]), _fmt(s["human"]), _fmt(s["watts"], 0),
-            ])
-        sections.append(_table(
-            ["Config", "Quant", "Load s", "Peak GB", "TTFT s", "Tok/s", "Scene s", "Chapter s",
-             "Manuscript s", "Valid", "Anchored %", "Planted", "False alarms", "Quotes grounded %",
-             "Judge chat", "Judge review", "People", "Watts"], rows))
-    if pairs:
+        summaries = [s for s in (summarize_run(r, split=split, task=task) for r in runs) if s is not None]
+        if summaries:
+            conv_only = all(not s["hasReview"] for s in summaries)
+            if conv_only:
+                rows = [
+                    [
+                        str(s["config"]), str(s["prompt"]), str(s["promptDigest"]),
+                        str(s["quant"]), str(s["cases"]), _fmt(s["runnerGb"]),
+                        _fmt(s["ttft"]), _fmt(s["tps"]), _fmt(s["tokensPerReply"], 0),
+                        _fmt(s["grounded"] * 100 if s["grounded"] is not None else None, 0),
+                        _fmt(s["judgeConv"]),
+                    ]
+                    for s in summaries
+                ]
+                sections.append(_table(
+                    ["Config", "Prompt", "Digest", "Quant", "Cases", "Peak GB", "TTFT s",
+                     "Tok/s", "Tok/reply", "Quotes grounded %", "Judge chat"], rows))
+            else:
+                rows = [
+                    [
+                        str(s["config"]), str(s["prompt"]), str(s["quant"]),
+                        _fmt(s["load"]), _fmt(s["runnerGb"]), _fmt(s["ttft"]),
+                        _fmt(s["tps"]), _fmt(s["tokensPerReply"], 0),
+                        _fmt(s["scene"], 0), _fmt(s["chapter"], 0), _fmt(s["manuscript"], 0),
+                        str(s["valid"]), _fmt(s["anchored"] * 100 if s["anchored"] is not None else None, 0),
+                        str(s["planted"]), str(s["falseAlarms"]),
+                        _fmt(s["grounded"] * 100 if s["grounded"] is not None else None, 0),
+                        _fmt(s["judgeConv"]), _fmt(s["judgeReview"]), _fmt(s["watts"], 0),
+                    ]
+                    for s in summaries
+                ]
+                sections.append(_table(
+                    ["Config", "Prompt", "Quant", "Load s", "Peak GB", "TTFT s", "Tok/s",
+                     "Tok/reply", "Scene s", "Chapter s", "Manuscript s", "Valid", "Anchored %",
+                     "Planted", "False alarms", "Quotes grounded %", "Judge chat", "Judge review",
+                     "Watts"], rows))
+    if pairs and split is None and task is None:
         rows = []
         for result in pairs:
             idle = [i for i in result["items"] if i.get("phase") == "idle" and "error" not in i]
@@ -120,7 +175,7 @@ def report(paths: List[Path]) -> str:
             ])
         sections.append(_table(["Chat model", "Reviewer", "Both loaded", "Peak GB", "TTFT idle s",
                                 "TTFT during review s", "Tok/s idle", "Tok/s during review", "Reviews"], rows))
-    if sustained:
+    if sustained and split is None and task is None:
         rows = []
         for result in sustained:
             res = result.get("resources") or {}
@@ -136,4 +191,4 @@ def report(paths: List[Path]) -> str:
             ])
         sections.append(_table(["Config", "Minutes", "Reviews", "Mean W", "Max W", "Min CPU speed limit",
                                 "Max thermal warning", "Power", "Battery used %", "Battery used Wh"], rows))
-    return "\n\n".join(sections) + "\n"
+    return ("\n\n".join(sections) + "\n") if sections else ""

@@ -12,7 +12,7 @@ synthetic cases and writes a summary of each run. People start with
 
 | Path                             | Responsibility                                                             |
 |----------------------------------|----------------------------------------------------------------------------|
-| [writer_evals/](./writer_evals/) | Runtimes, case loading, prompts, scoring, runner, judge, sheet, and report |
+| [writer_evals/](./writer_evals/) | Runtimes, case loading, prompts, scoring, runner, judge, and report        |
 | [cases/](./cases/)               | Synthetic case files and the documents they read                           |
 | [prompts/](./prompts/)           | Candidate pair-writing prompts and the judge prompts, as `.txt` templates  |
 | [configs.json](./configs.json)   | Named configurations of runtime, model, think setting, and options         |

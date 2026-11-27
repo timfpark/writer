@@ -1,0 +1,11 @@
+{
+  "id": "conv-glasshouse-develop",
+  "task": "conversation",
+  "split": "holdout",
+  "length": "scene",
+  "documents": [
+    "glasshouse"
+  ],
+  "request": "develop",
+  "note": "Holdout scene written without inspecting any prompt variant output."
+}

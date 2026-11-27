@@ -1,0 +1,11 @@
+{
+  "id": "conv-night-train-improve",
+  "task": "conversation",
+  "split": "holdout",
+  "length": "scene",
+  "documents": [
+    "night-train"
+  ],
+  "request": "improve",
+  "note": "Holdout scene written without inspecting any prompt variant output."
+}
