@@ -1,0 +1,205 @@
+#!/usr/bin/env bash
+# Implement a backlog story with GitHub Copilot CLI in a new sibling worktree,
+# review it, assess the feedback, merge origin/main until current, and push.
+# Exit codes: 0 pushed, 1 workflow or git error, 2 usage or prerequisite error.
+#
+# Bash reads a script as it runs it. The braces and the final exit make it parse
+# the whole file first, so editing this file during a run cannot corrupt the run.
+{
+set -euo pipefail
+
+implement_model=gemini-4-neon
+review_model=claude-opus-5.5
+
+usage() {
+  cat <<USAGE
+Usage: ${0##*/} <story-path>
+
+Implement a backlog story with GitHub Copilot CLI in a new sibling worktree,
+review it, address the review, merge origin/main until current, and push the branch.
+<story-path> is relative to the repository root, or an absolute path inside it.
+
+Exit codes: 0 pushed, 1 workflow or git error, 2 usage or prerequisite error.
+USAGE
+}
+
+if [[ $# -eq 1 && ( $1 == --help || $1 == -h ) ]]; then
+  usage
+  exit 0
+fi
+
+if [[ $# -ne 1 || -z $1 || $1 == -* ]]; then
+  usage >&2
+  exit 2
+fi
+
+fail() {
+  printf 'implement-story: %s\n' "$*" >&2
+  exit 1
+}
+
+fail_usage() {
+  printf 'implement-story: %s\n' "$*" >&2
+  exit 2
+}
+
+step() {
+  printf '\n==> %s\n' "$*"
+}
+
+command -v git >/dev/null 2>&1 || fail_usage 'prerequisite missing: git must be on PATH'
+command -v copilot >/dev/null 2>&1 || fail_usage 'prerequisite missing: GitHub Copilot CLI (copilot) must be on PATH'
+command -v cargo >/dev/null 2>&1 || fail_usage 'prerequisite missing: Cargo (cargo) must be on PATH'
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+repo_root=$(git -C "$script_dir/.." rev-parse --show-toplevel 2>/dev/null) ||
+  fail "not inside a Git repository: $script_dir/.."
+repo_name=$(basename -- "$repo_root")
+
+story=$1
+if [[ $story == /* ]]; then
+  story_dir=$(cd -- "$(dirname -- "$story")" 2>/dev/null && pwd -P) ||
+    fail "story directory does not exist: $story"
+  root_physical=$(cd -- "$repo_root" && pwd -P)
+  [[ $story_dir/ == "$root_physical"/* ]] || fail "story is outside the repository: $story"
+  story="${story_dir#"$root_physical"}/$(basename -- "$story")"
+  story=${story#/}
+fi
+story=${story#./}
+
+story_name=$(basename -- "$story")
+branch=${story_name%.md}
+if [[ -z $branch || $branch == -* ]] || ! git check-ref-format "refs/heads/$branch"; then
+  fail_usage "story name is not a valid branch name: $branch"
+fi
+worktree_path="$(dirname -- "$repo_root")/$repo_name-$branch"
+base_ref=origin/main
+
+step "Fetching origin"
+git -C "$repo_root" fetch origin
+git -C "$repo_root" rev-parse --verify --quiet "$base_ref^{commit}" >/dev/null ||
+  fail "$base_ref does not exist"
+[[ $(git -C "$repo_root" cat-file -t "$base_ref:$story" 2>/dev/null) == blob ]] ||
+  fail "story not found on $base_ref: $story"
+if git -C "$repo_root" show-ref --verify --quiet "refs/heads/$branch"; then
+  fail "branch already exists: $branch"
+fi
+if [[ -e $worktree_path || -L $worktree_path ]]; then
+  fail "destination already exists: $worktree_path"
+fi
+
+step "Creating worktree $worktree_path on branch $branch from $base_ref"
+# Relative links keep the worktree usable if the parent directory is moved or
+# mounted at another absolute path, such as inside a container.
+git -C "$repo_root" -c worktree.useRelativePaths=true \
+  worktree add --no-track -b "$branch" -- "$worktree_path" "$base_ref"
+cd -- "$worktree_path"
+base=$(git rev-parse HEAD)
+
+service_manifest="$worktree_path/service/Cargo.toml"
+feedback_file=$(mktemp "${TMPDIR:-/tmp}/implement-story-$branch.XXXXXX")
+cleanup() {
+  local status=$?
+  if [[ -f $service_manifest ]]; then
+    step "Cleaning Cargo build artifacts"
+    if cargo clean --manifest-path "$service_manifest"; then
+      :
+    else
+      local clean_status=$?
+      printf 'implement-story: final cargo clean failed (exit %s)\n' "$clean_status" >&2
+      [[ $status -ne 0 ]] || status=$clean_status
+    fi
+  fi
+  if [[ $status -eq 0 ]]; then
+    rm -f -- "$feedback_file"
+  else
+    printf 'Stopped in worktree: %s\n' "$worktree_path" >&2
+    [[ ! -s $feedback_file ]] || printf 'Review feedback: %s\n' "$feedback_file" >&2
+  fi
+  exit "$status"
+}
+trap cleanup EXIT
+
+if [[ -f $service_manifest ]]; then
+  step "Cleaning Cargo build artifacts"
+  cargo clean --manifest-path "$service_manifest"
+fi
+
+run_copilot() {
+  local model=$1 prompt=$2
+  shift 2
+  copilot --model "$model" --reasoning-effort high --context long_context \
+    --allow-all "$@" "$prompt"
+}
+
+require_clean() {
+  if [[ -n $(git status --porcelain) ]]; then
+    git status --short >&2
+    fail "$1 left uncommitted changes in $worktree_path"
+  fi
+}
+
+story_context="The branch implements the backlog story $story and deletes that document on \
+completion; read the original with \`git show $base:$story\`."
+autonomy="Do not push, open a pull request, switch branches, or rewrite history. Work \
+autonomously: no one can answer questions during this session."
+interaction="Do not push, open a pull request, switch branches, or rewrite history. Ask the \
+user when requirements are ambiguous or a decision needs their input."
+
+step "Implementing $story with $implement_model"
+printf 'Answer any Copilot questions, then exit the session when implementation is complete.\n'
+run_copilot "$implement_model" "Implement the backlog story at $story on the current branch \
+$branch. Read AGENTS.md and the guide for every subsystem the story affects, and follow them. \
+Complete every acceptance criterion in the story. When the story is implemented, delete $story \
+and its row in docs/backlog/README.md, and update the rest of the backlog as that index \
+describes for finished stories. Run tools/check from the repository root, fix failures, and \
+commit all changes on the current branch with conventional commit messages once it passes. \
+$interaction" -i
+
+if git cat-file -e "HEAD:$story" 2>/dev/null; then
+  fail "implementation did not delete $story"
+fi
+[[ $(git rev-list --count "$base..HEAD") -gt 0 ]] || fail 'implementation created no commits'
+require_clean 'Implementation'
+
+step "Reviewing $branch with $review_model"
+printf 'Answer any Copilot questions, then exit the session when the review is saved.\n'
+run_copilot "$review_model" "Review the changes on the current branch $branch since its merge \
+base with $base_ref (using the code-review skill if available). $story_context $interaction \
+Do not modify repository files, stage, or commit. Save the final review as plain text in \
+$feedback_file, the only file you may modify, and respond with the review." -i
+[[ -s $feedback_file ]] || fail 'code review produced no feedback'
+require_clean 'Code review'
+
+step "Assessing review feedback with $implement_model"
+printf 'Answer any Copilot questions, then exit the session when assessment is complete.\n'
+run_copilot "$implement_model" "Assess the code review feedback in $feedback_file on the \
+changes on the current branch $branch since its merge base with $base_ref (using the \
+assess-feedback skill if available). $story_context Run tools/check from the repository root \
+and commit applied changes on the current branch once it passes. $interaction" -i
+require_clean 'Feedback assessment'
+
+while true; do
+  step "Fetching origin"
+  git fetch origin
+  if git merge-base --is-ancestor "$base_ref" HEAD; then
+    printf '%s is merged into %s\n' "$base_ref" "$branch"
+    break
+  fi
+
+  step "Merging $base_ref into $branch with $implement_model"
+  run_copilot "$implement_model" "Merge $base_ref into the current branch $branch with \
+\`git merge $base_ref\`. Do not fetch first. Resolve any conflicts so the result keeps both the \
+branch's changes and those on main, following AGENTS.md and the affected subsystem guides. \
+$story_context Run tools/check from the repository root, fix failures, and conclude the merge \
+with a commit once it passes. $autonomy" --no-ask-user --trust-folder -p
+
+  git merge-base --is-ancestor "$base_ref" HEAD || fail "merge did not include $base_ref"
+  require_clean 'Merge'
+done
+
+step "Pushing $branch to origin"
+git push -u origin "$branch"
+printf '\nPushed %s from %s. Open a pull request to main when ready.\n' "$branch" "$worktree_path"
+exit
+}

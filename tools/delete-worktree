@@ -1,0 +1,122 @@
+#!/usr/bin/env bash
+# Remove the sibling <repo>-<name> worktree and its checked-out local branch
+# once merged into origin/HEAD (or HEAD), including squash and rebase merges.
+# Exit codes: 0 removed, 1 git or safety check error, 2 usage or prerequisite error.
+set -euo pipefail
+
+usage() {
+  cat <<USAGE
+Usage: ${0##*/} <name>
+
+Remove the sibling <repo>-<name> worktree and its checked-out local branch
+once merged into origin/HEAD (or HEAD), including squash and rebase merges.
+
+Exit codes: 0 removed, 1 git or safety check error, 2 usage or prerequisite error.
+USAGE
+}
+
+if [[ $# -eq 1 && ( $1 == --help || $1 == -h ) ]]; then
+  usage
+  exit 0
+fi
+
+if [[ $# -ne 1 ]]; then
+  usage >&2
+  exit 2
+fi
+
+if ! command -v git >/dev/null 2>&1; then
+  printf 'delete-worktree: prerequisite missing: git must be on PATH\n' >&2
+  exit 2
+fi
+
+name=$1
+if [[ $name == -* ]] || ! git check-ref-format "refs/heads/$name"; then
+  printf 'delete-worktree: invalid branch name: %s\n' "$name" >&2
+  exit 2
+fi
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+repo_root=$(git -C "$script_dir/.." rev-parse --show-toplevel 2>/dev/null) || {
+  printf 'delete-worktree: not inside a Git repository: %s\n' "$script_dir/.." >&2
+  exit 1
+}
+repo_name=$(basename -- "$repo_root")
+directory_name=${name//\//-}
+worktree_path="$(dirname -- "$repo_root")/$repo_name-$directory_name"
+
+worktree_list=$(git -C "$repo_root" worktree list --porcelain)
+if ! grep -Fqx -- "worktree $worktree_path" <<<"$worktree_list"; then
+  printf 'delete-worktree: no registered worktree found at: %s\n' "$worktree_path" >&2
+  exit 1
+fi
+
+if [[ ! -d $worktree_path ]]; then
+  printf 'delete-worktree: worktree directory is missing: %s\n' "$worktree_path" >&2
+  printf 'Run "git worktree prune" to clean up stale worktree entries.\n' >&2
+  exit 1
+fi
+
+worktree_branch=$(git -C "$worktree_path" symbolic-ref --quiet --short HEAD) || {
+  printf 'delete-worktree: worktree is not on a local branch: %s\n' "$worktree_path" >&2
+  exit 1
+}
+merge_target=$(git -C "$repo_root" symbolic-ref --quiet --short refs/remotes/origin/HEAD) ||
+  merge_target=HEAD
+
+# Squash and rebase merges leave the branch commits out of the target's
+# history, so also accept a branch whose combined change already has an
+# equivalent patch in the target.
+is_merged() {
+  local branch=$1
+  local base branch_tree target_tree squashed
+  if git -C "$repo_root" merge-base --is-ancestor "$branch" "$merge_target"; then
+    return 0
+  fi
+  branch_tree=$(git -C "$repo_root" rev-parse "$branch^{tree}") || return 1
+  target_tree=$(git -C "$repo_root" rev-parse "$merge_target^{tree}") || return 1
+  if [[ $branch_tree == "$target_tree" ]]; then
+    return 0
+  fi
+  base=$(git -C "$repo_root" merge-base "$merge_target" "$branch") || return 1
+  squashed=$(GIT_AUTHOR_NAME=delete-worktree GIT_AUTHOR_EMAIL=delete-worktree@localhost \
+    GIT_COMMITTER_NAME=delete-worktree GIT_COMMITTER_EMAIL=delete-worktree@localhost \
+    git -C "$repo_root" commit-tree "$branch_tree" -p "$base" -m squash) || return 1
+  [[ $(git -C "$repo_root" cherry "$merge_target" "$squashed") == -* ]]
+}
+
+remote_branch="refs/remotes/origin/$worktree_branch"
+remote_contains_local=false
+if git -C "$repo_root" show-ref --verify --quiet "$remote_branch" &&
+  git -C "$repo_root" merge-base --is-ancestor "$worktree_branch" "$remote_branch"; then
+  remote_contains_local=true
+fi
+
+if ! is_merged "$worktree_branch" &&
+  { [[ $remote_contains_local == false ]] || ! is_merged "$remote_branch"; }; then
+  printf 'delete-worktree: branch is not merged into %s; refusing to remove worktree or branch: %s\n' \
+    "$merge_target" "$worktree_branch" >&2
+  printf 'Run "git fetch origin" if the pull request was merged remotely.\n' >&2
+  exit 1
+fi
+
+if [[ $(uname -s) == Darwin ]]; then
+  delete_acl="user:$(id -un) deny delete"
+  for rel_dir in webapp/node_modules tools/node_modules service/target; do
+    parent_dir="$worktree_path/${rel_dir%/*}"
+    target_dir="$worktree_path/$rel_dir"
+    if [[ -d $target_dir && ! -L $target_dir && ! -L $parent_dir ]]; then
+      acl_entries=$(LC_ALL=C ls -lde -- "$target_dir" |
+        sed -n 's/^[[:space:]]*[0-9][0-9]*: //p')
+      if grep -Fxq -- "$delete_acl" <<<"$acl_entries"; then
+        chmod -a "$delete_acl" "$target_dir"
+        printf 'Removed macOS delete-denying ACL from: %s\n' "$target_dir"
+      fi
+    fi
+  done
+fi
+
+git -C "$repo_root" worktree remove -- "$worktree_path"
+# The merge check above replaces the ancestry check that -d would repeat.
+git -C "$repo_root" branch -D -- "$worktree_branch"
+printf 'Removed worktree and branch: %s\n' "$worktree_branch"

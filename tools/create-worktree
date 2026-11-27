@@ -1,0 +1,56 @@
+#!/usr/bin/env bash
+# Create a new local branch from HEAD in a sibling <repo>-<name> worktree.
+# Exit codes: 0 created, 1 git or path error, 2 usage or prerequisite error.
+set -euo pipefail
+
+usage() {
+  cat <<USAGE
+Usage: ${0##*/} <name>
+
+Create a new local branch from HEAD in a sibling <repo>-<name> worktree.
+Slashes in <name> become hyphens in the worktree directory name.
+
+Exit codes: 0 created, 1 git or path error, 2 usage or prerequisite error.
+USAGE
+}
+
+if [[ $# -eq 1 && ( $1 == --help || $1 == -h ) ]]; then
+  usage
+  exit 0
+fi
+
+if [[ $# -ne 1 ]]; then
+  usage >&2
+  exit 2
+fi
+
+if ! command -v git >/dev/null 2>&1; then
+  printf 'create-worktree: prerequisite missing: git must be on PATH\n' >&2
+  exit 2
+fi
+
+name=$1
+if [[ $name == -* ]] || ! git check-ref-format "refs/heads/$name"; then
+  printf 'create-worktree: invalid branch name: %s\n' "$name" >&2
+  exit 2
+fi
+
+script_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+repo_root=$(git -C "$script_dir/.." rev-parse --show-toplevel 2>/dev/null) || {
+  printf 'create-worktree: not inside a Git repository: %s\n' "$script_dir/.." >&2
+  exit 1
+}
+repo_name=$(basename -- "$repo_root")
+directory_name=${name//\//-}
+worktree_path="$(dirname -- "$repo_root")/$repo_name-$directory_name"
+
+if [[ -e $worktree_path || -L $worktree_path ]]; then
+  printf 'create-worktree: destination already exists: %s\n' "$worktree_path" >&2
+  exit 1
+fi
+
+# Relative links keep the worktree usable if the parent directory is moved or
+# mounted at another absolute path, such as inside a container.
+git -C "$repo_root" -c worktree.useRelativePaths=true \
+  worktree add -b "$name" -- "$worktree_path" HEAD
+printf 'Created worktree: %s\n' "$worktree_path"
