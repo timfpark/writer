@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildReadingPlan,
+  MAX_HISTORY_MESSAGES,
   parseReplyInline,
   READING_LIMIT_WORDS,
 } from "./reading";
@@ -63,6 +64,61 @@ describe("reading assembly", () => {
     expect(plan.history).toEqual([{ role: "writer", text: "newest one two" }]);
     expect(plan.droppedHistoryTurns).toBe(2);
     expect(plan.totalWords).toBeLessThanOrEqual(READING_LIMIT_WORDS);
+  });
+
+  it("centers a repeated or formatted selection near selectionOffset", () => {
+    const repeated = "She did not answer.";
+    const markdown = `${repeated} earlymarker ${makeWords("mid", 25_000)} latemarker *${repeated}*`;
+    const lateOffset = markdown.lastIndexOf(repeated);
+
+    const repeatedPlan = buildReadingPlan({
+      documentId: "doc-1",
+      documentTitle: "Long Novel",
+      markdown,
+      selection: repeated,
+      cursorOffset: 0,
+      selectionOffset: lateOffset,
+      contextDocuments: [],
+      history: [],
+    });
+    expect(repeatedPlan.documentScope).toBe("aroundSelection");
+    expect(repeatedPlan.documentText).toContain("latemarker");
+    expect(repeatedPlan.documentText).not.toContain("earlymarker");
+
+    const formattedPlan = buildReadingPlan({
+      documentId: "doc-1",
+      documentTitle: "Long Novel",
+      markdown,
+      selection: "latemarker She did not answer.",
+      cursorOffset: 0,
+      selectionOffset: lateOffset,
+      contextDocuments: [],
+      history: [],
+    });
+    expect(formattedPlan.documentScope).toBe("aroundSelection");
+    expect(formattedPlan.documentText).toContain("latemarker");
+    expect(formattedPlan.documentText).not.toContain("earlymarker");
+  });
+
+  it("caps history at MAX_HISTORY_MESSAGES even under the word limit", () => {
+    const history: Array<{ role: "writer" | "assistant"; text: string }> =
+      Array.from({ length: MAX_HISTORY_MESSAGES + 15 }, (_, i) => ({
+        role: i % 2 === 0 ? "writer" : "assistant",
+        text: `m${i}`,
+      }));
+    const plan = buildReadingPlan({
+      documentId: "doc-1",
+      documentTitle: "Short Draft",
+      markdown: "A short sentence.",
+      selection: null,
+      cursorOffset: 0,
+      contextDocuments: [],
+      history,
+    });
+    expect(plan.history).toHaveLength(MAX_HISTORY_MESSAGES);
+    expect(plan.droppedHistoryTurns).toBe(15);
+    expect(plan.history[0]?.text).toBe("m15");
+    expect(plan.history.at(-1)?.text).toBe(`m${MAX_HISTORY_MESSAGES + 14}`);
   });
 
   it("parses double-quoted passages and italicized alternatives", () => {

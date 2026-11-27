@@ -82,15 +82,37 @@ impl ScriptedConfig {
 #[derive(Debug, Clone)]
 pub struct ScriptedProvider {
     config: ScriptedConfig,
+    #[cfg(test)]
+    active_generations: std::sync::Arc<std::sync::atomic::AtomicUsize>,
 }
 
 impl ScriptedProvider {
     pub fn new(config: ScriptedConfig) -> Self {
-        Self { config }
+        Self {
+            config,
+            #[cfg(test)]
+            active_generations: std::sync::Arc::new(std::sync::atomic::AtomicUsize::new(0)),
+        }
     }
 
     pub fn config(&self) -> &ScriptedConfig {
         &self.config
+    }
+
+    #[cfg(test)]
+    fn active_generations(&self) -> usize {
+        self.active_generations
+            .load(std::sync::atomic::Ordering::SeqCst)
+    }
+}
+
+#[cfg(test)]
+struct GenerationGuard(std::sync::Arc<std::sync::atomic::AtomicUsize>);
+
+#[cfg(test)]
+impl Drop for GenerationGuard {
+    fn drop(&mut self) {
+        self.0.fetch_sub(1, std::sync::atomic::Ordering::SeqCst);
     }
 }
 
@@ -122,6 +144,8 @@ impl ChatProvider for ScriptedProvider {
 
     fn reply(&self, request: ChatTurnRequest) -> AgentFuture<'_, Result<ReplyStream, ReplyError>> {
         let config = self.config.clone();
+        #[cfg(test)]
+        let active_generations = std::sync::Arc::clone(&self.active_generations);
         Box::pin(async move {
             if config.mode == ScriptedMode::MissingModel {
                 return Err(ReplyError {
@@ -147,7 +171,14 @@ impl ChatProvider for ScriptedProvider {
             let fail_mid_stream = config.mode == ScriptedMode::FailMidStream;
 
             let (tx, rx) = mpsc::channel(16);
+            #[cfg(test)]
+            let _guard = {
+                active_generations.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                GenerationGuard(active_generations)
+            };
             tokio::spawn(async move {
+                #[cfg(test)]
+                let _task_guard = _guard;
                 if !sleep_or_closed(&tx, first_wait).await {
                     return;
                 }
@@ -556,10 +587,39 @@ mod tests {
             ..ScriptedConfig::default()
         });
         let stream = provider.reply(sample_request()).await.unwrap();
+        assert_eq!(provider.active_generations(), 1);
         // Dropping the stream closes the channel and wakes the sleeper without
         // waiting 60 seconds.
         drop(stream);
-        tokio::task::yield_now().await;
+        tokio::time::timeout(Duration::from_millis(500), async {
+            while provider.active_generations() > 0 {
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+        })
+        .await
+        .expect("producer task should exit immediately when stream is dropped");
+
+        // Also verify dropping mid-stream cancels immediately between tokens.
+        let mid_provider = ScriptedProvider::new(ScriptedConfig {
+            first_token_delay: Duration::ZERO,
+            per_1000_words_delay: Duration::ZERO,
+            tokens_per_second: 1,
+            ..ScriptedConfig::default()
+        });
+        let mut mid_stream = mid_provider.reply(sample_request()).await.unwrap();
+        assert!(matches!(
+            mid_stream.recv().await,
+            Some(ReplyEvent::Delta(_))
+        ));
+        assert_eq!(mid_provider.active_generations(), 1);
+        drop(mid_stream);
+        tokio::time::timeout(Duration::from_millis(500), async {
+            while mid_provider.active_generations() > 0 {
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+        })
+        .await
+        .expect("producer task should exit immediately when dropped mid-stream");
     }
 
     #[tokio::test]

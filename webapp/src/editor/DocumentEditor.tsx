@@ -291,9 +291,8 @@ export default function DocumentEditor({
     if (editor.isDestroyed) return undefined;
     const versionStamp = () => `${content.revision}:${versionRef.current}`;
 
-    const pushSummary = (incrementVersion: boolean) => {
+    const pushSummary = () => {
       if (editor.isDestroyed) return;
-      if (incrementVersion) versionRef.current += 1;
       const selection = activeSelection(editor);
       hadSelectionRef.current = selection !== null;
       bridge.updateSummary({
@@ -310,26 +309,31 @@ export default function DocumentEditor({
       });
     };
 
-    const scheduleSummary = (incrementVersion: boolean) => {
+    const scheduleSummary = () => {
       if (summaryTimerRef.current !== null) {
         clearTimeout(summaryTimerRef.current);
       }
       summaryTimerRef.current = setTimeout(() => {
         summaryTimerRef.current = null;
-        pushSummary(incrementVersion);
+        pushSummary();
       }, 300);
     };
 
-    onUpdateRef.current = () => scheduleSummary(true);
+    onUpdateRef.current = () => {
+      // Bump the edit version synchronously so a caret move within 300 ms
+      // never drops an edit and sending mid-debounce sees the current version.
+      versionRef.current += 1;
+      scheduleSummary();
+    };
     onSelectionRef.current = () => {
       if (editor.isDestroyed) return;
       const selection = activeSelection(editor);
       if (selection !== null || hadSelectionRef.current) {
         // Mirror selection changes immediately so the selection chip appears
         // or clears without lag.
-        pushSummary(false);
+        pushSummary();
       } else {
-        scheduleSummary(false);
+        scheduleSummary();
       }
     };
 
@@ -347,16 +351,32 @@ export default function DocumentEditor({
         const liveMarkdown = currentLoaded
           ? serializeMarkdown(editor.state.doc, currentLoaded)
           : plainText;
+        const toMarkdownOffset = (plainOffset: number) =>
+          plainText.length > 0
+            ? Math.round((plainOffset / plainText.length) * liveMarkdown.length)
+            : 0;
+        const selection = activeSelection(editor);
+        const rawCursorOffset = docPosToTextOffset(
+          editor.state.doc,
+          editor.state.selection.head,
+        );
+        const rawSelectionOffset = selection
+          ? docPosToTextOffset(
+              editor.state.doc,
+              Math.floor((selection.from + selection.to) / 2),
+            )
+          : null;
         return {
           documentId,
           markdown: liveMarkdown,
           plainText,
           wordCount: countWords(liveMarkdown),
-          cursorOffset: docPosToTextOffset(
-            editor.state.doc,
-            editor.state.selection.head,
-          ),
-          selection: activeSelection(editor),
+          cursorOffset: toMarkdownOffset(rawCursorOffset),
+          selectionOffset:
+            rawSelectionOffset !== null
+              ? toMarkdownOffset(rawSelectionOffset)
+              : null,
+          selection,
           version: versionStamp(),
         };
       },

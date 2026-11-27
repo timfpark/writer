@@ -225,9 +225,15 @@ export function AssistantPane({
     () => latestWriterTurn(activeThread),
     [activeThread],
   );
-  const isStreamingAny = snapshot.streamingThreadId !== null;
+  const isPendingHere =
+    snapshot.pendingSend !== null &&
+    snapshot.pendingSend.documentId === openDocumentId &&
+    snapshot.pendingSend.threadId === (activeThread?.id ?? null);
+  const isStreamingAny =
+    snapshot.streamingThreadId !== null || snapshot.pendingSend !== null;
   const isStreamingHere =
-    activeThread !== null && snapshot.streamingThreadId === activeThread.id;
+    (activeThread !== null && snapshot.streamingThreadId === activeThread.id) ||
+    isPendingHere;
 
   const documentEditedSinceChat = useMemo(() => {
     if (
@@ -273,8 +279,9 @@ export function AssistantPane({
     [snapshot.threads, openDocumentId],
   );
   const otherStreaming =
-    snapshot.streamingThreadId !== null &&
-    snapshot.streamingThreadId !== activeThread?.id;
+    (snapshot.streamingThreadId !== null &&
+      snapshot.streamingThreadId !== activeThread?.id) ||
+    (snapshot.pendingSend !== null && !isPendingHere);
   const otherUnread = snapshot.threads.some(
     (t) => t.id !== activeThread?.id && t.unread,
   );

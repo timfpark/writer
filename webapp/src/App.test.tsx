@@ -753,6 +753,217 @@ describe("assistant", () => {
     );
     expect(within(assistant).queryByText("Second thread note")).toBeNull();
   });
+
+  it("shows Stop immediately while readiness is pending and restores the draft if stopped", async () => {
+    let readinessCalls = 0;
+    let replyCalls = 0;
+    const pendingReadiness: { resolve: ((res: Response) => void) | null } = {
+      resolve: null,
+    };
+
+    stubFetch((request) => {
+      const path = new URL(request.url).pathname;
+      if (path === "/api/v1/pair-writer") {
+        readinessCalls += 1;
+        if (readinessCalls === 1) {
+          return healthyService(request);
+        }
+        return new Promise<Response>((resolve) => {
+          pendingReadiness.resolve = resolve;
+        });
+      }
+      if (path === "/api/v1/pair-writer/replies") {
+        replyCalls += 1;
+      }
+      return healthyService(request);
+    });
+
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
+    await waitFor(() => {
+      expect(readinessCalls).toBe(1);
+    });
+
+    fireEvent.change(messageBox(), { target: { value: "Check pacing" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    // Stop appears synchronously before readiness resolves, and the box clears.
+    const stop = screen.getByRole("button", { name: "Stop" });
+    expect(stop).toBeTruthy();
+    expect(messageBox()).toHaveProperty("value", "");
+
+    fireEvent.click(stop);
+    expect(screen.getByRole("button", { name: "Send" })).toBeTruthy();
+    expect(messageBox()).toHaveProperty("value", "Check pacing");
+
+    pendingReadiness.resolve?.(
+      Response.json({
+        ready: true,
+        provider: "scripted",
+        model: "scripted-pair-writer",
+        issue: null,
+        detail: null,
+      }),
+    );
+    await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
+    expect(replyCalls).toBe(0);
+  });
+
+  it("captures the original document if the writer switches documents during readiness", async () => {
+    const secondDocId = "1c7f4d0e-6e2b-4d3c-8f8a-2b3c4d5e6f7a";
+    let readinessCalls = 0;
+    const pendingReadiness: { resolve: ((res: Response) => void) | null } = {
+      resolve: null,
+    };
+    let sentContent: string | null = null;
+
+    stubFetch(async (request) => {
+      const path = new URL(request.url).pathname;
+      if (path === "/api/v1/workspace") {
+        return Response.json({
+          items: [
+            {
+              id: documentId,
+              kind: "document",
+              parentId: null,
+              title: "Synthetic Chapter One",
+              language: "en",
+            },
+            {
+              id: secondDocId,
+              kind: "document",
+              parentId: null,
+              title: "Synthetic Chapter Two",
+              language: "en",
+            },
+          ],
+        });
+      }
+      if (path === `/api/v1/documents/${secondDocId}`) {
+        return Response.json({
+          id: secondDocId,
+          parentId: null,
+          title: "Synthetic Chapter Two",
+          language: "en",
+          revision: "r2",
+        });
+      }
+      if (path === `/api/v1/documents/${secondDocId}/content`) {
+        return Response.json({
+          markdown: "Rain swept over the stone pier.\n",
+          revision: "r2",
+        });
+      }
+      if (path === "/api/v1/pair-writer") {
+        readinessCalls += 1;
+        if (readinessCalls === 1) {
+          return healthyService(request);
+        }
+        return new Promise<Response>((resolve) => {
+          pendingReadiness.resolve = resolve;
+        });
+      }
+      if (path === "/api/v1/pair-writer/replies" && request.method === "POST") {
+        const body: unknown = await request.clone().json();
+        if (
+          typeof body === "object" &&
+          body !== null &&
+          "document" in body &&
+          typeof body.document === "object" &&
+          body.document !== null &&
+          "content" in body.document &&
+          typeof body.document.content === "string"
+        ) {
+          sentContent = body.document.content;
+        }
+        return healthyService(request);
+      }
+      return healthyService(request);
+    });
+
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
+    await waitFor(() => {
+      expect(readinessCalls).toBe(1);
+    });
+
+    fireEvent.change(messageBox(), {
+      target: { value: "Check chapter one opening" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    expect(screen.getByRole("button", { name: "Stop" })).toBeTruthy();
+
+    // Switch to Chapter Two before readiness returns.
+    const nav = screen.getByRole("navigation", { name: "Navigator" });
+    fireEvent.click(within(nav).getByText("Synthetic Chapter Two"));
+    await screen.findByRole("textbox", { name: "Synthetic Chapter Two" });
+
+    pendingReadiness.resolve?.(
+      Response.json({
+        ready: true,
+        provider: "scripted",
+        model: "scripted-pair-writer",
+        issue: null,
+        detail: null,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(sentContent).toBe("The lamp burned *low* through the night.\n");
+    });
+    // Chapter Two stays on its own New chat view instead of being hijacked by Chapter One's thread.
+    const assistant = screen.getByRole("complementary", { name: "Assistant" });
+    expect(
+      within(assistant).getByRole("heading", { name: "New chat", level: 2 }),
+    ).toBeTruthy();
+  });
+
+  it("refreshes readiness and shows the setup notice when /replies returns 503 unavailable", async () => {
+    let readinessChecks = 0;
+    stubFetch((request) => {
+      const path = new URL(request.url).pathname;
+      if (path === "/api/v1/pair-writer") {
+        readinessChecks += 1;
+        // Ready on pane open and pre-send check, then missing on the refresh after 503.
+        if (readinessChecks <= 2) {
+          return healthyService(request);
+        }
+        return Promise.resolve(
+          Response.json({
+            ready: false,
+            provider: "scripted",
+            model: "scripted-pair-writer",
+            issue: "modelMissing",
+            detail: "Model scripted-pair-writer is not installed.",
+          }),
+        );
+      }
+      if (path === "/api/v1/pair-writer/replies" && request.method === "POST") {
+        return Promise.resolve(
+          problem(
+            503,
+            "unavailable",
+            "The configured pair-writer model is not installed.",
+          ),
+        );
+      }
+      return healthyService(request);
+    });
+
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
+    await waitFor(() => {
+      expect(readinessChecks).toBe(1);
+    });
+
+    fireEvent.change(messageBox(), { target: { value: "Review this draft" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    expect(
+      await screen.findByText(/Model “scripted-pair-writer” is not available/i),
+    ).toBeTruthy();
+    expect(readinessChecks).toBe(3);
+  });
 });
 
 describe("service availability", () => {

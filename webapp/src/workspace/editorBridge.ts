@@ -15,7 +15,9 @@ export interface DocumentSnapshot {
   markdown: string;
   plainText: string;
   wordCount: number;
+  // Offsets in `markdown` character coordinates for windowing long documents.
   cursorOffset: number;
+  selectionOffset: number | null;
   selection: EditorSelection | null;
   version: string;
 }

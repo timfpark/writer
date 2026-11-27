@@ -10,7 +10,7 @@ import {
   type ReadingScope,
 } from "../api/client";
 import { readSseStream } from "../api/sse";
-import type { EditorBridge } from "./editorBridge";
+import type { DocumentSnapshot, EditorBridge } from "./editorBridge";
 import {
   buildReadingPlan,
   countWords,
@@ -381,12 +381,18 @@ export interface ReadinessState {
 
 export type ChatView = "thread" | "list";
 
+export interface PendingSendInfo {
+  threadId: string | null;
+  documentId: string;
+}
+
 export interface ConversationSnapshot {
   threads: readonly ChatThread[];
   activeThreadId: string | null;
   view: ChatView;
   draft: string;
   readiness: ReadinessState;
+  pendingSend: PendingSendInfo | null;
   streamingThreadId: string | null;
   streamingMessageId: string | null;
   extraContext: readonly ContextDocEntry[];
@@ -452,7 +458,12 @@ export class ConversationStore {
     messageId: string;
     controller: AbortController;
   } | null = null;
-  private sendingPending = false;
+  private pendingSend: {
+    threadId: string | null;
+    documentId: string;
+    controller: AbortController;
+    restoreDraft: string | null;
+  } | null = null;
   private extraContext: ContextDocEntry[] = [];
   private ignoredSelectionKey: string | null = null;
   private viewingSource: ReadOnlySourceView | null = null;
@@ -483,17 +494,24 @@ export class ConversationStore {
 
   getSnapshot = (): ConversationSnapshot => {
     if (!this.cachedSnapshot) {
-      const signal: AssistantSignal = this.streaming
-        ? "streaming"
-        : this.threads.some((thread) => thread.unread)
-          ? "unread"
-          : "idle";
+      const signal: AssistantSignal =
+        this.streaming || this.pendingSend
+          ? "streaming"
+          : this.threads.some((thread) => thread.unread)
+            ? "unread"
+            : "idle";
       this.cachedSnapshot = {
         threads: this.threads,
         activeThreadId: this.activeThreadId,
         view: this.view,
         draft: this.draft,
         readiness: this.readiness,
+        pendingSend: this.pendingSend
+          ? {
+              threadId: this.pendingSend.threadId,
+              documentId: this.pendingSend.documentId,
+            }
+          : null,
         streamingThreadId: this.streaming?.threadId ?? null,
         streamingMessageId: this.streaming?.messageId ?? null,
         extraContext: this.extraContext,
@@ -512,6 +530,10 @@ export class ConversationStore {
   }
 
   dispose(): void {
+    if (this.pendingSend) {
+      this.pendingSend.controller.abort();
+      this.pendingSend = null;
+    }
     if (this.streaming) {
       this.streaming.controller.abort();
       this.streaming = null;
@@ -603,10 +625,15 @@ export class ConversationStore {
     if (changed) this.emit();
   }
 
-  async checkReadiness(): Promise<PairWriterStatus> {
+  async checkReadiness(signal?: AbortSignal): Promise<PairWriterStatus | null> {
     this.readiness = { ...this.readiness, checking: true };
     this.emit();
-    const status = await this.assistant.checkReadiness();
+    const status = await this.assistant.checkReadiness(signal);
+    if (signal?.aborted) {
+      this.readiness = { ...this.readiness, checking: false };
+      this.emit();
+      return null;
+    }
     this.readiness = { checked: true, checking: false, status };
     this.emit();
     return status;
@@ -641,6 +668,10 @@ export class ConversationStore {
   }
 
   deleteThread(threadId: string): void {
+    if (this.pendingSend?.threadId === threadId) {
+      this.pendingSend.controller.abort();
+      this.pendingSend = null;
+    }
     if (this.streaming?.threadId === threadId) {
       this.streaming.controller.abort();
       this.streaming = null;
@@ -698,6 +729,16 @@ export class ConversationStore {
   }
 
   stopStreaming(): void {
+    if (this.pendingSend) {
+      const { controller, restoreDraft } = this.pendingSend;
+      this.pendingSend = null;
+      controller.abort();
+      if (restoreDraft !== null && this.draft === "") {
+        this.draft = restoreDraft;
+      }
+      this.emit();
+      return;
+    }
     if (!this.streaming) return;
     const { threadId, messageId, controller } = this.streaming;
     this.streaming = null;
@@ -710,7 +751,7 @@ export class ConversationStore {
   }
 
   async send(explicitPrompt?: string): Promise<void> {
-    if (this.streaming || this.sendingPending) return;
+    if (this.streaming || this.pendingSend) return;
     const documentId = this.openDocumentId;
     if (!documentId) return;
 
@@ -722,28 +763,66 @@ export class ConversationStore {
     const text = (explicitPrompt ?? this.draft).trim();
     if (!text) return;
 
-    this.sendingPending = true;
-    try {
-      const status = await this.checkReadiness();
-      if (!status.ready) {
-        // Keep the writer's typed message intact when not ready.
-        return;
-      }
-      this.startTurn({
-        text,
-        documentId,
-        documentTitle: this.openDocumentTitle || "Untitled",
-        existingThread: active,
-        clearDraft: explicitPrompt === undefined,
-        replaceFailedMessageId: null,
-      });
-    } finally {
-      this.sendingPending = false;
+    // Capture the live document snapshot and context synchronously so switching
+    // documents while readiness answers never sends an empty or mismatched draft.
+    const capturedSnapshot = this.bridge.readSnapshot(documentId);
+    if (!capturedSnapshot) return;
+    const documentTitle = this.openDocumentTitle || "Untitled";
+    const capturedContext = [...this.extraContext];
+    const capturedIgnoredSelectionKey = this.ignoredSelectionKey;
+    const restoreDraft = explicitPrompt === undefined ? this.draft : null;
+
+    const controller = new AbortController();
+    this.pendingSend = {
+      threadId: active?.id ?? null,
+      documentId,
+      controller,
+      restoreDraft,
+    };
+    if (explicitPrompt === undefined) {
+      this.draft = "";
     }
+    this.emit();
+
+    const status = await this.checkReadiness(controller.signal);
+    if (
+      controller.signal.aborted ||
+      this.pendingSend?.controller !== controller
+    ) {
+      return;
+    }
+    this.pendingSend = null;
+    if (!status?.ready) {
+      // Keep the writer's typed message intact when the pair writer is not ready.
+      if (restoreDraft !== null && this.draft === "") {
+        this.draft = restoreDraft;
+      }
+      this.emit();
+      return;
+    }
+
+    const latestActive = active
+      ? (this.threads.find((t) => t.id === active.id) ?? null)
+      : null;
+    if (active && !latestActive) {
+      this.emit();
+      return;
+    }
+
+    this.startTurn({
+      text,
+      documentId,
+      documentTitle,
+      existingThread: latestActive,
+      capturedSnapshot,
+      capturedContext,
+      capturedIgnoredSelectionKey,
+      replaceFailedMessageId: null,
+    });
   }
 
   async retry(threadId: string, failedMessageId: string): Promise<void> {
-    if (this.streaming || this.sendingPending) return;
+    if (this.streaming || this.pendingSend) return;
     const documentId = this.openDocumentId;
     if (!documentId) return;
     const thread = this.threads.find((t) => t.id === threadId);
@@ -754,21 +833,50 @@ export class ConversationStore {
     );
     if (!failed) return;
 
-    this.sendingPending = true;
-    try {
-      const status = await this.checkReadiness();
-      if (!status.ready) return;
-      this.startTurn({
-        text: failed.promptText,
-        documentId,
-        documentTitle: this.openDocumentTitle || thread.documentTitle,
-        existingThread: thread,
-        clearDraft: false,
-        replaceFailedMessageId: failedMessageId,
-      });
-    } finally {
-      this.sendingPending = false;
+    const capturedSnapshot = this.bridge.readSnapshot(documentId);
+    if (!capturedSnapshot) return;
+    const documentTitle = this.openDocumentTitle || thread.documentTitle;
+    const capturedContext = [...this.extraContext];
+    const capturedIgnoredSelectionKey = this.ignoredSelectionKey;
+
+    const controller = new AbortController();
+    this.pendingSend = {
+      threadId,
+      documentId,
+      controller,
+      restoreDraft: null,
+    };
+    this.emit();
+
+    const status = await this.checkReadiness(controller.signal);
+    if (
+      controller.signal.aborted ||
+      this.pendingSend?.controller !== controller
+    ) {
+      return;
     }
+    this.pendingSend = null;
+    if (!status?.ready) {
+      this.emit();
+      return;
+    }
+
+    const latestThread = this.threads.find((t) => t.id === threadId);
+    if (!latestThread) {
+      this.emit();
+      return;
+    }
+
+    this.startTurn({
+      text: failed.promptText,
+      documentId,
+      documentTitle,
+      existingThread: latestThread,
+      capturedSnapshot,
+      capturedContext,
+      capturedIgnoredSelectionKey,
+      replaceFailedMessageId: failedMessageId,
+    });
   }
 
   private startTurn(params: {
@@ -776,18 +884,23 @@ export class ConversationStore {
     documentId: string;
     documentTitle: string;
     existingThread: ChatThread | null;
-    clearDraft: boolean;
+    capturedSnapshot: DocumentSnapshot;
+    capturedContext: readonly ContextDocEntry[];
+    capturedIgnoredSelectionKey: string | null;
     replaceFailedMessageId: string | null;
   }): void {
-    const snapshot = this.bridge.readSnapshot(params.documentId);
-    const liveMarkdown = snapshot?.markdown ?? "";
-    const cursorOffset = snapshot?.cursorOffset ?? 0;
-    const rawSelection = snapshot?.selection ?? null;
+    const { capturedSnapshot } = params;
+    const liveMarkdown = capturedSnapshot.markdown;
+    const cursorOffset = capturedSnapshot.cursorOffset;
+    const rawSelection = capturedSnapshot.selection;
     const currentSelKey = selectionKey(rawSelection);
-    const activeSelection =
-      rawSelection && currentSelKey !== this.ignoredSelectionKey
-        ? rawSelection.text.trim()
-        : null;
+    const useSelection =
+      rawSelection !== null &&
+      currentSelKey !== params.capturedIgnoredSelectionKey;
+    const activeSelection = useSelection ? rawSelection.text.trim() : null;
+    const selectionOffset = useSelection
+      ? capturedSnapshot.selectionOffset
+      : null;
 
     // Build history from existing thread (excluding dividers, errors, or the
     // failed turn being retried).
@@ -814,7 +927,8 @@ export class ConversationStore {
       markdown: liveMarkdown,
       selection: activeSelection,
       cursorOffset,
-      contextDocuments: this.extraContext,
+      selectionOffset,
+      contextDocuments: params.capturedContext,
       history,
     });
 
@@ -835,7 +949,7 @@ export class ConversationStore {
       selectionQuote: plan.selection,
       contextTitles: plan.contextDocuments.map((d) => d.title),
       openDocFullMarkdown: liveMarkdown,
-      openDocVersion: snapshot?.version ?? "",
+      openDocVersion: capturedSnapshot.version,
       openDocReadMarkdown: plan.documentText,
       openDocScope: plan.documentScope,
       openDocWordCount: plan.documentWordCount,
@@ -950,13 +1064,21 @@ export class ConversationStore {
         messages: appended,
       };
       this.threads = [newThread, ...this.threads];
-      this.activeThreadId = threadId;
+      // Only switch activeThreadId if the writer is still on this document's
+      // new-chat view; if they switched documents or threads while readiness
+      // was checked, let the reply stream into its own thread in the background.
+      if (
+        this.openDocumentId === params.documentId &&
+        this.activeThreadId === null
+      ) {
+        this.activeThreadId = threadId;
+      }
     }
 
-    if (params.clearDraft) {
-      this.draft = "";
-    }
-    if (this.ignoredSelectionKey !== null) {
+    if (
+      this.openDocumentId === params.documentId &&
+      this.ignoredSelectionKey !== null
+    ) {
       this.ignoredSelectionKey = null;
       this.bridge.setSelectionIgnored(params.documentId, false);
     }
@@ -976,7 +1098,7 @@ export class ConversationStore {
         title: plan.documentTitle,
         content: plan.documentText,
         scope: plan.documentScope,
-        cursorOffset,
+        cursorOffset: selectionOffset ?? cursorOffset,
       },
       ...(plan.selection ? { selection: { text: plan.selection } } : {}),
       contextDocuments: plan.contextDocuments.map((doc) => ({

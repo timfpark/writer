@@ -4,6 +4,8 @@
 import type { ChatHistoryMessage, ReadingScope } from "../api/client";
 
 export const READING_LIMIT_WORDS = 19_000;
+// Matches `MAX_HISTORY_MESSAGES` in `service/crates/writer-api/src/pair_writer.rs`.
+export const MAX_HISTORY_MESSAGES = 200;
 
 function isSpaceAt(text: string, index: number): boolean {
   const code = text.charCodeAt(index);
@@ -131,6 +133,43 @@ export interface ReadingPlan {
   summaryLabel: string;
 }
 
+// Finds the occurrence of `needle` (or its first non-empty line when `needle`
+// spans multiple paragraphs) in `haystack` closest to `hintOffset`.
+function findNearestOccurrence(
+  haystack: string,
+  needle: string,
+  hintOffset: number,
+): number | null {
+  const findBest = (target: string): number | null => {
+    if (!target) return null;
+    let best: number | null = null;
+    let bestDist = Infinity;
+    let searchFrom = 0;
+    while (searchFrom <= haystack.length) {
+      const idx = haystack.indexOf(target, searchFrom);
+      if (idx === -1) break;
+      const dist = Math.abs(idx - hintOffset);
+      if (dist < bestDist) {
+        best = idx;
+        bestDist = dist;
+      }
+      searchFrom = idx + 1;
+    }
+    return best;
+  };
+
+  const exact = findBest(needle);
+  if (exact !== null) return exact;
+  const firstLine = needle
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => line.length > 0);
+  if (firstLine && firstLine !== needle) {
+    return findBest(firstLine);
+  }
+  return null;
+}
+
 // Builds ADR 0012's reading plan before a turn is sent so the composer shows
 // what the next turn will read and `What it read` keeps the exact text read.
 export function buildReadingPlan(input: {
@@ -139,6 +178,7 @@ export function buildReadingPlan(input: {
   markdown: string;
   selection: string | null;
   cursorOffset: number;
+  selectionOffset?: number | null;
   contextDocuments: readonly ContextDocEntry[];
   history: readonly ChatHistoryMessage[];
 }): ReadingPlan {
@@ -150,8 +190,13 @@ export function buildReadingPlan(input: {
   if (fullDocumentWordCount > READING_LIMIT_WORDS) {
     if (trimmedSelection) {
       documentScope = "aroundSelection";
-      const found = input.markdown.indexOf(trimmedSelection);
-      const focus = found >= 0 ? found : input.cursorOffset;
+      const hint = input.selectionOffset ?? input.cursorOffset;
+      const found = findNearestOccurrence(
+        input.markdown,
+        trimmedSelection,
+        hint,
+      );
+      const focus = found ?? hint;
       documentText = windowAroundOffset(
         input.markdown,
         focus,
@@ -179,11 +224,13 @@ export function buildReadingPlan(input: {
     }
   }
 
-  // Keep the newest history turns that fit inside the remaining budget.
+  // Keep the newest history turns that fit inside both the word budget and the
+  // service's per-request message limit.
   const historyBudget = Math.max(0, READING_LIMIT_WORDS - usedWords);
   const keptReversed: ChatHistoryMessage[] = [];
   let historyWords = 0;
   for (let i = input.history.length - 1; i >= 0; i -= 1) {
+    if (keptReversed.length >= MAX_HISTORY_MESSAGES) break;
     const entry = input.history[i];
     if (!entry) continue;
     const words = countWords(entry.text);

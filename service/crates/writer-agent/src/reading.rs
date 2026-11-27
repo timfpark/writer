@@ -108,6 +108,56 @@ fn scope_label(scope: ReadingScope) -> &'static str {
     }
 }
 
+/// Finds the UTF-8 character offset of the occurrence of `needle` (or its first
+/// non-empty line when `needle` spans multiple lines) in `haystack` that is
+/// nearest to `hint_char`, or the first occurrence when `hint_char` is `None`.
+fn nearest_occurrence_char_offset(
+    haystack: &str,
+    needle: &str,
+    hint_char: Option<usize>,
+) -> Option<usize> {
+    let find_best = |target: &str| -> Option<usize> {
+        if target.is_empty() {
+            return None;
+        }
+        let Some(hint) = hint_char else {
+            return haystack
+                .find(target)
+                .map(|byte_idx| haystack[..byte_idx].chars().count());
+        };
+        let mut best: Option<(usize, usize)> = None;
+        let mut search_from = 0usize;
+        let mut prev_byte = 0usize;
+        let mut prev_chars = 0usize;
+        while let Some(rel) = haystack[search_from..].find(target) {
+            let byte_idx = search_from + rel;
+            prev_chars += haystack[prev_byte..byte_idx].chars().count();
+            prev_byte = byte_idx;
+            let distance = prev_chars.abs_diff(hint);
+            if best.is_none_or(|(_, best_dist)| distance < best_dist) {
+                best = Some((prev_chars, distance));
+            }
+            let step = haystack[byte_idx..]
+                .chars()
+                .next()
+                .map_or(1, char::len_utf8);
+            search_from = byte_idx + step;
+        }
+        best.map(|(offset, _)| offset)
+    };
+
+    find_best(needle).or_else(|| {
+        let first_line = needle
+            .lines()
+            .map(str::trim)
+            .find(|line| !line.is_empty())?;
+        if first_line == needle {
+            return None;
+        }
+        find_best(first_line)
+    })
+}
+
 /// Assembles a turn's reading within [`READING_LIMIT_WORDS`]: the open
 /// document (whole up to the limit, or windowed around selection/cursor),
 /// added context documents that fit, and the newest thread turns (dropping
@@ -123,13 +173,13 @@ pub fn assemble_reading(request: &ChatTurnRequest) -> AssembledReading {
     let raw_doc_words = count_words(&request.document.content);
     let (document_text, document_scope) = if raw_doc_words > READING_LIMIT_WORDS {
         if let Some(ref sel) = selection {
-            let focus_char = request
-                .document
-                .content
-                .find(sel.as_str())
-                .map(|byte_idx| request.document.content[..byte_idx].chars().count())
-                .or(request.document.cursor_offset)
-                .unwrap_or(0);
+            let focus_char = nearest_occurrence_char_offset(
+                &request.document.content,
+                sel.as_str(),
+                request.document.cursor_offset,
+            )
+            .or(request.document.cursor_offset)
+            .unwrap_or(0);
             (
                 window_around_char_offset(
                     &request.document.content,
@@ -420,6 +470,34 @@ mod tests {
         assert_eq!(reading.history[0].text, "newest alpha beta gamma");
         assert_eq!(reading.dropped_history_turns, 2);
         assert!(reading.total_words <= READING_LIMIT_WORDS);
+    }
+
+    #[test]
+    fn centers_repeated_and_formatted_selection_near_cursor_offset() {
+        let repeated = "She did not answer.";
+        let early = format!("{repeated} earlymarker");
+        let middle = make_words("mid", 25_000);
+        let late = format!("latemarker {repeated}");
+        let full = format!("{early} {middle} {late}");
+        let late_offset = full.rfind(repeated).unwrap();
+        let late_char_offset = full[..late_offset].chars().count();
+
+        let reading = assemble_reading(&ChatTurnRequest {
+            message: "Check this beat".to_owned(),
+            document: DocumentInput {
+                document_id: "doc-long".to_owned(),
+                title: "Long Novel".to_owned(),
+                content: full,
+                scope: None,
+                cursor_offset: Some(late_char_offset),
+            },
+            selection: Some(repeated.to_owned()),
+            context_documents: vec![],
+            history: vec![],
+        });
+        assert_eq!(reading.document_scope, ReadingScope::AroundSelection);
+        assert!(reading.document_text.contains("latemarker"));
+        assert!(!reading.document_text.contains("earlymarker"));
     }
 
     #[test]
