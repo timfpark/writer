@@ -19,7 +19,7 @@ conversation for good.
 
 ## Context
 
-[Backlog 60](./0060-scripted-chat-tab.md) builds
+Backlog 60 built
 [ADR 0012](../adrs/0012-pair-writing-experience.md)'s `Chat` tab with its
 threads, and what each turn read, held in browser memory, so a reload
 clears them, and [backlog 61](./0061-local-model-chat.md) answers it from the
@@ -38,7 +38,7 @@ service.
 * Replace the in-memory threads with the service's conversation resources
   behind the `Assistant` interface, keeping every `Chat` behavior backlog 60
   delivers.
-* Restore after a reload each document's last thread, the switcher, each
+* Restore after a reload each document's last thread, the `Chats` list, each
   transcript with its `What it read` sources and quote links, and the dot on
   a reply that finished unseen.
 * Open each turn's sources exactly as read, and show the revival banner

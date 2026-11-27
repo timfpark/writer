@@ -136,6 +136,22 @@ test("edits a 1 MiB document within the responsiveness targets", async ({
     editableWithin,
   );
 
+  const middle = editor.locator("p").nth(400);
+  await middle.scrollIntoViewIfNeeded();
+
+  // Start a pair-writer reply so typing latency is measured while a reply
+  // streams from the real service, as ADR 0012 requires.
+  const assistant = page.getByRole("complementary", { name: "Assistant" });
+  const chatBox = assistant.getByRole("textbox", {
+    name: "Message the assistant",
+  });
+  await chatBox.click();
+  await page.keyboard.type(
+    "Give me some ideas about how I can improve this text",
+  );
+  await page.keyboard.press("Enter");
+  await expect(assistant.getByRole("button", { name: "Stop" })).toBeVisible();
+
   // Measures each keystroke from keydown to the frame after it, and each
   // serialization for a save.
   await page.evaluate(() => {
@@ -163,8 +179,6 @@ test("edits a 1 MiB document within the responsiveness targets", async ({
     }).observe({ entryTypes: ["measure"] });
   });
 
-  const middle = editor.locator("p").nth(400);
-  await middle.scrollIntoViewIfNeeded();
   await middle.click();
   await page.keyboard.press("End");
   // Faster than any writer types, but each key waits for the one before to
@@ -177,6 +191,9 @@ test("edits a 1 MiB document within the responsiveness targets", async ({
   await expect(
     page.getByRole("banner").getByText("Saved", { exact: true }),
   ).toBeVisible({ timeout: 30_000 });
+  await expect(assistant.getByText("What it read")).toBeVisible({
+    timeout: 30_000,
+  });
 
   const { keystrokes, serializations } = await page.evaluate(
     () => window.writerTiming ?? { keystrokes: [], serializations: [] },

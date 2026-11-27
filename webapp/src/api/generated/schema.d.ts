@@ -200,6 +200,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pair-writer": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Report whether the pair writer is ready to answer and, if not, what is
+         *     missing.
+         */
+        get: operations["getPairWriter"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pair-writer/replies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stream a pair-writer reply for one conversation turn.
+         * @description Streams `text/event-stream` with `delta` (`ChatReplyDelta`) events, ending
+         *     in either a `done` (`ChatReplyDone`) event or an `error` (`Problem`) event.
+         */
+        post: operations["createPairWriterReply"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspace": {
         parameters: {
             query?: never;
@@ -221,6 +262,77 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @description Another document added to the turn with `+ Context`. */
+        ChatContextDocument: {
+            content: string;
+            documentId: string;
+            title: string;
+        };
+        /**
+         * @description The open document as it stands when the writer sends, unsaved edits
+         *     included.
+         */
+        ChatDocumentInput: {
+            /**
+             * @description Current Markdown or prose text of the open document (or its window
+             *     around the selection or cursor when past the reading limit).
+             */
+            content: string;
+            /**
+             * Format: int32
+             * @description Approximate character offset of the caret in `content` when no
+             *     selection is active.
+             */
+            cursorOffset?: number;
+            documentId: string;
+            /** @description Scope used if the caller already windowed a document past the limit. */
+            scope?: components["schemas"]["ReadingScope"];
+            title: string;
+        };
+        /** @description One earlier message in the active thread. */
+        ChatHistoryMessage: {
+            role: components["schemas"]["ChatHistoryRole"];
+            text: string;
+        };
+        /**
+         * @description Who spoke an earlier turn in a thread.
+         * @enum {string}
+         */
+        ChatHistoryRole: "writer" | "assistant";
+        /** @description One source recorded in a reply's `done` event for `What it read`. */
+        ChatReadSource: {
+            documentId: string | null;
+            kind: components["schemas"]["ChatSourceKind"];
+            label: string;
+            scope: components["schemas"]["ReadingScope"] | null;
+            title: string | null;
+            /** Format: int32 */
+            wordCount: number;
+        };
+        /** @description Payload of a `delta` SSE event carrying streamed reply text. */
+        ChatReplyDelta: {
+            text: string;
+        };
+        /** @description Payload of a `done` SSE event carrying the facts `What it read` shows. */
+        ChatReplyDone: {
+            /** Format: int32 */
+            droppedHistoryTurns: number;
+            model: string;
+            /** @description Prompt name and digest when a prompt is used, or `null` otherwise. */
+            promptVersion: string | null;
+            sources: components["schemas"]["ChatReadSource"][];
+            /** Format: int32 */
+            totalWords: number;
+        };
+        /** @description The editor's active selection, used as the turn's focus. */
+        ChatSelectionInput: {
+            text: string;
+        };
+        /**
+         * @description The kind of source recorded in `What it read`.
+         * @enum {string}
+         */
+        ChatSourceKind: "document" | "selection" | "contextDocument" | "history";
         /** @description A document to create with a client-generated identifier. */
         CreateDocumentRequest: {
             /** @description The sibling to create it before, or `null` for the end. */
@@ -255,6 +367,19 @@ export interface components {
              *     characters.
              */
             title: string;
+        };
+        /** @description A stateless conversation turn sent to the pair writer. */
+        CreatePairWriterReplyRequest: {
+            /** @description Additional documents added with `+ Context`. */
+            contextDocuments?: components["schemas"]["ChatContextDocument"][];
+            /** @description The open document as it stands. */
+            document: components["schemas"]["ChatDocumentInput"];
+            /** @description Earlier messages in the current thread, oldest first. */
+            history?: components["schemas"]["ChatHistoryMessage"][];
+            /** @description The writer's question or prompt for this turn. */
+            message: string;
+            /** @description Optional active selection in the open document. */
+            selection?: components["schemas"]["ChatSelectionInput"];
         };
         /** @description A document's metadata and the revision of its content. */
         Document: {
@@ -291,6 +416,22 @@ export interface components {
         HealthStatus: "ok";
         /** @enum {string} */
         ItemKind: "folder" | "document";
+        /**
+         * @description Why the pair writer is not ready to answer.
+         * @enum {string}
+         */
+        PairWriterIssue: "notConfigured" | "runtimeUnreachable" | "modelMissing";
+        /** @description Whether the pair writer can answer and, if not, what is missing. */
+        PairWriterStatus: {
+            /** @description Short service-authored explanation of what is missing; otherwise `null`. */
+            detail: string | null;
+            issue: components["schemas"]["PairWriterIssue"] | null;
+            /** @description Configured model name, or `null` when none is configured. */
+            model: string | null;
+            /** @description Configured provider name, or `null` when none is configured. */
+            provider: string | null;
+            ready: boolean;
+        };
         /** @description An RFC 9457 problem details object describing why a request failed. */
         Problem: {
             code: components["schemas"]["ProblemCode"];
@@ -319,6 +460,11 @@ export interface components {
             /** @description A JSON Pointer to the field, or `""` for the whole body. */
             pointer: string;
         };
+        /**
+         * @description How much of the open document a turn reads.
+         * @enum {string}
+         */
+        ReadingScope: "whole" | "aroundSelection" | "aroundCursor";
         /**
          * @description A whole new content for a document, checked against the revision the
          *     client's edits started from.
@@ -1291,6 +1437,113 @@ export interface operations {
             };
             /** @description The service failed unexpectedly. */
             500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    getPairWriter: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Whether the pair writer is ready and, if not, what is missing. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairWriterStatus"];
+                };
+            };
+            /** @description The service failed unexpectedly. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createPairWriterReply: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePairWriterReplyRequest"];
+            };
+        };
+        responses: {
+            /** @description Server-sent event stream (`text/event-stream`). Events: `delta` (`ChatReplyDelta`), ending with `done` (`ChatReplyDone`) or `error` (`Problem`). */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "text/event-stream": string;
+                };
+            };
+            /** @description The request body is not valid JSON. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The request body exceeds the size limit. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The request body is not sent as application/json. */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The request body breaks the schema or a workspace rule; `errors` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The service failed unexpectedly. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The pair writer is not configured or not ready. */
+            503: {
                 headers: {
                     [name: string]: unknown;
                 };

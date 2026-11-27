@@ -12,9 +12,29 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createQueryClient } from "./api/queries";
 import { App } from "./App";
 import { createAppRouter } from "./router";
-import { notConnectedReply } from "./workspace/conversation";
 
 const documentId = "0b6f3c9e-5d1a-4c2b-9e7f-1a2b3c4d5e6f";
+
+function sseResponse(
+  events: Array<{ event: string; data: unknown }>,
+): Response {
+  const payload = events
+    .map(
+      ({ event, data }) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`,
+    )
+    .join("");
+  const encoder = new TextEncoder();
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encoder.encode(payload));
+      controller.close();
+    },
+  });
+  return new Response(stream, {
+    status: 200,
+    headers: { "Content-Type": "text/event-stream" },
+  });
+}
 
 const clients: ReturnType<typeof createQueryClient>[] = [];
 
@@ -78,6 +98,48 @@ function healthyService(request: Request): Promise<Response> {
       }),
     );
   }
+  if (path === "/api/v1/pair-writer") {
+    return Promise.resolve(
+      Response.json({
+        ready: true,
+        provider: "scripted",
+        model: "scripted-pair-writer",
+        issue: null,
+        detail: null,
+      }),
+    );
+  }
+  if (path === "/api/v1/pair-writer/replies" && request.method === "POST") {
+    return Promise.resolve(
+      sseResponse([
+        {
+          event: "delta",
+          data: {
+            text: '1. In "The lamp burned low through the night.", consider *trimming one beat*.',
+          },
+        },
+        {
+          event: "done",
+          data: {
+            model: "scripted-pair-writer",
+            promptVersion: null,
+            sources: [
+              {
+                kind: "document",
+                documentId,
+                title: "Synthetic Chapter One",
+                scope: "whole",
+                wordCount: 7,
+                label: "Synthetic Chapter One · whole · 7 words",
+              },
+            ],
+            totalWords: 7,
+            droppedHistoryTurns: 0,
+          },
+        },
+      ]),
+    );
+  }
   return Promise.resolve(problem(404, "notFound", "No such item."));
 }
 
@@ -110,8 +172,18 @@ function toggle(name: "Navigator" | "Assistant") {
 }
 
 beforeEach(() => {
-  // The router resets scroll on navigation, which jsdom does not implement.
+  // The router resets scroll on navigation and ProseMirror measures Ranges on
+  // selectionchange, neither of which jsdom implements.
   vi.stubGlobal("scrollTo", () => {});
+  if (
+    typeof Range !== "undefined" &&
+    typeof Range.prototype.getClientRects !== "function"
+  ) {
+    Range.prototype.getClientRects = () =>
+      document.createElement("div").getClientRects();
+    Range.prototype.getBoundingClientRect = () =>
+      document.createElement("div").getBoundingClientRect();
+  }
 });
 
 afterEach(() => {
@@ -482,31 +554,44 @@ function transcript() {
 }
 
 describe("assistant", () => {
-  it("shows a sent message and the stub's reply without any request", async () => {
-    const fetch = stubFetch(healthyService);
+  it("asks the writer to open a document when none is open", async () => {
+    stubFetch(healthyService);
     renderApp();
     await screen.findByText("No document is open");
-    const requests = fetch.mock.calls.length;
+
+    expect(
+      screen.getByText(/Open a document in the navigator to chat/i),
+    ).toBeTruthy();
+    fireEvent.change(messageBox(), { target: { value: "Is this too slow?" } });
+    expect(screen.getByRole("button", { name: "Send" })).toHaveProperty(
+      "disabled",
+      true,
+    );
+  });
+
+  it("streams a reply for the open document with a quote link and What it read", async () => {
+    stubFetch(healthyService);
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
 
     fireEvent.change(messageBox(), {
       target: { value: "  Is the opening\ntoo slow? " },
     });
     fireEvent.keyDown(messageBox(), { key: "Enter" });
 
-    await within(transcript()).findByText(notConnectedReply);
-    const messages = within(transcript()).getAllByRole("listitem");
-    expect(messages.map((message) => message.textContent)).toEqual([
-      "YouIs the opening\ntoo slow?",
-      `Assistant${notConnectedReply}`,
-    ]);
+    expect(
+      await within(transcript()).findByRole("button", {
+        name: "“The lamp burned low through the night.”",
+      }),
+    ).toBeTruthy();
+    expect(within(transcript()).getByText("What it read")).toBeTruthy();
     expect(messageBox()).toHaveProperty("value", "");
-    expect(fetch.mock.calls.length).toBe(requests);
   });
 
   it("starts a new line on Shift+Enter and sends nothing blank", async () => {
     stubFetch(healthyService);
-    renderApp();
-    await screen.findByText("No document is open");
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
 
     fireEvent.change(messageBox(), { target: { value: "A first line" } });
     fireEvent.keyDown(messageBox(), { key: "Enter", shiftKey: true });
@@ -521,45 +606,30 @@ describe("assistant", () => {
     expect(within(transcript()).queryAllByRole("listitem")).toHaveLength(0);
   });
 
-  it("sends from the Send button", async () => {
+  it("keeps the conversation while docked panes collapse and overlaid panes close", async () => {
     stubFetch(healthyService);
-    renderApp();
-    await screen.findByText("No document is open");
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
 
-    fireEvent.change(messageBox(), { target: { value: "Name the harbor." } });
-    fireEvent.click(screen.getByRole("button", { name: "Send" }));
-
-    expect(
-      await within(transcript()).findByText(notConnectedReply),
-    ).toBeTruthy();
-  });
-
-  it("keeps the conversation while a docked pane collapses and expands", async () => {
-    stubFetch(healthyService);
-    renderApp();
-    await screen.findByText("No document is open");
     fireEvent.change(messageBox(), { target: { value: "Keep this." } });
-    fireEvent.keyDown(messageBox(), { key: "Enter" });
-    await within(transcript()).findByText(notConnectedReply);
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    await within(transcript()).findByText("What it read");
 
     fireEvent.click(toggle("Assistant"));
     fireEvent.click(toggle("Assistant"));
-
     expect(within(transcript()).getByText("Keep this.")).toBeTruthy();
-    expect(within(transcript()).getByText(notConnectedReply)).toBeTruthy();
-  });
 
-  it("keeps the conversation and the draft while an overlaid pane closes", async () => {
+    cleanup();
     stubViewport(false);
     stubFetch(healthyService);
-    renderApp();
-    await screen.findByText("No document is open");
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
 
     fireEvent.click(toggle("Assistant"));
     const dialog = await screen.findByRole("dialog", { name: "Assistant" });
-    fireEvent.change(messageBox(), { target: { value: "Keep this." } });
+    fireEvent.change(messageBox(), { target: { value: "Keep overlaid." } });
     fireEvent.keyDown(messageBox(), { key: "Enter" });
-    await within(transcript()).findByText(notConnectedReply);
+    await within(transcript()).findByText("What it read");
     fireEvent.change(messageBox(), { target: { value: "Half a thought" } });
 
     fireEvent.keyDown(dialog, { key: "Escape" });
@@ -569,9 +639,330 @@ describe("assistant", () => {
     fireEvent.click(toggle("Assistant"));
     await screen.findByRole("dialog", { name: "Assistant" });
 
-    expect(within(transcript()).getByText("Keep this.")).toBeTruthy();
-    expect(within(transcript()).getByText(notConnectedReply)).toBeTruthy();
+    expect(within(transcript()).getByText("Keep overlaid.")).toBeTruthy();
     expect(messageBox()).toHaveProperty("value", "Half a thought");
+  });
+
+  it("shows the setup notice, keeps the typed message, and clears without reload", async () => {
+    let ready = false;
+    stubFetch((request) => {
+      if (new URL(request.url).pathname === "/api/v1/pair-writer") {
+        return Promise.resolve(
+          Response.json(
+            ready
+              ? {
+                  ready: true,
+                  provider: "scripted",
+                  model: "scripted-pair-writer",
+                  issue: null,
+                  detail: null,
+                }
+              : {
+                  ready: false,
+                  provider: "scripted",
+                  model: "scripted-pair-writer",
+                  issue: "modelMissing",
+                  detail: "Model scripted-pair-writer is not installed.",
+                },
+          ),
+        );
+      }
+      return healthyService(request);
+    });
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
+
+    expect(
+      await screen.findByText(/Model “scripted-pair-writer” is not available/i),
+    ).toBeTruthy();
+    expect(screen.getByText(/service\/README\.md/)).toBeTruthy();
+
+    fireEvent.change(messageBox(), { target: { value: "Keep my question" } });
+    expect(screen.getByRole("button", { name: "Send" })).toHaveProperty(
+      "disabled",
+      true,
+    );
+
+    ready = true;
+    fireEvent.click(screen.getByRole("button", { name: "Check again" }));
+    await waitFor(() => {
+      expect(
+        screen.queryByText(/Model “scripted-pair-writer” is not available/i),
+      ).toBeNull();
+    });
+    expect(messageBox()).toHaveProperty("value", "Keep my question");
+    expect(screen.getByRole("button", { name: "Send" })).toHaveProperty(
+      "disabled",
+      false,
+    );
+  });
+
+  it("navigates between the active thread and the full-pane Chats list", async () => {
+    stubFetch(healthyService);
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
+
+    const assistant = screen.getByRole("complementary", { name: "Assistant" });
+    expect(
+      within(assistant).getByRole("heading", { name: "New chat", level: 2 }),
+    ).toBeTruthy();
+
+    fireEvent.change(messageBox(), { target: { value: "First thread note" } });
+    fireEvent.keyDown(messageBox(), { key: "Enter" });
+    await within(transcript()).findByText("What it read");
+
+    // Back arrow opens the full-pane Chats list with New chat and both sections.
+    fireEvent.click(within(assistant).getByRole("button", { name: /^Chats/ }));
+    expect(
+      within(assistant).getByRole("heading", { name: "Chats", level: 2 }),
+    ).toBeTruthy();
+    expect(within(assistant).getByText("This document")).toBeTruthy();
+    expect(within(assistant).getByText("All chats")).toBeTruthy();
+
+    // New chat creates a fresh thread from the list view.
+    fireEvent.click(
+      within(assistant).getByRole("button", { name: "New chat" }),
+    );
+    expect(
+      within(assistant).getByRole("heading", { name: "New chat", level: 2 }),
+    ).toBeTruthy();
+    fireEvent.change(messageBox(), { target: { value: "Second thread note" } });
+    fireEvent.keyDown(messageBox(), { key: "Enter" });
+    await within(transcript()).findByText("What it read");
+
+    // Return to the Chats list, open the first thread, then delete the second from the list.
+    fireEvent.click(within(assistant).getByRole("button", { name: /^Chats/ }));
+    const firstButtons = within(assistant).getAllByRole("button", {
+      name: /First thread note/,
+    });
+    const firstRow = firstButtons.find(
+      (btn) => !btn.getAttribute("aria-label")?.startsWith("Delete "),
+    );
+    expect(firstRow).toBeTruthy();
+    fireEvent.click(firstRow!);
+    expect(within(transcript()).getByText("First thread note")).toBeTruthy();
+
+    fireEvent.click(within(assistant).getByRole("button", { name: /^Chats/ }));
+    const deleteSecond = within(assistant).getAllByRole("button", {
+      name: "Delete Second thread note",
+    })[0];
+    expect(deleteSecond).toBeTruthy();
+    fireEvent.click(deleteSecond!);
+    fireEvent.click(
+      within(assistant).getByRole("button", { name: "Confirm delete" }),
+    );
+    expect(within(assistant).queryByText("Second thread note")).toBeNull();
+  });
+
+  it("shows Stop immediately while readiness is pending and restores the draft if stopped", async () => {
+    let readinessCalls = 0;
+    let replyCalls = 0;
+    const pendingReadiness: { resolve: ((res: Response) => void) | null } = {
+      resolve: null,
+    };
+
+    stubFetch((request) => {
+      const path = new URL(request.url).pathname;
+      if (path === "/api/v1/pair-writer") {
+        readinessCalls += 1;
+        if (readinessCalls === 1) {
+          return healthyService(request);
+        }
+        return new Promise<Response>((resolve) => {
+          pendingReadiness.resolve = resolve;
+        });
+      }
+      if (path === "/api/v1/pair-writer/replies") {
+        replyCalls += 1;
+      }
+      return healthyService(request);
+    });
+
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
+    await waitFor(() => {
+      expect(readinessCalls).toBe(1);
+    });
+
+    fireEvent.change(messageBox(), { target: { value: "Check pacing" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    // Stop appears synchronously before readiness resolves, and the box clears.
+    const stop = screen.getByRole("button", { name: "Stop" });
+    expect(stop).toBeTruthy();
+    expect(messageBox()).toHaveProperty("value", "");
+
+    fireEvent.click(stop);
+    expect(screen.getByRole("button", { name: "Send" })).toBeTruthy();
+    expect(messageBox()).toHaveProperty("value", "Check pacing");
+
+    pendingReadiness.resolve?.(
+      Response.json({
+        ready: true,
+        provider: "scripted",
+        model: "scripted-pair-writer",
+        issue: null,
+        detail: null,
+      }),
+    );
+    await act(() => new Promise((resolve) => setTimeout(resolve, 20)));
+    expect(replyCalls).toBe(0);
+  });
+
+  it("captures the original document if the writer switches documents during readiness", async () => {
+    const secondDocId = "1c7f4d0e-6e2b-4d3c-8f8a-2b3c4d5e6f7a";
+    let readinessCalls = 0;
+    const pendingReadiness: { resolve: ((res: Response) => void) | null } = {
+      resolve: null,
+    };
+    let sentContent: string | null = null;
+
+    stubFetch(async (request) => {
+      const path = new URL(request.url).pathname;
+      if (path === "/api/v1/workspace") {
+        return Response.json({
+          items: [
+            {
+              id: documentId,
+              kind: "document",
+              parentId: null,
+              title: "Synthetic Chapter One",
+              language: "en",
+            },
+            {
+              id: secondDocId,
+              kind: "document",
+              parentId: null,
+              title: "Synthetic Chapter Two",
+              language: "en",
+            },
+          ],
+        });
+      }
+      if (path === `/api/v1/documents/${secondDocId}`) {
+        return Response.json({
+          id: secondDocId,
+          parentId: null,
+          title: "Synthetic Chapter Two",
+          language: "en",
+          revision: "r2",
+        });
+      }
+      if (path === `/api/v1/documents/${secondDocId}/content`) {
+        return Response.json({
+          markdown: "Rain swept over the stone pier.\n",
+          revision: "r2",
+        });
+      }
+      if (path === "/api/v1/pair-writer") {
+        readinessCalls += 1;
+        if (readinessCalls === 1) {
+          return healthyService(request);
+        }
+        return new Promise<Response>((resolve) => {
+          pendingReadiness.resolve = resolve;
+        });
+      }
+      if (path === "/api/v1/pair-writer/replies" && request.method === "POST") {
+        const body: unknown = await request.clone().json();
+        if (
+          typeof body === "object" &&
+          body !== null &&
+          "document" in body &&
+          typeof body.document === "object" &&
+          body.document !== null &&
+          "content" in body.document &&
+          typeof body.document.content === "string"
+        ) {
+          sentContent = body.document.content;
+        }
+        return healthyService(request);
+      }
+      return healthyService(request);
+    });
+
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
+    await waitFor(() => {
+      expect(readinessCalls).toBe(1);
+    });
+
+    fireEvent.change(messageBox(), {
+      target: { value: "Check chapter one opening" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+    expect(screen.getByRole("button", { name: "Stop" })).toBeTruthy();
+
+    // Switch to Chapter Two before readiness returns.
+    const nav = screen.getByRole("navigation", { name: "Navigator" });
+    fireEvent.click(within(nav).getByText("Synthetic Chapter Two"));
+    await screen.findByRole("textbox", { name: "Synthetic Chapter Two" });
+
+    pendingReadiness.resolve?.(
+      Response.json({
+        ready: true,
+        provider: "scripted",
+        model: "scripted-pair-writer",
+        issue: null,
+        detail: null,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(sentContent).toBe("The lamp burned *low* through the night.\n");
+    });
+    // Chapter Two stays on its own New chat view instead of being hijacked by Chapter One's thread.
+    const assistant = screen.getByRole("complementary", { name: "Assistant" });
+    expect(
+      within(assistant).getByRole("heading", { name: "New chat", level: 2 }),
+    ).toBeTruthy();
+  });
+
+  it("refreshes readiness and shows the setup notice when /replies returns 503 unavailable", async () => {
+    let readinessChecks = 0;
+    stubFetch((request) => {
+      const path = new URL(request.url).pathname;
+      if (path === "/api/v1/pair-writer") {
+        readinessChecks += 1;
+        // Ready on pane open and pre-send check, then missing on the refresh after 503.
+        if (readinessChecks <= 2) {
+          return healthyService(request);
+        }
+        return Promise.resolve(
+          Response.json({
+            ready: false,
+            provider: "scripted",
+            model: "scripted-pair-writer",
+            issue: "modelMissing",
+            detail: "Model scripted-pair-writer is not installed.",
+          }),
+        );
+      }
+      if (path === "/api/v1/pair-writer/replies" && request.method === "POST") {
+        return Promise.resolve(
+          problem(
+            503,
+            "unavailable",
+            "The configured pair-writer model is not installed.",
+          ),
+        );
+      }
+      return healthyService(request);
+    });
+
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
+    await waitFor(() => {
+      expect(readinessChecks).toBe(1);
+    });
+
+    fireEvent.change(messageBox(), { target: { value: "Review this draft" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    expect(
+      await screen.findByText(/Model “scripted-pair-writer” is not available/i),
+    ).toBeTruthy();
+    expect(readinessChecks).toBe(3);
   });
 });
 

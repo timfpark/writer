@@ -11,6 +11,9 @@ use std::time::Duration;
 
 use tokio::net::TcpListener;
 use tokio::sync::oneshot;
+use writer_agent::{
+    ChatProvider, ScriptedConfig, ScriptedMode, ScriptedProvider, UnconfiguredProvider,
+};
 use writer_storage::FilesystemStore;
 
 /// Overrides the loopback port the service listens on.
@@ -18,6 +21,14 @@ const PORT_VAR: &str = "WRITER_PORT";
 const DEFAULT_PORT: u16 = 8888;
 /// Overrides the folder holding Writer's data.
 const DATA_DIR_VAR: &str = "WRITER_DATA_DIR";
+/// Selects the pair-writer provider (`scripted`, or unset for none).
+const PAIR_WRITER_VAR: &str = "WRITER_PAIR_WRITER";
+/// Configures the scripted provider's behavior (`ready`, `missing-model`, or `fail-mid-stream`).
+const SCRIPTED_MODE_VAR: &str = "WRITER_SCRIPTED_MODE";
+const SCRIPTED_FIRST_TOKEN_MS_VAR: &str = "WRITER_SCRIPTED_FIRST_TOKEN_MS";
+const SCRIPTED_MS_PER_1000_WORDS_VAR: &str = "WRITER_SCRIPTED_MS_PER_1000_WORDS";
+const SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS_VAR: &str = "WRITER_SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS";
+const SCRIPTED_TOKENS_PER_SEC_VAR: &str = "WRITER_SCRIPTED_TOKENS_PER_SEC";
 /// How long in-flight requests may run after a shutdown signal.
 const DRAIN_DEADLINE: Duration = Duration::from_secs(10);
 
@@ -83,6 +94,77 @@ fn platform_data_dir(var: impl Fn(&str) -> Option<OsString>) -> Option<PathBuf> 
     }
 }
 
+fn optional_u64_env(var: &str, default: u64) -> Result<u64, String> {
+    let invalid = || format!("{var} must be a non-negative integer");
+    match std::env::var(var) {
+        Err(std::env::VarError::NotPresent) => Ok(default),
+        Ok(value) if value.is_empty() => Ok(default),
+        Ok(value) => value.parse::<u64>().map_err(|_| invalid()),
+        Err(std::env::VarError::NotUnicode(_)) => Err(invalid()),
+    }
+}
+
+fn optional_u32_env(var: &str, default: u32) -> Result<u32, String> {
+    let invalid = || format!("{var} must be a non-negative integer");
+    match std::env::var(var) {
+        Err(std::env::VarError::NotPresent) => Ok(default),
+        Ok(value) if value.is_empty() => Ok(default),
+        Ok(value) => value.parse::<u32>().map_err(|_| invalid()),
+        Err(std::env::VarError::NotUnicode(_)) => Err(invalid()),
+    }
+}
+
+fn scripted_mode_from_env() -> Result<ScriptedMode, String> {
+    let invalid = || {
+        format!("{SCRIPTED_MODE_VAR} must be one of 'ready', 'missing-model', or 'fail-mid-stream'")
+    };
+    match std::env::var(SCRIPTED_MODE_VAR) {
+        Err(std::env::VarError::NotPresent) => Ok(ScriptedMode::Ready),
+        Ok(value) if value.is_empty() || value == "ready" => Ok(ScriptedMode::Ready),
+        Ok(value) if value == "missing-model" => Ok(ScriptedMode::MissingModel),
+        Ok(value) if value == "fail-mid-stream" => Ok(ScriptedMode::FailMidStream),
+        _ => Err(invalid()),
+    }
+}
+
+fn agent_from_env() -> Result<(Arc<dyn ChatProvider>, &'static str), String> {
+    let invalid = || format!("{PAIR_WRITER_VAR} must be 'scripted' or unset");
+    let provider = match std::env::var(PAIR_WRITER_VAR) {
+        Err(std::env::VarError::NotPresent) => return Ok((Arc::new(UnconfiguredProvider), "none")),
+        Ok(value) if value.is_empty() => return Ok((Arc::new(UnconfiguredProvider), "none")),
+        Ok(value) => value,
+        Err(std::env::VarError::NotUnicode(_)) => return Err(invalid()),
+    };
+
+    if provider != "scripted" {
+        return Err(invalid());
+    }
+
+    let defaults = ScriptedConfig::default();
+    let config = ScriptedConfig {
+        first_token_delay: Duration::from_millis(optional_u64_env(
+            SCRIPTED_FIRST_TOKEN_MS_VAR,
+            u64::try_from(defaults.first_token_delay.as_millis()).unwrap_or(2_000),
+        )?),
+        per_1000_words_delay: Duration::from_millis(optional_u64_env(
+            SCRIPTED_MS_PER_1000_WORDS_VAR,
+            u64::try_from(defaults.per_1000_words_delay.as_millis()).unwrap_or(3_000),
+        )?),
+        followup_first_token_delay: Duration::from_millis(optional_u64_env(
+            SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS_VAR,
+            u64::try_from(defaults.followup_first_token_delay.as_millis()).unwrap_or(450),
+        )?),
+        tokens_per_second: optional_u32_env(
+            SCRIPTED_TOKENS_PER_SEC_VAR,
+            defaults.tokens_per_second,
+        )?,
+        mode: scripted_mode_from_env()?,
+        model: defaults.model,
+    };
+
+    Ok((Arc::new(ScriptedProvider::new(config)), "scripted"))
+}
+
 #[tokio::main]
 async fn main() -> ExitCode {
     tracing_subscriber::fmt()
@@ -90,7 +172,10 @@ async fn main() -> ExitCode {
         .with_target(false)
         .init();
 
-    let (port, data_dir) = match port_from_env().and_then(|port| Ok((port, data_dir_from_env()?))) {
+    let (port, data_dir, (agent, agent_label)) = match port_from_env()
+        .and_then(|port| Ok((port, data_dir_from_env()?)))
+        .and_then(|(port, data_dir)| Ok((port, data_dir, agent_from_env()?)))
+    {
         Ok(settings) => settings,
         Err(message) => {
             tracing::error!("{message}");
@@ -119,6 +204,7 @@ async fn main() -> ExitCode {
         }
     };
     tracing::info!("data folder: {}", data_dir.display());
+    tracing::info!("pair writer: {agent_label}");
 
     let address = SocketAddr::from((Ipv4Addr::LOCALHOST, port));
     let listener = match TcpListener::bind(address).await {
@@ -131,7 +217,7 @@ async fn main() -> ExitCode {
     tracing::info!("listening on http://{address}");
 
     let (signalled_tx, signalled_rx) = oneshot::channel();
-    let router = writer_api::router(Arc::new(store.clone()));
+    let router = writer_api::router_with_agent(Arc::new(store.clone()), agent);
     let server = axum::serve(listener, router).with_graceful_shutdown(async move {
         shutdown.await;
         tracing::info!("shutting down");

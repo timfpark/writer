@@ -140,3 +140,18 @@
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
+
+/*
+ * Keeps the editor's active selection visible while focus moves to Chat, and
+ * briefly highlights passages jumped to from a reply's quote links.
+ */
+.content :global(.writer-inactive-selection) {
+  background: var(--color-current);
+  border-radius: 2px;
+}
+
+.content :global(.writer-quote-highlight) {
+  background: var(--color-current);
+  outline: 1px solid var(--color-accent);
+  border-radius: 2px;
+}

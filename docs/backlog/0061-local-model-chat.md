@@ -18,7 +18,7 @@ about my text without it leaving my machine.
 
 ## Context
 
-[Backlog 60](./0060-scripted-chat-tab.md) builds
+Backlog 60 built
 [ADR 0012](../adrs/0012-pair-writing-experience.md)'s Chat tab against a
 scripted pair writer behind a provisional, stateless streaming endpoint in
 an agent crate. This story replaces the script with the model, so the
@@ -109,4 +109,4 @@ cases that run through the service wait for that ADR and
 
 ## Prerequisites
 
-* [Try the Chat tab against a scripted pair writer](./0060-scripted-chat-tab.md)
+None.

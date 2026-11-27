@@ -832,10 +832,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "writer-agent"
+version = "0.1.0"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "writer-api"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "futures-core",
  "serde",
  "serde_json",
  "tempfile",
@@ -846,6 +854,7 @@ dependencies = [
  "tracing-subscriber",
  "utoipa",
  "utoipa-axum",
+ "writer-agent",
  "writer-domain",
  "writer-storage",
 ]
@@ -863,6 +872,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "writer-agent",
  "writer-api",
  "writer-storage",
 ]

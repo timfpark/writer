@@ -18,10 +18,12 @@ interface DeleteDialogProps {
 }
 
 function deletionSummary(kind: ItemKind, descendants: number): string {
-  if (kind === "document") return "This permanently deletes the document.";
+  if (kind === "document") {
+    return "This permanently deletes the document. Any chats about it stay under All chats until you delete them.";
+  }
   if (descendants === 0) return "This permanently deletes the empty folder.";
   const items = descendants === 1 ? "1 item" : `${descendants} items`;
-  return `This permanently deletes the folder and the ${items} inside it.`;
+  return `This permanently deletes the folder and the ${items} inside it. Any chats about deleted documents stay under All chats until you delete them.`;
 }
 
 // Deletion is permanent, as ADR 0005 decides, so the navigator asks first and

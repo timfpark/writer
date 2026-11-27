@@ -8,6 +8,20 @@ export type ItemKind = components["schemas"]["ItemKind"];
 export type Folder = components["schemas"]["Folder"];
 export type Document = components["schemas"]["Document"];
 export type DocumentContent = components["schemas"]["DocumentContent"];
+export type PairWriterStatus = components["schemas"]["PairWriterStatus"];
+export type PairWriterIssue = components["schemas"]["PairWriterIssue"];
+export type CreatePairWriterReplyRequest =
+  components["schemas"]["CreatePairWriterReplyRequest"];
+export type ChatDocumentInput = components["schemas"]["ChatDocumentInput"];
+export type ChatSelectionInput = components["schemas"]["ChatSelectionInput"];
+export type ChatContextDocument = components["schemas"]["ChatContextDocument"];
+export type ChatHistoryMessage = components["schemas"]["ChatHistoryMessage"];
+export type ChatHistoryRole = components["schemas"]["ChatHistoryRole"];
+export type ChatReplyDelta = components["schemas"]["ChatReplyDelta"];
+export type ChatReplyDone = components["schemas"]["ChatReplyDone"];
+export type ChatReadSource = components["schemas"]["ChatReadSource"];
+export type ChatSourceKind = components["schemas"]["ChatSourceKind"];
+export type ReadingScope = components["schemas"]["ReadingScope"];
 
 // The only way components reach the service. Paths are same-origin, so the
 // development server's /api/ proxy, or any host that routes /api/ to the

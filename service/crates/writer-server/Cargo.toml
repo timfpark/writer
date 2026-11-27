@@ -11,6 +11,7 @@ axum.workspace = true
 tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber.workspace = true
+writer-agent.workspace = true
 writer-api.workspace = true
 writer-storage.workspace = true
 

@@ -36,7 +36,7 @@ removes the finding quietly, `F8` and `Shift+F8` move between findings, and
 thread. Findings carry `What it read` disclosures, and one dot on the
 collapsed toggle pulses while the pair writer works.
 
-[Backlog 60](./0060-scripted-chat-tab.md) builds the agent crate, its
+Backlog 60 built the agent crate, its
 scripted provider, and the `Chat` tab this story hands findings to. Real
 findings wait on [backlog 48](./0048-background-agent-evals.md) and
 [backlog 35](./0035-service-background-review.md), and
@@ -135,4 +135,4 @@ typing latency.
 
 ## Prerequisites
 
-* [Try the Chat tab against a scripted pair writer](./0060-scripted-chat-tab.md)
+None.

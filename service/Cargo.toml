@@ -9,11 +9,13 @@ rust-version = "1.100"
 publish = false
 
 [workspace.dependencies]
+writer-agent = { path = "crates/writer-agent" }
 writer-api = { path = "crates/writer-api" }
 writer-domain = { path = "crates/writer-domain" }
 writer-storage = { path = "crates/writer-storage" }
 
 axum = { version = "0.8.9", default-features = false, features = ["http1", "json", "query", "tokio"] }
+futures-core = { version = "0.3.34", default-features = false }
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 sha2 = { version = "0.11.1", default-features = false }

@@ -25,7 +25,19 @@ const service = spawn(
   {
     cwd: serviceDir,
     stdio: "inherit",
-    env: { ...process.env, WRITER_DATA_DIR: dataDir },
+    env: {
+      ...process.env,
+      WRITER_DATA_DIR: dataDir,
+      WRITER_PAIR_WRITER: process.env.WRITER_PAIR_WRITER ?? "scripted",
+      WRITER_SCRIPTED_FIRST_TOKEN_MS:
+        process.env.WRITER_SCRIPTED_FIRST_TOKEN_MS ?? "120",
+      WRITER_SCRIPTED_MS_PER_1000_WORDS:
+        process.env.WRITER_SCRIPTED_MS_PER_1000_WORDS ?? "0",
+      WRITER_SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS:
+        process.env.WRITER_SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS ?? "40",
+      WRITER_SCRIPTED_TOKENS_PER_SEC:
+        process.env.WRITER_SCRIPTED_TOKENS_PER_SEC ?? "60",
+    },
   },
 );
 

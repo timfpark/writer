@@ -52,7 +52,23 @@ export default defineConfig(({ mode }) => ({
     emitFontLicenses(),
   ],
   // scripts/bundle-budget.js reads the manifest to find each chunk's imports.
-  build: { manifest: true },
+  build: {
+    manifest: true,
+    rolldownOptions: {
+      output: {
+        // Keep shared UI primitives in one chunk rather than fragmenting them
+        // across small files with separate gzip dictionaries.
+        codeSplitting: {
+          groups: [
+            {
+              name: "ui",
+              test: /node_modules\/(react-aria-components|@react-aria|@react-stately|@internationalized)/,
+            },
+          ],
+        },
+      },
+    },
+  },
   // Browser test runs serve packages' production exports, as the build does,
   // so the responsiveness test measures what ships rather than development
   // builds with assertions, such as micromark's. Their pre-bundled

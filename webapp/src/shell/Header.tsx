@@ -1,7 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams } from "@tanstack/react-router";
 import { Keyboard, PanelLeft, PanelRight, type LucideIcon } from "lucide-react";
-import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type KeyboardEvent,
+} from "react";
 import {
   Button,
   ToggleButton,
@@ -12,6 +18,10 @@ import { defaultLanguage } from "../api/languages";
 import { documentQueryOptions } from "../api/queries";
 import { useWorkspaceChange, useWorkspaceTree } from "../api/workspaceChanges";
 import { useSaveStatus } from "../saving/saveManager";
+import type {
+  AssistantSignal,
+  ConversationStore,
+} from "../workspace/conversation";
 import controls from "./controls.module.css";
 import styles from "./Header.module.css";
 import { LanguagePicker } from "./LanguagePicker";
@@ -24,12 +34,18 @@ import type { PaneState } from "./usePane";
 interface HeaderProps {
   navigator: PaneState;
   assistant: PaneState;
+  conversation: ConversationStore;
   onShowShortcuts: () => void;
 }
 
 // Lays out over the same columns as the region below, so the title centers
 // over the writing column whichever side panes are docked open.
-export function Header({ navigator, assistant, onShowShortcuts }: HeaderProps) {
+export function Header({
+  navigator,
+  assistant,
+  conversation,
+  onShowShortcuts,
+}: HeaderProps) {
   return (
     <header
       className={styles.header}
@@ -58,7 +74,7 @@ export function Header({ navigator, assistant, onShowShortcuts }: HeaderProps) {
             {`Keyboard shortcuts (${keyLabel(referenceKeys)})`}
           </Tooltip>
         </TooltipTrigger>
-        <PaneToggle pane={assistant} label="Assistant" icon={PanelRight} />
+        <AssistantToggle pane={assistant} conversation={conversation} />
         <ProfileMenu />
       </div>
     </header>
@@ -213,23 +229,69 @@ interface PaneToggleProps {
   pane: PaneState;
   label: string;
   icon: LucideIcon;
+  signal?: AssistantSignal;
 }
 
-function PaneToggle({ pane, label, icon: Icon }: PaneToggleProps) {
+function AssistantToggle({
+  pane,
+  conversation,
+}: {
+  pane: PaneState;
+  conversation: ConversationStore;
+}) {
+  const signal = useSyncExternalStore(
+    conversation.subscribe,
+    () => conversation.getSnapshot().signal,
+  );
+  return (
+    <PaneToggle
+      pane={pane}
+      label="Assistant"
+      icon={PanelRight}
+      signal={pane.open ? "idle" : signal}
+    />
+  );
+}
+
+function PaneToggle({
+  pane,
+  label,
+  icon: Icon,
+  signal = "idle",
+}: PaneToggleProps) {
+  const accessibleName =
+    signal === "streaming"
+      ? `${label} (replying)`
+      : signal === "unread"
+        ? `${label} (unread reply)`
+        : label;
+  const tooltipText =
+    signal === "streaming"
+      ? `Show ${label.toLowerCase()} — replying (${keyLabel(paneKeys[pane.name])})`
+      : signal === "unread"
+        ? `Show ${label.toLowerCase()} — unread reply (${keyLabel(paneKeys[pane.name])})`
+        : `${pane.open ? "Hide" : "Show"} ${label.toLowerCase()} (${keyLabel(paneKeys[pane.name])})`;
   return (
     <TooltipTrigger delay={600}>
       <ToggleButton
-        className={controls.iconButton}
-        aria-label={label}
+        className={`${controls.iconButton} ${styles.toggle}`}
+        aria-label={accessibleName}
         aria-keyshortcuts={ariaKeys(paneKeys[pane.name])}
         {...(pane.docked ? { "aria-controls": paneId(pane) } : {})}
         isSelected={pane.open}
         onChange={pane.toggle}
       >
         <Icon aria-hidden size={18} />
+        {signal !== "idle" ? (
+          <span
+            className={styles.signalDot}
+            data-signal={signal}
+            aria-hidden="true"
+          />
+        ) : null}
       </ToggleButton>
       <Tooltip className={controls.tooltip} offset={6}>
-        {`${pane.open ? "Hide" : "Show"} ${label.toLowerCase()} (${keyLabel(paneKeys[pane.name])})`}
+        {tooltipText}
       </Tooltip>
     </TooltipTrigger>
   );

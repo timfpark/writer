@@ -10,8 +10,9 @@ Vite 8: Writer's editing workspace. Today it shows the workspace shell, a
 header with the open document's editable title, save status, language picker,
 and a keyboard shortcut reference above a collapsible navigator holding the
 workspace tree, the writing region editing the open document with autosave,
-and a collapsible assistant holding an in-memory conversation answered by a
-client-side stub. Browser tests in `e2e/` drive it against a running service.
+and a collapsible assistant holding ADR 0012's in-memory chat threads answered
+by the service's provisional pair-writer endpoints. Browser tests in `e2e/`
+drive it against a running service with the scripted provider enabled.
 People start with [README.md](./README.md), which maps the source folders.
 
 * Reach the service only through its HTTP API, using the client in
@@ -77,10 +78,16 @@ People start with [README.md](./README.md), which maps the source folders.
   pane returns rely on [regions.ts](./src/shell/regions.ts): keep
   `data-region` on each pane and the writing region, and `data-focus-target`
   on the one control in each that takes focus.
-* Get the assistant's replies only through the `Assistant` interface in
-  [conversation.ts](./src/workspace/conversation.ts), whose default is the
-  client-side stub. Keep the conversation in `WorkspaceShell`, never in the
-  pane, because an overlaid pane unmounts while it is closed.
+* Read SSE streams through `openapi-fetch`'s `parseAs: "stream"` option and
+  [src/api/sse.ts](./src/api/sse.ts) behind the `Assistant` interface in
+  [conversation.ts](./src/workspace/conversation.ts), never calling `fetch`
+  directly in components.
+* Keep `ConversationStore` and `EditorBridge` in `WorkspaceShell`, never in
+  the pane, because an overlaid pane unmounts while it is closed and
+  `useSyncExternalStore` keeps streamed token updates from re-rendering the
+  editor. Bridge the editor only through
+  [editorBridge.ts](./src/workspace/editorBridge.ts), which imports nothing
+  from `src/editor/`.
 * Size the docked panes, the writing region, and the header's matching
   columns from the same layout tokens in
   [tokens.css](./src/styles/tokens.css) (`--page-width`, `--page-inset`, the

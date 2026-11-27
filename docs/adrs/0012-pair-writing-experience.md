@@ -44,9 +44,10 @@ drain and typing in a host browser.
   text and may suggest wording, but Writer never puts agent text into the
   document; the writer types or copies what they choose.
 * Organize `Chat` in threads. Each finding's `Answer in Chat` or `Discuss in
-  Chat` opens that finding's own thread, a switcher lists threads by last
-  activity, and one reply streams at a time, finishing in its thread even if
-  the writer moves on.
+  Chat` opens that finding's own thread, a full-pane `Chats` list reached
+  from a thread's back button lists threads by last activity alongside
+  `New chat`, and one reply streams at a time, finishing in its thread even
+  if the writer moves on.
 * Ground every turn in the text on screen: the open document as it stands,
   unsaved edits included, with the selection as its focus, plus the book's
   living artifacts and any documents the writer adds with `+ Context`. A turn
@@ -171,15 +172,18 @@ the revisit triggers say when to reconsider option 2.
 
 ### Threads in the Chat tab
 
-`Chat` holds separate threads, as coding assistants do. Its header shows the
-current thread's title as a switcher, with `+ New` and `Delete`:
+`Chat` holds separate threads, as coding assistants do. Opening a document
+lands directly in that document's active or new thread so the writer can ask
+about a passage at once; the thread's header shows a `Chats` back button
+(with `+ New` and `Delete`) above the thread's title, stepping up to a
+full-pane `Chats` list with `New chat` at the top:
 
 * A thread belongs to the document open when it started, and takes its title
   from its first message or its finding, without a model call. Opening a
   document reopens the thread last used with it, or a new thread.
-* The switcher lists threads by last activity, under `This document` or
-  `All chats`. A thread about another document can be read from there; to
-  continue it, `Open document` opens its document.
+* The `Chats` list shows threads by last activity, under `This document` and
+  `All chats`. Selecting a thread opens it; a thread about another document
+  can be read from there, and `Open document` opens its document to continue.
 * `Answer in Chat` on an open question and `Discuss in Chat` on any other
   finding open that finding's thread, or resume it. The finding stays pinned
   at the top of the thread with a link to its passage, and replies read the
@@ -292,9 +296,10 @@ battery would go to reviews thrown away. This record amends the trigger:
 * Replies are not on the page, so they get an unread signal. One dot on the
   assistant toggle pulses while the pair writer reviews or replies, and stays
   lit when a reply finished unseen, until the writer views that thread. The
-  `Chat` tab and the thread's switcher entry carry the same dot. The toggle's
-  accessible name states which, so the state never depends on motion, which
-  ADR 0007 turns off for writers who reduce it.
+  `Chat` tab, the thread header's `Chats` back button when another thread is
+  active or unread, and the thread's row in the `Chats` list carry the same
+  dot. The toggle's accessible name states which, so the state never depends
+  on motion, which ADR 0007 turns off for writers who reduce it.
 * None of these opens the pane, shows a toast, shifts the page, or moves
   focus. A polite live region announces a finished reply and a review that
   changes the findings count.
@@ -398,8 +403,8 @@ Each journey runs from the writer's first action to its last visible result.
    session recap at once, with no model call.
 2. A document opens with its active findings and underlines restored, and
    `Reference` shows its book's artifacts.
-3. The switcher lists the document's threads, or `All chats`, and opening
-   one restores its transcript, sources, and links.
+3. The `Chats` list shows the document's threads and `All chats`, and
+   selecting one restores its transcript, sources, and links.
 
 ### 6. Reviving a conversation and seeing the text as it was
 
@@ -554,7 +559,7 @@ The backlog builds this experience in Writer before the agent's
 architecture is fixed, so a design that fails is backed out while that is
 cheap:
 
-* [Backlog 60](../backlog/0060-scripted-chat-tab.md) builds the `Chat` tab
+* Backlog 60 built the `Chat` tab
   and every conversation journey against a scripted pair writer, holding
   threads in browser memory.
 * [Backlog 61](../backlog/0061-local-model-chat.md) answers it from ADR

@@ -32,7 +32,7 @@ their quoted text, and dismissals with their agent and exact text. Its
 list what must be stored. This decision chooses the data model and storage
 that make those journeys work.
 
-[Backlog 60](./0060-scripted-chat-tab.md) holds the `Chat` tab's threads,
+Backlog 60 holds the `Chat` tab's threads,
 and what each turn read, in browser memory and sends each turn to a
 provisional, stateless endpoint that stores nothing, so a reload clears
 them.
