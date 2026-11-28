@@ -57,11 +57,13 @@ export default defineConfig(({ mode }) => ({
     rolldownOptions: {
       output: {
         // Keep shared UI primitives in one chunk rather than fragmenting them
-        // across small files with separate gzip dictionaries.
+        // across small files with separate gzip dictionaries, while leaving
+        // primitives used only by one lazy chunk (such as Tabs) inside it.
         codeSplitting: {
           groups: [
             {
               name: "ui",
+              minShareCount: 2,
               test: /node_modules\/(react-aria-components|@react-aria|@react-stately|@internationalized)/,
             },
           ],

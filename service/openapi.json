@@ -1260,6 +1260,117 @@
         }
       }
     },
+    "/api/v1/pair-writer/reviews": {
+      "post": {
+        "tags": [
+          "pair-writer"
+        ],
+        "summary": "Review changed paragraphs or scenes for provisional background findings.",
+        "operationId": "createPairWriterReview",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreatePairWriterReviewRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Advice-only background findings for the changed passages.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PairWriterReviewResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "The request body is not valid JSON.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "The request body exceeds the size limit.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "The request body is not sent as application/json.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "The request body breaks the schema or a workspace rule; `errors` names each field.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "The service failed unexpectedly.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "The pair-writer provider failed before completing the review.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "The pair writer is not configured or not ready.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "The pair-writer provider timed out before completing the review.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/workspace": {
       "get": {
         "tags": [
@@ -1342,6 +1453,27 @@
             "description": "Scope used if the caller already windowed a document past the limit."
           },
           "title": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ChatFindingInput": {
+        "type": "object",
+        "description": "A pinned finding handed off from the Findings tab to a Chat thread.",
+        "required": [
+          "agent",
+          "quote",
+          "note"
+        ],
+        "properties": {
+          "agent": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          },
+          "quote": {
             "type": "string"
           }
         },
@@ -1579,6 +1711,7 @@
         "enum": [
           "document",
           "selection",
+          "finding",
           "contextDocument",
           "history"
         ]
@@ -1680,6 +1813,10 @@
             "$ref": "#/components/schemas/ChatDocumentInput",
             "description": "The open document as it stands."
           },
+          "finding": {
+            "$ref": "#/components/schemas/ChatFindingInput",
+            "description": "Optional pinned finding when the thread was opened from the Findings tab."
+          },
           "history": {
             "type": "array",
             "items": {
@@ -1694,6 +1831,37 @@
           "selection": {
             "$ref": "#/components/schemas/ChatSelectionInput",
             "description": "Optional active selection in the open document."
+          }
+        },
+        "additionalProperties": false
+      },
+      "CreatePairWriterReviewRequest": {
+        "type": "object",
+        "description": "Request to review changed paragraphs or scenes of one document.",
+        "required": [
+          "documentId",
+          "title",
+          "passages"
+        ],
+        "properties": {
+          "documentId": {
+            "type": "string"
+          },
+          "documentWordCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Optional document word count for quietness gates and `What it read`.",
+            "minimum": 0
+          },
+          "passages": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewPassageInput"
+            },
+            "description": "Changed paragraphs or scenes to review, in reading order."
+          },
+          "title": {
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -1748,6 +1916,90 @@
             "type": "string"
           }
         }
+      },
+      "FindingAnchor": {
+        "type": "object",
+        "description": "Provisional passage anchor pointing to an exact substring inside one\nreviewed passage, using UTF-16 code-unit offsets.",
+        "required": [
+          "passageId",
+          "contentHash",
+          "startOffset",
+          "endOffset",
+          "quote"
+        ],
+        "properties": {
+          "contentHash": {
+            "type": "string"
+          },
+          "endOffset": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "passageId": {
+            "type": "string"
+          },
+          "quote": {
+            "type": "string"
+          },
+          "startOffset": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "FindingAudit": {
+        "type": "object",
+        "description": "Facts shown in a finding's collapsed `What it read` disclosure.",
+        "required": [
+          "model",
+          "promptVersion",
+          "trigger",
+          "reason",
+          "sources",
+          "totalWords"
+        ],
+        "properties": {
+          "model": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Prompt name and version when a prompt or rule set is used, or `null`."
+          },
+          "reason": {
+            "type": "string"
+          },
+          "sources": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ChatReadSource"
+            }
+          },
+          "totalWords": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "trigger": {
+            "type": "string"
+          }
+        }
+      },
+      "FindingCategory": {
+        "type": "string",
+        "description": "Category filters defined in ADR 0011 for the Findings tab.",
+        "enum": [
+          "prose",
+          "continuity",
+          "questions",
+          "chapter",
+          "rules"
+        ]
       },
       "Folder": {
         "type": "object",
@@ -1806,6 +2058,33 @@
           "runtimeUnreachable",
           "modelMissing"
         ]
+      },
+      "PairWriterReviewResponse": {
+        "type": "object",
+        "description": "Advice-only findings produced for one background review request.",
+        "required": [
+          "items",
+          "model",
+          "promptVersion"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewFinding"
+            }
+          },
+          "model": {
+            "type": "string"
+          },
+          "promptVersion": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Prompt name and version when a prompt or rule set is used, or `null`."
+          }
+        }
       },
       "PairWriterStatus": {
         "type": "object",
@@ -2008,6 +2287,90 @@
           "title": {
             "type": "string",
             "description": "1 to 200 characters with no surrounding whitespace or control\ncharacters."
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReviewAgentKind": {
+        "type": "string",
+        "description": "The five pause-triggered background agents from ADR 0011.",
+        "enum": [
+          "weakProse",
+          "clarity",
+          "openQuestions",
+          "povTense",
+          "repetition"
+        ]
+      },
+      "ReviewFinding": {
+        "type": "object",
+        "description": "One advice-only background review finding.",
+        "required": [
+          "findingId",
+          "agent",
+          "agentLabel",
+          "category",
+          "confidence",
+          "note",
+          "anchor",
+          "audit"
+        ],
+        "properties": {
+          "agent": {
+            "$ref": "#/components/schemas/ReviewAgentKind"
+          },
+          "agentLabel": {
+            "type": "string"
+          },
+          "anchor": {
+            "$ref": "#/components/schemas/FindingAnchor"
+          },
+          "audit": {
+            "$ref": "#/components/schemas/FindingAudit"
+          },
+          "category": {
+            "$ref": "#/components/schemas/FindingCategory"
+          },
+          "confidence": {
+            "type": "integer",
+            "format": "int32",
+            "minimum": 0
+          },
+          "findingId": {
+            "type": "string"
+          },
+          "note": {
+            "type": "string"
+          }
+        }
+      },
+      "ReviewPassageInput": {
+        "type": "object",
+        "description": "One changed paragraph or scene sent for provisional background review.",
+        "required": [
+          "passageId",
+          "index",
+          "text",
+          "contentHash"
+        ],
+        "properties": {
+          "contentHash": {
+            "type": "string",
+            "description": "Content hash of `text` so callers correlate findings with the reviewed snapshot."
+          },
+          "index": {
+            "type": "integer",
+            "format": "int32",
+            "description": "Zero-based block index in reading order within the document.",
+            "minimum": 0
+          },
+          "passageId": {
+            "type": "string",
+            "description": "Client-assigned stable identifier for the paragraph or scene block."
+          },
+          "text": {
+            "type": "string",
+            "description": "Plain prose text of the changed paragraph or scene."
           }
         },
         "additionalProperties": false

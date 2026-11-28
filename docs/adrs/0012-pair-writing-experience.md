@@ -565,7 +565,7 @@ cheap:
 * Backlog 61 answered it from ADR
   0010's local model, reading as this record defines and measuring the
   first-token targets.
-* [Backlog 62](../backlog/0062-scripted-findings-tab.md) builds the
+* Backlog 62 built the
   `Findings` tab, the underlines, `Pause`, the amended pause trigger, and
   `F8` against scripted findings.
 * [Backlog 12](../backlog/0012-first-pair-writing-agent.md) and

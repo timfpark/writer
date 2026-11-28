@@ -17,6 +17,7 @@ export interface PaneState {
   docked: boolean;
   open: boolean;
   toggle: () => void;
+  show: () => void;
   close: () => void;
 }
 
@@ -49,9 +50,16 @@ export function usePane(name: PaneName, pathname: string): PaneState {
       setOverlayOpen(!open);
     }
   }, [name, docked, open, setCollapsed]);
+  const show = useCallback(() => {
+    if (docked) {
+      setCollapsed(false);
+    } else {
+      setOverlayOpen(true);
+    }
+  }, [docked, setCollapsed]);
   const close = useCallback(() => {
     setOverlayOpen(false);
   }, []);
 
-  return { name, docked, open, toggle, close };
+  return { name, docked, open, toggle, show, close };
 }

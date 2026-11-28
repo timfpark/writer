@@ -30,8 +30,13 @@ import {
 import {
   docPosToTextOffset,
   findQuoteRange,
+  focusFindingRangeInEditor,
   highlightQuoteInEditor,
+  readPassagesFromEditor,
+  resolveFindingAnchorInEditor,
+  setFindingCallbacks,
   setSelectionIgnoredInEditor,
+  syncFindingDecorationsInEditor,
 } from "./passageHighlights";
 
 const LinkDialog = lazy(() =>
@@ -107,28 +112,17 @@ function toBoundary(editor: Editor, end: boolean, extend: boolean): boolean {
   return true;
 }
 
-function isAsciiSpace(code: number): boolean {
-  return (
-    code === 32 ||
-    code === 9 ||
-    code === 10 ||
-    code === 13 ||
-    code === 12 ||
-    code === 11
-  );
-}
-
-// Zero-allocation word count so measuring a 1 MiB manuscript never triggers a
-// GC pause during editor mount or typing.
 function countWords(text: string): number {
   let count = 0;
   let inWord = false;
   for (let i = 0; i < text.length; i += 1) {
     const code = text.charCodeAt(i);
-    const space = code <= 32 ? isAsciiSpace(code) : /\s/.test(text[i] ?? "");
-    if (space) {
-      inWord = false;
-    } else if (!inWord) {
+    const space =
+      code === 32 ||
+      (code >= 9 && code <= 13) ||
+      (code > 127 && /\s/.test(text[i] ?? ""));
+    if (space) inWord = false;
+    else if (!inWord) {
       inWord = true;
       count += 1;
     }
@@ -295,15 +289,11 @@ export default function DocumentEditor({
       if (editor.isDestroyed) return;
       const selection = activeSelection(editor);
       hadSelectionRef.current = selection !== null;
+      const curDoc = editor.state.doc;
       bridge.updateSummary({
         documentId,
-        wordCount: countWords(
-          editor.state.doc.textBetween(0, editor.state.doc.content.size, "\n"),
-        ),
-        cursorOffset: docPosToTextOffset(
-          editor.state.doc,
-          editor.state.selection.head,
-        ),
+        wordCount: countWords(curDoc.textBetween(0, curDoc.content.size, "\n")),
+        cursorOffset: docPosToTextOffset(curDoc, editor.state.selection.head),
         selection,
         version: versionStamp(),
       });
@@ -339,6 +329,18 @@ export default function DocumentEditor({
 
     const initialSelection = activeSelection(editor);
     hadSelectionRef.current = initialSelection !== null;
+    setFindingCallbacks(editor, {
+      onTransaction: (editedPassageIds, findingUpdates) => {
+        bridge.reportTransaction({
+          documentId,
+          editedPassageIds,
+          findingUpdates,
+        });
+      },
+      onClickFinding: (findingId) => {
+        bridge.reportFindingClick(documentId, findingId);
+      },
+    });
     const unregister = bridge.register({
       documentId,
       readSnapshot: () => {
@@ -385,6 +387,12 @@ export default function DocumentEditor({
       highlightQuote: (quote) => highlightQuoteInEditor(editor, quote),
       setSelectionIgnored: (ignored) =>
         setSelectionIgnoredInEditor(editor, ignored),
+      readPassages: (passageIds) => readPassagesFromEditor(editor, passageIds),
+      resolveAnchor: (anchor) => resolveFindingAnchorInEditor(editor, anchor),
+      syncFindingDecorations: (ranges, selectedFindingId) =>
+        syncFindingDecorationsInEditor(editor, ranges, selectedFindingId),
+      focusFindingRange: (from, to, moveCaret) =>
+        focusFindingRangeInEditor(editor, from, to, moveCaret),
     });
 
     // Defer the initial word count and summary emission until after the first
@@ -413,6 +421,7 @@ export default function DocumentEditor({
         clearTimeout(summaryTimerRef.current);
         summaryTimerRef.current = null;
       }
+      setFindingCallbacks(editor, null);
       unregister();
     };
   }, [editor, documentId, content.markdown, content.revision, bridge]);

@@ -18,8 +18,9 @@ use futures_core::Stream;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use writer_agent::{
-    self as agent, ChatProvider, ChatTurnRequest, ContextDocument, DocumentInput, HistoryMessage,
-    HistoryRole, ReplyError, ReplyErrorKind, ReplyEvent, ReplyStream,
+    self as agent, ChatProvider, ChatTurnRequest, ContextDocument, DocumentInput, FindingContext,
+    HistoryMessage, HistoryRole, ReplyError, ReplyErrorKind, ReplyEvent, ReplyStream,
+    ReviewPassageInput as AgentReviewPassageInput, ReviewRequest,
 };
 
 use crate::extract::Json;
@@ -33,6 +34,9 @@ const MAX_DOCUMENT_BYTES: usize = 1024 * 1024;
 const MAX_TITLE_BYTES: usize = 1024;
 const MAX_CONTEXT_DOCUMENTS: usize = 20;
 const MAX_HISTORY_MESSAGES: usize = 200;
+const MAX_REVIEW_PASSAGES: usize = 200;
+const MAX_PASSAGE_ID_BYTES: usize = 256;
+const MAX_FINDING_TEXT_BYTES: usize = 16 * 1024;
 
 /// Why the pair writer is not ready to answer.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
@@ -166,6 +170,15 @@ pub struct ChatSelectionInput {
     pub text: String,
 }
 
+/// A pinned finding handed off from the Findings tab to a Chat thread.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ChatFindingInput {
+    pub agent: String,
+    pub quote: String,
+    pub note: String,
+}
+
 /// Another document added to the turn with `+ Context`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
@@ -187,6 +200,10 @@ pub struct CreatePairWriterReplyRequest {
     #[serde(default)]
     #[schema(nullable = false)]
     pub selection: Option<ChatSelectionInput>,
+    /// Optional pinned finding when the thread was opened from the Findings tab.
+    #[serde(default)]
+    #[schema(nullable = false)]
+    pub finding: Option<ChatFindingInput>,
     /// Additional documents added with `+ Context`.
     #[serde(default)]
     pub context_documents: Vec<ChatContextDocument>,
@@ -201,6 +218,7 @@ pub struct CreatePairWriterReplyRequest {
 pub enum ChatSourceKind {
     Document,
     Selection,
+    Finding,
     ContextDocument,
     History,
 }
@@ -210,6 +228,7 @@ impl From<agent::ReadSourceKind> for ChatSourceKind {
         match kind {
             agent::ReadSourceKind::Document => Self::Document,
             agent::ReadSourceKind::Selection => Self::Selection,
+            agent::ReadSourceKind::Finding => Self::Finding,
             agent::ReadSourceKind::ContextDocument => Self::ContextDocument,
             agent::ReadSourceKind::History => Self::History,
         }
@@ -404,6 +423,35 @@ fn validate_request(body: &CreatePairWriterReplyRequest) -> Result<(), Problem> 
         }
     }
 
+    if let Some(ref finding) = body.finding {
+        if finding.agent.trim().is_empty() || finding.agent.len() > MAX_PASSAGE_ID_BYTES {
+            errors.push(ProblemFieldError {
+                pointer: "/finding/agent".to_owned(),
+                detail: "Must be between 1 and 256 bytes.".to_owned(),
+            });
+        }
+        if finding.quote.trim().is_empty()
+            || finding.quote.len() > MAX_FINDING_TEXT_BYTES
+            || finding.quote.contains('\0')
+        {
+            errors.push(ProblemFieldError {
+                pointer: "/finding/quote".to_owned(),
+                detail: "Must be non-empty, within 16 KiB, and contain no NUL characters."
+                    .to_owned(),
+            });
+        }
+        if finding.note.trim().is_empty()
+            || finding.note.len() > MAX_FINDING_TEXT_BYTES
+            || finding.note.contains('\0')
+        {
+            errors.push(ProblemFieldError {
+                pointer: "/finding/note".to_owned(),
+                detail: "Must be non-empty, within 16 KiB, and contain no NUL characters."
+                    .to_owned(),
+            });
+        }
+    }
+
     if body.history.len() > MAX_HISTORY_MESSAGES {
         errors.push(ProblemFieldError {
             pointer: "/history".to_owned(),
@@ -530,6 +578,11 @@ pub(crate) async fn create_pair_writer_reply(
             cursor_offset: body.document.cursor_offset.map(|n| n as usize),
         },
         selection: body.selection.map(|s| s.text),
+        finding: body.finding.map(|f| FindingContext {
+            agent: f.agent,
+            quote: f.quote,
+            note: f.note,
+        }),
         context_documents: body
             .context_documents
             .into_iter()
@@ -551,4 +604,303 @@ pub(crate) async fn create_pair_writer_reply(
 
     let stream = agent.reply(request).await.map_err(Problem::from)?;
     Ok(Sse::new(SseReplyStream { inner: stream }).keep_alive(KeepAlive::default()))
+}
+
+/// One changed paragraph or scene sent for provisional background review.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct ReviewPassageInput {
+    /// Client-assigned stable identifier for the paragraph or scene block.
+    pub passage_id: String,
+    /// Zero-based block index in reading order within the document.
+    pub index: u32,
+    /// Plain prose text of the changed paragraph or scene.
+    pub text: String,
+    /// Content hash of `text` so callers correlate findings with the reviewed snapshot.
+    pub content_hash: String,
+}
+
+/// Request to review changed paragraphs or scenes of one document.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct CreatePairWriterReviewRequest {
+    pub document_id: String,
+    pub title: String,
+    /// Changed paragraphs or scenes to review, in reading order.
+    pub passages: Vec<ReviewPassageInput>,
+    /// Optional document word count for quietness gates and `What it read`.
+    #[serde(default)]
+    #[schema(nullable = false)]
+    pub document_word_count: Option<u32>,
+}
+
+/// The five pause-triggered background agents from ADR 0011.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum ReviewAgentKind {
+    WeakProse,
+    Clarity,
+    OpenQuestions,
+    PovTense,
+    Repetition,
+}
+
+impl From<agent::ReviewAgentKind> for ReviewAgentKind {
+    fn from(kind: agent::ReviewAgentKind) -> Self {
+        match kind {
+            agent::ReviewAgentKind::WeakProse => Self::WeakProse,
+            agent::ReviewAgentKind::Clarity => Self::Clarity,
+            agent::ReviewAgentKind::OpenQuestions => Self::OpenQuestions,
+            agent::ReviewAgentKind::PovTense => Self::PovTense,
+            agent::ReviewAgentKind::Repetition => Self::Repetition,
+        }
+    }
+}
+
+/// Category filters defined in ADR 0011 for the Findings tab.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub enum FindingCategory {
+    Prose,
+    Continuity,
+    Questions,
+    Chapter,
+    Rules,
+}
+
+impl From<agent::FindingCategory> for FindingCategory {
+    fn from(category: agent::FindingCategory) -> Self {
+        match category {
+            agent::FindingCategory::Prose => Self::Prose,
+            agent::FindingCategory::Continuity => Self::Continuity,
+            agent::FindingCategory::Questions => Self::Questions,
+            agent::FindingCategory::Chapter => Self::Chapter,
+            agent::FindingCategory::Rules => Self::Rules,
+        }
+    }
+}
+
+/// Provisional passage anchor pointing to an exact substring inside one
+/// reviewed passage, using UTF-16 code-unit offsets.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct FindingAnchor {
+    pub passage_id: String,
+    pub content_hash: String,
+    pub start_offset: u32,
+    pub end_offset: u32,
+    pub quote: String,
+}
+
+impl From<agent::FindingAnchor> for FindingAnchor {
+    fn from(anchor: agent::FindingAnchor) -> Self {
+        Self {
+            passage_id: anchor.passage_id,
+            content_hash: anchor.content_hash,
+            start_offset: anchor.start_offset,
+            end_offset: anchor.end_offset,
+            quote: anchor.quote,
+        }
+    }
+}
+
+/// Facts shown in a finding's collapsed `What it read` disclosure.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct FindingAudit {
+    pub model: String,
+    /// Prompt name and version when a prompt or rule set is used, or `null`.
+    #[schema(required = true)]
+    pub prompt_version: Option<String>,
+    pub trigger: String,
+    pub reason: String,
+    pub sources: Vec<ChatReadSource>,
+    pub total_words: u32,
+}
+
+impl From<agent::FindingAudit> for FindingAudit {
+    fn from(audit: agent::FindingAudit) -> Self {
+        Self {
+            model: audit.model,
+            prompt_version: audit.prompt_version,
+            trigger: audit.trigger,
+            reason: audit.reason,
+            sources: audit.sources.into_iter().map(Into::into).collect(),
+            total_words: audit.total_words,
+        }
+    }
+}
+
+/// One advice-only background review finding.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct ReviewFinding {
+    pub finding_id: String,
+    pub agent: ReviewAgentKind,
+    pub agent_label: String,
+    pub category: FindingCategory,
+    pub confidence: u32,
+    pub note: String,
+    pub anchor: FindingAnchor,
+    pub audit: FindingAudit,
+}
+
+impl From<agent::ReviewFinding> for ReviewFinding {
+    fn from(finding: agent::ReviewFinding) -> Self {
+        Self {
+            finding_id: finding.finding_id,
+            agent: finding.agent.into(),
+            agent_label: finding.agent_label,
+            category: finding.category.into(),
+            confidence: finding.confidence,
+            note: finding.note,
+            anchor: finding.anchor.into(),
+            audit: finding.audit.into(),
+        }
+    }
+}
+
+/// Advice-only findings produced for one background review request.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, ToSchema)]
+#[serde(rename_all = "camelCase")]
+pub struct PairWriterReviewResponse {
+    pub items: Vec<ReviewFinding>,
+    pub model: String,
+    /// Prompt name and version when a prompt or rule set is used, or `null`.
+    #[schema(required = true)]
+    pub prompt_version: Option<String>,
+}
+
+impl From<agent::ReviewResponse> for PairWriterReviewResponse {
+    fn from(response: agent::ReviewResponse) -> Self {
+        Self {
+            items: response.items.into_iter().map(Into::into).collect(),
+            model: response.model,
+            prompt_version: response.prompt_version,
+        }
+    }
+}
+
+fn validate_review_request(body: &CreatePairWriterReviewRequest) -> Result<(), Problem> {
+    let mut errors = Vec::new();
+    if body.document_id.trim().is_empty() || body.document_id.len() > MAX_TITLE_BYTES {
+        errors.push(ProblemFieldError {
+            pointer: "/documentId".to_owned(),
+            detail: "Must be between 1 and 1,024 bytes.".to_owned(),
+        });
+    }
+    if body.title.trim().is_empty() || body.title.len() > MAX_TITLE_BYTES {
+        errors.push(ProblemFieldError {
+            pointer: "/title".to_owned(),
+            detail: "Must be between 1 and 1,024 bytes.".to_owned(),
+        });
+    }
+    if body.passages.is_empty() || body.passages.len() > MAX_REVIEW_PASSAGES {
+        errors.push(ProblemFieldError {
+            pointer: "/passages".to_owned(),
+            detail: "Must contain between 1 and 200 passages.".to_owned(),
+        });
+    }
+    let mut total_bytes = 0usize;
+    for (idx, passage) in body.passages.iter().enumerate() {
+        if passage.passage_id.trim().is_empty() || passage.passage_id.len() > MAX_PASSAGE_ID_BYTES {
+            errors.push(ProblemFieldError {
+                pointer: format!("/passages/{idx}/passageId"),
+                detail: "Must be between 1 and 256 bytes.".to_owned(),
+            });
+        }
+        if passage.content_hash.trim().is_empty()
+            || passage.content_hash.len() > MAX_PASSAGE_ID_BYTES
+        {
+            errors.push(ProblemFieldError {
+                pointer: format!("/passages/{idx}/contentHash"),
+                detail: "Must be between 1 and 256 bytes.".to_owned(),
+            });
+        }
+        if passage.text.contains('\0') {
+            errors.push(ProblemFieldError {
+                pointer: format!("/passages/{idx}/text"),
+                detail: "Must not contain NUL characters.".to_owned(),
+            });
+        }
+        total_bytes = total_bytes.saturating_add(passage.text.len());
+    }
+    if total_bytes > MAX_DOCUMENT_BYTES {
+        errors.push(ProblemFieldError {
+            pointer: "/passages".to_owned(),
+            detail: "Total passage text exceeds the 1 MiB limit.".to_owned(),
+        });
+    }
+
+    if errors.is_empty() {
+        Ok(())
+    } else {
+        Err(Problem::validation_failed(errors))
+    }
+}
+
+/// Review changed paragraphs or scenes for provisional background findings.
+#[utoipa::path(
+    post,
+    path = "/pair-writer/reviews",
+    operation_id = "createPairWriterReview",
+    tag = "pair-writer",
+    request_body = CreatePairWriterReviewRequest,
+    responses(
+        (
+            status = 200,
+            description = "Advice-only background findings for the changed passages.",
+            body = PairWriterReviewResponse
+        ),
+        (
+            status = 502,
+            description = "The pair-writer provider failed before completing the review.",
+            body = Problem,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = 503,
+            description = "The pair writer is not configured or not ready.",
+            body = Problem,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = 504,
+            description = "The pair-writer provider timed out before completing the review.",
+            body = Problem,
+            content_type = "application/problem+json"
+        ),
+        (
+            status = 500,
+            description = "The service failed unexpectedly.",
+            body = Problem,
+            content_type = "application/problem+json"
+        ),
+        BodyProblems,
+    )
+)]
+pub(crate) async fn create_pair_writer_review(
+    State(agent): State<Agent>,
+    Json(body): Json<CreatePairWriterReviewRequest>,
+) -> Result<AxumJson<PairWriterReviewResponse>, Problem> {
+    validate_review_request(&body)?;
+
+    let request = ReviewRequest {
+        document_id: body.document_id,
+        title: body.title,
+        passages: body
+            .passages
+            .into_iter()
+            .map(|p| AgentReviewPassageInput {
+                passage_id: p.passage_id,
+                index: p.index,
+                text: p.text,
+                content_hash: p.content_hash,
+            })
+            .collect(),
+        document_word_count: body.document_word_count,
+    };
+
+    let response = agent.review(request).await.map_err(Problem::from)?;
+    Ok(AxumJson(response.into()))
 }

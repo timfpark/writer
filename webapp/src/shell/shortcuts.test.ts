@@ -1,6 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { nextRegion } from "./regions";
-import { ariaKeys, keyLabel, navigatorShortcut } from "./shortcuts";
+import {
+  ariaKeys,
+  findingStep,
+  isPauseShortcut,
+  keyLabel,
+  navigatorShortcut,
+  pauseKeys,
+} from "./shortcuts";
 
 function key(init: KeyboardEventInit): KeyboardEvent {
   return new KeyboardEvent("keydown", init);
@@ -41,7 +48,28 @@ describe("shortcuts", () => {
     expect(ariaKeys(["Mod", "Shift", "\\"])).toBe(
       "Control+Shift+\\ Meta+Shift+\\",
     );
+    expect(ariaKeys(pauseKeys)).toBe("Control+Shift+P Meta+Shift+P");
     expect(ariaKeys(["Shift", "F10"])).toBe("Shift+F10");
+  });
+
+  it("matches Mod+Shift+P for pause and F8 / Shift+F8 for finding stepping", () => {
+    expect(
+      isPauseShortcut(key({ code: "KeyP", metaKey: true, shiftKey: true })),
+    ).toBe(true);
+    expect(
+      isPauseShortcut(key({ code: "KeyP", ctrlKey: true, shiftKey: true })),
+    ).toBe(true);
+    expect(isPauseShortcut(key({ code: "KeyP", metaKey: true }))).toBe(false);
+    expect(
+      isPauseShortcut(
+        key({ code: "KeyP", metaKey: true, shiftKey: true, repeat: true }),
+      ),
+    ).toBe(false);
+
+    expect(findingStep(key({ key: "F8" }))).toBe(1);
+    expect(findingStep(key({ key: "F8", shiftKey: true }))).toBe(-1);
+    expect(findingStep(key({ key: "F8", ctrlKey: true }))).toBe(null);
+    expect(findingStep(key({ key: "F8", altKey: true }))).toBe(null);
   });
 });
 

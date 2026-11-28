@@ -10,7 +10,8 @@ Vite 8: Writer's editing workspace. Today it shows the workspace shell, a
 header with the open document's editable title, save status, language picker,
 and a keyboard shortcut reference above a collapsible navigator holding the
 workspace tree, the writing region editing the open document with autosave,
-and a collapsible assistant holding ADR 0012's in-memory chat threads answered
+and a collapsible assistant holding ADR 0011 and ADR 0012's `Findings` and
+`Chat` tabs, passage underlines, `Pause`, and in-memory chat threads answered
 by the service's provisional pair-writer endpoints. Browser tests in `e2e/`
 drive it against a running service with the scripted provider enabled.
 People start with [README.md](./README.md), which maps the source folders.
@@ -82,10 +83,13 @@ People start with [README.md](./README.md), which maps the source folders.
   [src/api/sse.ts](./src/api/sse.ts) behind the `Assistant` interface in
   [conversation.ts](./src/workspace/conversation.ts), never calling `fetch`
   directly in components.
-* Keep `ConversationStore` and `EditorBridge` in `WorkspaceShell`, never in
-  the pane, because an overlaid pane unmounts while it is closed and
-  `useSyncExternalStore` keeps streamed token updates from re-rendering the
-  editor. Bridge the editor only through
+* Keep `ConversationStore`, `FindingsStore`, and `EditorBridge` owned by
+  `WorkspaceShell`, never in the pane, because an overlaid pane unmounts while
+  it is closed and `useSyncExternalStore` keeps streamed token and review
+  updates from re-rendering the editor. Load `ConversationStore`,
+  `FindingsStore`, and `AssistantPane` together through the lazy
+  [assistantRuntime.ts](./src/workspace/assistantRuntime.ts) chunk so they stay
+  out of the eager shell bundle. Bridge the editor only through
   [editorBridge.ts](./src/workspace/editorBridge.ts), which imports nothing
   from `src/editor/`.
 * Size the docked panes, the writing region, and the header's matching

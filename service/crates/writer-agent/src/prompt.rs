@@ -66,7 +66,8 @@ impl PromptTemplate {
     /// placed first so Ollama can reuse its KV cache on follow-up turns.
     pub fn render_messages(&self, reading: &AssembledReading, request: &str) -> Vec<PromptMessage> {
         let documents = render_documents(reading);
-        let selection_block = render_selection(reading.selection.as_deref());
+        let selection_block =
+            render_selection_and_finding(reading.selection.as_deref(), reading.finding.as_ref());
         let trimmed_request = request.trim();
 
         let mut messages = Vec::with_capacity(reading.history.len() + 2);
@@ -177,13 +178,25 @@ fn render_one_document(id: &str, title: &str, text: &str) -> String {
     )
 }
 
-fn render_selection(selection: Option<&str>) -> String {
-    match selection.map(str::trim).filter(|s| !s.is_empty()) {
-        Some(sel) => {
-            format!("\nThe writer has selected this passage:\n<selection>\n{sel}\n</selection>\n")
-        }
-        None => String::new(),
+fn render_selection_and_finding(
+    selection: Option<&str>,
+    finding: Option<&crate::FindingContext>,
+) -> String {
+    let mut out = String::new();
+    if let Some(pinned) = finding {
+        out.push_str(&format!(
+            "\nThe writer is discussing this {} finding:\n<finding>\nPassage: {}\nNote: {}\n</finding>\n",
+            pinned.agent.trim(),
+            pinned.quote.trim(),
+            pinned.note.trim()
+        ));
     }
+    if let Some(sel) = selection.map(str::trim).filter(|s| !s.is_empty()) {
+        out.push_str(&format!(
+            "\nThe writer has selected this passage:\n<selection>\n{sel}\n</selection>\n"
+        ));
+    }
+    out
 }
 
 #[cfg(test)]
@@ -215,6 +228,7 @@ mod tests {
                 cursor_offset: None,
             },
             selection: Some("The lamp burned low above the harbor stones.".to_owned()),
+            finding: None,
             context_documents: vec![ContextDocument {
                 document_id: "doc-2".to_owned(),
                 title: "Notes".to_owned(),
@@ -262,6 +276,7 @@ mod tests {
             message: "How can I further develop this text?".to_owned(),
             document: doc.clone(),
             selection: None,
+            finding: None,
             context_documents: vec![],
             history: vec![],
         };
@@ -272,6 +287,7 @@ mod tests {
             message: "What other ideas should I explore?".to_owned(),
             document: doc,
             selection: None,
+            finding: None,
             context_documents: vec![],
             history: vec![
                 HistoryMessage {

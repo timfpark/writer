@@ -3,7 +3,6 @@ import { Outlet, useParams, useRouterState } from "@tanstack/react-router";
 import {
   lazy,
   Suspense,
-  useContext,
   useEffect,
   useState,
   useSyncExternalStore,
@@ -11,8 +10,11 @@ import {
 import { documentQueryOptions, healthQueryOptions } from "../api/queries";
 import { useQueryFailure } from "../api/useQueryFailure";
 import { useWorkspaceTree } from "../api/workspaceChanges";
-import { AssistantContext, ConversationStore } from "../workspace/conversation";
+import type { AssistantTab } from "../workspace/AssistantPane";
+import type { AssistantRuntime } from "../workspace/assistantRuntime";
+import type { ConversationStore } from "../workspace/conversation";
 import { EditorBridge, EditorBridgeContext } from "../workspace/editorBridge";
+import type { FindingsStore } from "../workspace/findings";
 import { Navigator } from "../workspace/Navigator";
 import { SaveNotices } from "../workspace/SaveNotices";
 import { ServiceUnavailable } from "../workspace/ServiceUnavailable";
@@ -25,15 +27,22 @@ import {
   regionOf,
   type Region,
 } from "./regions";
-import { isReferenceShortcut, paneForShortcut, regionStep } from "./shortcuts";
+import {
+  findingStep,
+  isPauseShortcut,
+  isReferenceShortcut,
+  paneForShortcut,
+  regionStep,
+} from "./shortcuts";
 import { usePane } from "./usePane";
 import styles from "./WorkspaceShell.module.css";
 
-const loadAssistantPane = () =>
-  import("../workspace/AssistantPane").then((module) => ({
+const loadAssistantRuntime = () => import("../workspace/assistantRuntime");
+const AssistantPane = lazy(() =>
+  loadAssistantRuntime().then((module) => ({
     default: module.AssistantPane,
-  }));
-const AssistantPane = lazy(loadAssistantPane);
+  })),
+);
 
 const ReadOnlySourceView = lazy(() =>
   import("../workspace/ReadOnlySourceView").then((module) => ({
@@ -47,19 +56,38 @@ const ShortcutsDialog = lazy(() =>
   })),
 );
 
-// Announces finished pair-writer replies politely without moving focus or
+// Announces finished pair-writer replies, finding count changes, deleted
+// passages, pause changes, and F8 findings politely without moving focus or
 // re-rendering the workspace shell on every streamed token.
-function AssistantAnnouncer({ store }: { store: ConversationStore }) {
-  const announcement = useSyncExternalStore(
+function AssistantAnnouncer({
+  store,
+  findingsStore,
+}: {
+  store: ConversationStore;
+  findingsStore: FindingsStore;
+}) {
+  const chatAnnouncement = useSyncExternalStore(
     store.subscribe,
     () => store.getSnapshot().announcement,
   );
+  const findingsAnnouncement = useSyncExternalStore(
+    findingsStore.subscribe,
+    () => findingsStore.getSnapshot().announcement,
+  );
   return (
-    <output className={styles.srOnly} aria-live="polite" aria-atomic="true">
-      {announcement?.text ?? ""}
-    </output>
+    <>
+      <output className={styles.srOnly} aria-live="polite" aria-atomic="true">
+        {chatAnnouncement?.text ?? ""}
+      </output>
+      <output className={styles.srOnly} aria-live="polite" aria-atomic="true">
+        {findingsAnnouncement?.text ?? ""}
+      </output>
+    </>
   );
 }
+
+const noopSubscribe = () => () => {};
+const nullSource = () => null;
 
 // Renders the read-only source view over the writing region while keeping the
 // live document editor mounted so unsaved edits and undo history stay intact.
@@ -68,13 +96,13 @@ function WritingRegionBody({
   failure,
   onRetry,
 }: {
-  store: ConversationStore;
+  store: ConversationStore | null;
   failure: unknown;
   onRetry: () => void;
 }) {
   const viewingSource = useSyncExternalStore(
-    store.subscribe,
-    () => store.getSnapshot().viewingSource,
+    store?.subscribe ?? noopSubscribe,
+    store ? () => store.getSnapshot().viewingSource : nullSource,
   );
 
   if (failure) {
@@ -83,7 +111,7 @@ function WritingRegionBody({
 
   return (
     <>
-      {viewingSource ? (
+      {viewingSource && store ? (
         <Suspense fallback={null}>
           <ReadOnlySourceView
             key={`${viewingSource.documentId}:${viewingSource.subtitle}`}
@@ -99,15 +127,19 @@ function WritingRegionBody({
   );
 }
 
-// Keeps ConversationStore synced with the open document, pane visibility, and
-// workspace document titles without subscribing WorkspaceShell (and Navigator)
-// to workspace-tree or document-metadata query updates.
+// Keeps ConversationStore and FindingsStore synced with the open document,
+// pane visibility, active tab, and workspace document titles without
+// subscribing WorkspaceShell (and Navigator) to query updates.
 function ConversationSync({
   store,
+  findingsStore,
   assistantOpen,
+  activeTab,
 }: {
   store: ConversationStore;
+  findingsStore: FindingsStore;
   assistantOpen: boolean;
+  activeTab: AssistantTab;
 }) {
   const { documentId } = useParams({ strict: false });
   const { items } = useWorkspaceTree();
@@ -119,11 +151,16 @@ function ConversationSync({
 
   useEffect(() => {
     store.setOpenDocument(documentId ?? null, openDocTitle);
-  }, [store, documentId, openDocTitle]);
+    findingsStore.setOpenDocument(documentId ?? null, openDocTitle);
+  }, [store, findingsStore, documentId, openDocTitle]);
 
   useEffect(() => {
     store.setAssistantOpen(assistantOpen);
   }, [store, assistantOpen]);
+
+  useEffect(() => {
+    store.setChatTabVisible(activeTab === "chat");
+  }, [store, activeTab]);
 
   useEffect(() => {
     if (!items) return;
@@ -147,20 +184,46 @@ export function WorkspaceShell() {
   const navigator = usePane("navigator", pathname);
   const assistant = usePane("assistant", pathname);
   const health = useQuery(healthQueryOptions);
-  const assistantService = useContext(AssistantContext);
 
   const [editorBridge] = useState(() => new EditorBridge());
-  const [conversation] = useState(
-    () => new ConversationStore(assistantService, editorBridge),
-  );
+  const [runtime, setRuntime] = useState<AssistantRuntime | null>(null);
+  const [assistantTab, setAssistantTab] = useState<AssistantTab>("chat");
+
+  // Load ConversationStore and FindingsStore alongside the lazy assistant chunk
+  // so they stay owned by WorkspaceShell (surviving overlaid pane unmounts)
+  // without adding to the eager shell bundle.
   useEffect(() => {
-    void loadAssistantPane();
-  }, []);
+    let active = true;
+    let created: AssistantRuntime | null = null;
+    void loadAssistantRuntime().then((module) => {
+      if (!active) return;
+      created = module.createAssistantRuntime(editorBridge);
+      setRuntime(created);
+    });
+    return () => {
+      active = false;
+      created?.conversation.dispose();
+      created?.findings.dispose();
+    };
+  }, [editorBridge]);
+
+  const conversation = runtime?.conversation ?? null;
+  const findings = runtime?.findings ?? null;
 
   useEffect(() => {
-    conversation.setAssistant(assistantService);
-  }, [conversation, assistantService]);
-  useEffect(() => () => conversation.dispose(), [conversation]);
+    if (!conversation || !findings) return undefined;
+    return conversation.onBusyChange((busy) => findings.setChatBusy(busy));
+  }, [conversation, findings]);
+
+  const showAssistant = assistant.show;
+  useEffect(() => {
+    if (!findings) return undefined;
+    return editorBridge.onFindingClick((_documentId, findingId) => {
+      setAssistantTab("findings");
+      showAssistant();
+      findings.selectFinding(findingId, { moveCaret: false });
+    });
+  }, [editorBridge, findings, showAssistant]);
 
   const [showingShortcuts, setShowingShortcuts] = useState(false);
 
@@ -179,6 +242,25 @@ export function WorkspaceShell() {
       if (isReferenceShortcut(event)) {
         event.preventDefault();
         setShowingShortcuts((showing) => !showing);
+        return;
+      }
+      if (isPauseShortcut(event) && conversation && findings) {
+        const readiness = conversation.getSnapshot().readiness;
+        if (!readiness.checked || readiness.status?.ready !== false) {
+          event.preventDefault();
+          findings.togglePaused();
+        }
+        return;
+      }
+      const findingDirection = findingStep(event);
+      if (findingDirection && findings) {
+        const hidden = "[aria-hidden='true'], [inert]";
+        if (regionElement("writing")?.closest(hidden)) return;
+        event.preventDefault();
+        const selected = findings.stepFinding(findingDirection);
+        if (selected) {
+          setAssistantTab("findings");
+        }
         return;
       }
       const step = regionStep(event);
@@ -210,6 +292,8 @@ export function WorkspaceShell() {
       globalThis.removeEventListener("keydown", onKeyDown);
     };
   }, [
+    conversation,
+    findings,
     toggleNavigator,
     toggleAssistant,
     navigatorShown,
@@ -227,6 +311,7 @@ export function WorkspaceShell() {
           navigator={navigator}
           assistant={assistant}
           conversation={conversation}
+          findings={findings}
           onShowShortcuts={() => setShowingShortcuts(true)}
         />
         <div className={styles.body}>
@@ -242,18 +327,32 @@ export function WorkspaceShell() {
             />
           </main>
           <Pane pane={assistant} label="Assistant" landmark="aside">
-            <Suspense fallback={null}>
-              <AssistantPane
-                store={conversation}
-                onRevealWriting={() => {
-                  if (!assistant.docked) assistant.close();
-                }}
-              />
-            </Suspense>
+            {conversation && findings ? (
+              <Suspense fallback={null}>
+                <AssistantPane
+                  store={conversation}
+                  findingsStore={findings}
+                  activeTab={assistantTab}
+                  onTabChange={setAssistantTab}
+                  onRevealWriting={() => {
+                    if (!assistant.docked) assistant.close();
+                  }}
+                />
+              </Suspense>
+            ) : null}
           </Pane>
         </div>
-        <ConversationSync store={conversation} assistantOpen={assistant.open} />
-        <AssistantAnnouncer store={conversation} />
+        {conversation && findings ? (
+          <>
+            <ConversationSync
+              store={conversation}
+              findingsStore={findings}
+              assistantOpen={assistant.open}
+              activeTab={assistantTab}
+            />
+            <AssistantAnnouncer store={conversation} findingsStore={findings} />
+          </>
+        ) : null}
         {showingShortcuts ? (
           <Suspense fallback={null}>
             <ShortcutsDialog onClose={() => setShowingShortcuts(false)} />

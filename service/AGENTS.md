@@ -51,8 +51,10 @@ start with [README.md](./README.md).
   body limit per route with `routes!(...).layer(DefaultBodyLimit::max(...))`,
   as the operations that carry document content do.
 * Provisional pair-writer routes live under `/api/v1/pair-writer`
-  (`getPairWriter` for readiness and `createPairWriterReply` on
-  `POST /api/v1/pair-writer/replies` for ADR 0004 SSE streams). By default
+  (`getPairWriter` for readiness, `createPairWriterReply` on
+  `POST /api/v1/pair-writer/replies` for ADR 0004 SSE streams, and
+  `createPairWriterReview` on `POST /api/v1/pair-writer/reviews` for
+  scripted pause-triggered findings). By default
   (`WRITER_PAIR_WRITER=ollama` or unset), `writer-server` uses
   `OllamaProvider` against `OLLAMA_HOST` (default `http://127.0.0.1:11434`,
   or `http://host.docker.internal:11434` inside the development container) and

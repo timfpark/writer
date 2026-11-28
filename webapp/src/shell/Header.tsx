@@ -22,6 +22,7 @@ import type {
   AssistantSignal,
   ConversationStore,
 } from "../workspace/conversation";
+import type { FindingsStore } from "../workspace/findings";
 import controls from "./controls.module.css";
 import styles from "./Header.module.css";
 import { LanguagePicker } from "./LanguagePicker";
@@ -34,7 +35,8 @@ import type { PaneState } from "./usePane";
 interface HeaderProps {
   navigator: PaneState;
   assistant: PaneState;
-  conversation: ConversationStore;
+  conversation: ConversationStore | null;
+  findings: FindingsStore | null;
   onShowShortcuts: () => void;
 }
 
@@ -44,6 +46,7 @@ export function Header({
   navigator,
   assistant,
   conversation,
+  findings,
   onShowShortcuts,
 }: HeaderProps) {
   return (
@@ -74,7 +77,11 @@ export function Header({
             {`Keyboard shortcuts (${keyLabel(referenceKeys)})`}
           </Tooltip>
         </TooltipTrigger>
-        <AssistantToggle pane={assistant} conversation={conversation} />
+        <AssistantToggle
+          pane={assistant}
+          conversation={conversation}
+          findings={findings}
+        />
         <ProfileMenu />
       </div>
     </header>
@@ -230,25 +237,75 @@ interface PaneToggleProps {
   label: string;
   icon: LucideIcon;
   signal?: AssistantSignal;
+  findingsCount?: number;
+  statusDetail?: string | null;
 }
+
+const noopSubscribe = () => () => {};
+const idleSignal = (): AssistantSignal => "idle";
+const EMPTY_FINDINGS_SIGNAL = { activeCount: 0, reviewing: false } as const;
+const emptyFindingsSignal = () => EMPTY_FINDINGS_SIGNAL;
 
 function AssistantToggle({
   pane,
   conversation,
+  findings,
 }: {
   pane: PaneState;
-  conversation: ConversationStore;
+  conversation: ConversationStore | null;
+  findings: FindingsStore | null;
 }) {
-  const signal = useSyncExternalStore(
-    conversation.subscribe,
-    () => conversation.getSnapshot().signal,
+  const chatSignal = useSyncExternalStore(
+    conversation?.subscribe ?? noopSubscribe,
+    conversation ? () => conversation.getSnapshot().signal : idleSignal,
   );
+  const findingsSnap = useSyncExternalStore<{
+    activeCount: number;
+    reviewing: boolean;
+  }>(
+    findings?.subscribe ?? noopSubscribe,
+    findings ? findings.getSnapshot : emptyFindingsSignal,
+  );
+  const activeCount = pane.open ? 0 : findingsSnap.activeCount;
+  const combinedSignal: AssistantSignal = pane.open
+    ? "idle"
+    : chatSignal === "streaming" || findingsSnap.reviewing
+      ? "streaming"
+      : chatSignal;
+
+  const countPart =
+    activeCount > 0
+      ? activeCount === 1
+        ? "1 finding"
+        : `${activeCount} findings`
+      : null;
+  const activityPart = pane.open
+    ? null
+    : chatSignal === "streaming"
+      ? "replying"
+      : findingsSnap.reviewing
+        ? "reviewing"
+        : chatSignal === "unread"
+          ? "unread reply"
+          : null;
+
+  const statusDetail =
+    countPart && activityPart
+      ? `${countPart} (${activityPart})`
+      : countPart
+        ? countPart
+        : activityPart
+          ? `(${activityPart})`
+          : null;
+
   return (
     <PaneToggle
       pane={pane}
       label="Assistant"
       icon={PanelRight}
-      signal={pane.open ? "idle" : signal}
+      signal={combinedSignal}
+      findingsCount={activeCount}
+      statusDetail={statusDetail}
     />
   );
 }
@@ -258,19 +315,17 @@ function PaneToggle({
   label,
   icon: Icon,
   signal = "idle",
+  findingsCount = 0,
+  statusDetail = null,
 }: PaneToggleProps) {
-  const accessibleName =
-    signal === "streaming"
-      ? `${label} (replying)`
-      : signal === "unread"
-        ? `${label} (unread reply)`
-        : label;
-  const tooltipText =
-    signal === "streaming"
-      ? `Show ${label.toLowerCase()} — replying (${keyLabel(paneKeys[pane.name])})`
-      : signal === "unread"
-        ? `Show ${label.toLowerCase()} — unread reply (${keyLabel(paneKeys[pane.name])})`
-        : `${pane.open ? "Hide" : "Show"} ${label.toLowerCase()} (${keyLabel(paneKeys[pane.name])})`;
+  const accessibleName = statusDetail
+    ? statusDetail.startsWith("(")
+      ? `${label} ${statusDetail}`
+      : `${label}, ${statusDetail}`
+    : label;
+  const tooltipText = statusDetail
+    ? `Show ${label.toLowerCase()} — ${statusDetail.replace(/^\(|\)$/g, "")} (${keyLabel(paneKeys[pane.name])})`
+    : `${pane.open ? "Hide" : "Show"} ${label.toLowerCase()} (${keyLabel(paneKeys[pane.name])})`;
   return (
     <TooltipTrigger delay={600}>
       <ToggleButton
@@ -288,6 +343,11 @@ function PaneToggle({
             data-signal={signal}
             aria-hidden="true"
           />
+        ) : null}
+        {findingsCount > 0 ? (
+          <span className={styles.countBadge} aria-hidden="true">
+            {findingsCount}
+          </span>
         ) : null}
       </ToggleButton>
       <Tooltip className={controls.tooltip} offset={6}>

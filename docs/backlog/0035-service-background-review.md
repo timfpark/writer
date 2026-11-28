@@ -39,7 +39,7 @@ as a conversation of its own and how it points to the version of the text it
 read. Backlog 60 and
 backlog 61 built the agent crate, its scripted
 provider, and `service/prompts/`,
-[backlog 62](./0062-scripted-findings-tab.md) adds scripted findings behind a
+backlog 62 added scripted findings behind a
 provisional review endpoint, and
 [backlog 12](./0012-first-pair-writing-agent.md) aligns them with the agent
 ADR and adds the conversation cases in `evals/`, all of which this story

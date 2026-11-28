@@ -9,6 +9,7 @@ use std::time::Duration;
 use tokio::sync::mpsc;
 
 use crate::reading::{AssembledReading, assemble_reading, strip_markdown_inline};
+use crate::review::{ReviewRequest, ReviewResponse, scripted_review};
 use crate::{
     AgentFuture, ChatProvider, ChatTurnRequest, PairWriterIssue, PairWriterStatus, ReplyDone,
     ReplyError, ReplyErrorKind, ReplyEvent, ReplyStream,
@@ -38,6 +39,8 @@ pub struct ScriptedConfig {
     pub followup_first_token_delay: Duration,
     /// Streaming rate in tokens per second (ADR 0010: ~30 tokens/s).
     pub tokens_per_second: u32,
+    /// Delay before a scripted background review finishes (tests shorten this).
+    pub review_delay: Duration,
     pub mode: ScriptedMode,
     pub model: String,
 }
@@ -49,6 +52,7 @@ impl Default for ScriptedConfig {
             per_1000_words_delay: Duration::from_millis(3_000),
             followup_first_token_delay: Duration::from_millis(450),
             tokens_per_second: 30,
+            review_delay: Duration::from_millis(1_200),
             mode: ScriptedMode::Ready,
             model: DEFAULT_SCRIPTED_MODEL.to_owned(),
         }
@@ -219,6 +223,43 @@ impl ChatProvider for ScriptedProvider {
             Ok(ReplyStream::from_receiver(rx))
         })
     }
+
+    fn review(
+        &self,
+        request: ReviewRequest,
+    ) -> AgentFuture<'_, Result<ReviewResponse, ReplyError>> {
+        let config = self.config.clone();
+        #[cfg(test)]
+        let active_generations = std::sync::Arc::clone(&self.active_generations);
+        Box::pin(async move {
+            if config.mode == ScriptedMode::MissingModel {
+                return Err(ReplyError {
+                    kind: ReplyErrorKind::Unavailable,
+                    detail: "The configured pair-writer model is not installed.".to_owned(),
+                });
+            }
+
+            #[cfg(test)]
+            let _guard = {
+                active_generations.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                GenerationGuard(active_generations)
+            };
+
+            if !config.review_delay.is_zero() {
+                tokio::time::sleep(config.review_delay).await;
+            }
+
+            if config.mode == ScriptedMode::FailMidStream {
+                return Err(ReplyError {
+                    kind: ReplyErrorKind::UpstreamFailed,
+                    detail: "The pair writer stopped responding before the review finished."
+                        .to_owned(),
+                });
+            }
+
+            Ok(scripted_review(&request, &config.model))
+        })
+    }
 }
 
 async fn sleep_or_closed(tx: &mpsc::Sender<ReplyEvent>, delay: Duration) -> bool {
@@ -386,7 +427,24 @@ pub fn compose_scripted_reply(message: &str, reading: &AssembledReading) -> Stri
     }
 
     let mut notes = Vec::new();
-    if quotes.is_empty() {
+    if let Some(ref pinned) = reading.finding {
+        let pinned_quote = strip_markdown_inline(&pinned.quote).trim().to_owned();
+        if !pinned_quote.is_empty() && !pinned_quote.contains('"') {
+            let alt = brief_alternative(&pinned_quote, 0);
+            notes.push(format!(
+                "1. On the {} note for \"{pinned_quote}\", consider keeping the intent while trying a sharper turn such as {alt}.",
+                pinned.agent
+            ));
+            notes.push(
+                "2. Check how the sentence immediately before and after this passage sets up the rhythm before revising."
+                    .to_owned(),
+            );
+        }
+    }
+
+    if !notes.is_empty() {
+        // Finding-grounded notes already populated.
+    } else if quotes.is_empty() {
         notes.push(
             "1. The draft is currently light on prose; try opening on one concrete sensory beat, such as *a door latch clicking shut before anyone speaks*."
                 .to_owned(),
@@ -483,6 +541,7 @@ mod tests {
             per_1000_words_delay: Duration::ZERO,
             followup_first_token_delay: Duration::from_millis(1),
             tokens_per_second: 0,
+            review_delay: Duration::from_millis(1),
             mode,
             model: DEFAULT_SCRIPTED_MODEL.to_owned(),
         }
@@ -499,6 +558,7 @@ mod tests {
                 cursor_offset: None,
             },
             selection: None,
+            finding: None,
             context_documents: vec![],
             history: vec![],
         }
@@ -643,5 +703,42 @@ mod tests {
             text.contains("\"Cold rain ticked against the glass\""),
             "reply: {text}"
         );
+    }
+
+    #[tokio::test]
+    async fn review_cancels_when_future_is_dropped_and_returns_findings_when_ready() {
+        let slow = std::sync::Arc::new(ScriptedProvider::new(ScriptedConfig {
+            review_delay: Duration::from_secs(60),
+            ..fast_config(ScriptedMode::Ready)
+        }));
+        let request = ReviewRequest {
+            document_id: "doc-1".to_owned(),
+            title: "Chapter 1".to_owned(),
+            passages: vec![crate::ReviewPassageInput {
+                passage_id: "p1".to_owned(),
+                index: 0,
+                text: "The harbor felt very dark beneath the low pier.".to_owned(),
+                content_hash: "h1".to_owned(),
+            }],
+            document_word_count: Some(9),
+        };
+        let slow_task = std::sync::Arc::clone(&slow);
+        let req_task = request.clone();
+        let handle = tokio::spawn(async move { slow_task.review(req_task).await });
+        tokio::time::sleep(Duration::from_millis(20)).await;
+        assert_eq!(slow.active_generations(), 1);
+        handle.abort();
+        tokio::time::timeout(Duration::from_millis(500), async {
+            while slow.active_generations() > 0 {
+                tokio::time::sleep(Duration::from_millis(5)).await;
+            }
+        })
+        .await
+        .expect("review task should cancel when aborted");
+
+        let fast = ScriptedProvider::new(fast_config(ScriptedMode::Ready));
+        let response = fast.review(request).await.unwrap();
+        assert_eq!(response.items.len(), 1);
+        assert_eq!(response.items[0].agent, crate::ReviewAgentKind::WeakProse);
     }
 }

@@ -20,11 +20,12 @@ use tower::ServiceExt;
 use writer_agent::{
     AgentFuture, ChatProvider, ChatTurnRequest, DEFAULT_CONVERSATION_MODEL, DEFAULT_SCRIPTED_MODEL,
     OllamaConfig, OllamaProvider, PairWriterStatus, ReplyError, ReplyEvent, ReplyStream,
-    ScriptedConfig, ScriptedMode, ScriptedProvider, UnconfiguredProvider,
+    ReviewRequest, ReviewResponse, ScriptedConfig, ScriptedMode, ScriptedProvider,
+    UnconfiguredProvider,
 };
 use writer_api::{
-    ChatReplyDelta, ChatReplyDone, PairWriterIssue, PairWriterStatus as ApiStatus, Problem,
-    ProblemCode,
+    ChatReplyDelta, ChatReplyDone, PairWriterIssue, PairWriterReviewResponse,
+    PairWriterStatus as ApiStatus, Problem, ProblemCode, ReviewAgentKind,
 };
 use writer_storage::FilesystemStore;
 
@@ -77,6 +78,7 @@ fn fast_scripted(mode: ScriptedMode) -> Arc<dyn ChatProvider> {
         per_1000_words_delay: Duration::ZERO,
         followup_first_token_delay: Duration::from_millis(1),
         tokens_per_second: 0,
+        review_delay: Duration::from_millis(1),
         mode,
         model: DEFAULT_SCRIPTED_MODEL.to_owned(),
     }))
@@ -407,6 +409,19 @@ impl ChatProvider for DisconnectProbeProvider {
                 cancelled.notify_one();
             });
             Ok(ReplyStream::from_receiver(rx))
+        })
+    }
+
+    fn review(
+        &self,
+        _request: ReviewRequest,
+    ) -> AgentFuture<'_, Result<ReviewResponse, ReplyError>> {
+        Box::pin(async {
+            Ok(ReviewResponse {
+                items: vec![],
+                model: "probe".to_owned(),
+                prompt_version: None,
+            })
         })
     }
 }
@@ -807,6 +822,202 @@ async fn ollama_missing_model_and_failures_never_leak_marker() {
     assert_eq!(problem.status, 504);
 
     assert_no_marker_in_logs();
+}
+
+#[tokio::test]
+async fn scripted_review_returns_five_agent_kinds_with_anchors_and_audit() {
+    let (_dir, router) = router_for(fast_scripted(ScriptedMode::Ready)).await;
+
+    let body = json!({
+        "documentId": "a0000000-0000-4000-8000-000000000001",
+        "title": format!("Harbor Chapter {MARKER}"),
+        "documentWordCount": 60,
+        "passages": [
+            {
+                "passageId": "p-1",
+                "index": 0,
+                "text": format!("The harbor felt very dark beneath the pier near {MARKER}."),
+                "contentHash": "h-1"
+            },
+            {
+                "passageId": "p-2",
+                "index": 1,
+                "text": "Mara paused at the dock before she told her to wait.",
+                "contentHash": "h-2"
+            },
+            {
+                "passageId": "p-3",
+                "index": 2,
+                "text": "She never told the keeper where the brass key lay.",
+                "contentHash": "h-3"
+            },
+            {
+                "passageId": "p-4",
+                "index": 3,
+                "text": "Tom walked along the seawall and opens the rusted gate.",
+                "contentHash": "h-4"
+            },
+            {
+                "passageId": "p-5",
+                "index": 4,
+                "text": "Cold lantern light spilled from the lantern along the quay.",
+                "contentHash": "h-5"
+            }
+        ]
+    })
+    .to_string();
+
+    let response = router
+        .oneshot(
+            Request::post("/api/v1/pair-writer/reviews")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let bytes = to_bytes(response.into_body(), usize::MAX).await.unwrap();
+    let review: PairWriterReviewResponse = serde_json::from_slice(&bytes).unwrap();
+    assert_eq!(review.model, DEFAULT_SCRIPTED_MODEL);
+    assert!(review.prompt_version.is_some());
+
+    let agents: Vec<ReviewAgentKind> = review.items.iter().map(|f| f.agent).collect();
+    assert!(agents.contains(&ReviewAgentKind::WeakProse));
+    assert!(agents.contains(&ReviewAgentKind::Clarity));
+    assert!(agents.contains(&ReviewAgentKind::OpenQuestions));
+    assert!(agents.contains(&ReviewAgentKind::PovTense));
+    assert!(agents.contains(&ReviewAgentKind::Repetition));
+    for finding in &review.items {
+        assert!(!finding.finding_id.is_empty());
+        assert!(!finding.anchor.quote.is_empty());
+        assert!(finding.anchor.start_offset < finding.anchor.end_offset);
+        assert_eq!(finding.audit.trigger, "Short typing pause");
+        assert_eq!(finding.audit.sources.len(), 1);
+    }
+    assert_no_marker_in_logs();
+}
+
+#[tokio::test]
+async fn review_validates_and_handles_unavailable_without_leaking_marker() {
+    let (_dir, router) = router_for(fast_scripted(ScriptedMode::Ready)).await;
+
+    let invalid = json!({
+        "documentId": "",
+        "title": format!("Draft {MARKER}"),
+        "passages": []
+    })
+    .to_string();
+    let res = router
+        .oneshot(
+            Request::post("/api/v1/pair-writer/reviews")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(invalid))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::UNPROCESSABLE_ENTITY);
+    let text = String::from_utf8(
+        to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec(),
+    )
+    .unwrap();
+    assert!(!text.contains(MARKER), "422 leaked marker: {text}");
+    let problem: Problem = serde_json::from_str(&text).unwrap();
+    assert_eq!(problem.code, ProblemCode::ValidationFailed);
+
+    let (_dir2, unconfigured) = router_for(Arc::new(UnconfiguredProvider)).await;
+    let valid = json!({
+        "documentId": "a0000000-0000-4000-8000-000000000001",
+        "title": format!("Draft {MARKER}"),
+        "passages": [{
+            "passageId": "p-1",
+            "index": 0,
+            "text": format!("The pier felt very dark near {MARKER}."),
+            "contentHash": "h-1"
+        }]
+    })
+    .to_string();
+    let res = unconfigured
+        .oneshot(
+            Request::post("/api/v1/pair-writer/reviews")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(valid))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::SERVICE_UNAVAILABLE);
+    let text = String::from_utf8(
+        to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec(),
+    )
+    .unwrap();
+    assert!(!text.contains(MARKER), "503 leaked marker: {text}");
+    let problem: Problem = serde_json::from_str(&text).unwrap();
+    assert_eq!(problem.code, ProblemCode::Unavailable);
+
+    assert_no_marker_in_logs();
+}
+
+#[tokio::test]
+async fn reply_accepts_pinned_finding_and_records_it_in_what_it_read() {
+    let (_dir, router) = router_for(fast_scripted(ScriptedMode::Ready)).await;
+    let body = json!({
+        "message": "How might I tighten this?",
+        "document": {
+            "documentId": "a0000000-0000-4000-8000-000000000001",
+            "title": "Harbor Chapter",
+            "content": "The harbor felt very dark beneath the low pier.\n"
+        },
+        "finding": {
+            "agent": "Weak prose",
+            "quote": "very dark",
+            "note": "The intensifier softens the image."
+        }
+    })
+    .to_string();
+
+    let response = router
+        .oneshot(
+            Request::post("/api/v1/pair-writer/replies")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(body))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let raw = String::from_utf8(
+        to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec(),
+    )
+    .unwrap();
+    let events = parse_sse(&raw);
+    let mut reply_text = String::new();
+    let mut done: Option<ChatReplyDone> = None;
+    for (name, data) in events {
+        if name == "delta" {
+            let delta: ChatReplyDelta = serde_json::from_str(&data).unwrap();
+            reply_text.push_str(&delta.text);
+        } else if name == "done" {
+            done = Some(serde_json::from_str(&data).unwrap());
+        }
+    }
+    assert!(reply_text.contains("\"very dark\""), "reply: {reply_text}");
+    let done = done.expect("done event");
+    assert!(
+        done.sources
+            .iter()
+            .any(|s| s.kind == writer_api::ChatSourceKind::Finding)
+    );
 }
 
 #[tokio::test]

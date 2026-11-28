@@ -6,9 +6,12 @@ import {
   type ChatReplyDone,
   type ChatReplyMetrics,
   type CreatePairWriterReplyRequest,
+  type CreatePairWriterReviewRequest,
+  type PairWriterReviewResponse,
   type PairWriterStatus,
   type Problem,
   type ReadingScope,
+  type ReviewAgentKind,
 } from "../api/client";
 import { readSseStream } from "../api/sse";
 import type { DocumentSnapshot, EditorBridge } from "./editorBridge";
@@ -40,6 +43,10 @@ export interface ReplyStreamHandlers {
   onError: (error: AssistantStreamError) => void;
 }
 
+export type ReviewPassagesResult =
+  | { ok: true; response: PairWriterReviewResponse }
+  | { ok: false; unavailable: boolean; aborted?: boolean };
+
 // What answers the writer in the assistant pane. Keeping every service call
 // behind this interface confines a replaced endpoint to this module.
 export interface Assistant {
@@ -49,6 +56,10 @@ export interface Assistant {
     handlers: ReplyStreamHandlers,
     signal: AbortSignal,
   ): Promise<void>;
+  reviewPassages(
+    request: CreatePairWriterReviewRequest,
+    signal: AbortSignal,
+  ): Promise<ReviewPassagesResult>;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -108,6 +119,7 @@ function isSourceKind(value: unknown): value is ChatReadSource["kind"] {
   return (
     value === "document" ||
     value === "selection" ||
+    value === "finding" ||
     value === "contextDocument" ||
     value === "history"
   );
@@ -317,6 +329,30 @@ export const serviceAssistant: Assistant = {
       });
     }
   },
+
+  async reviewPassages(
+    request: CreatePairWriterReviewRequest,
+    signal: AbortSignal,
+  ): Promise<ReviewPassagesResult> {
+    try {
+      const result = await client.POST("/api/v1/pair-writer/reviews", {
+        body: request,
+        signal,
+      });
+      if (result.data) {
+        return { ok: true, response: result.data };
+      }
+      const problem = parseProblem(result.error);
+      const unavailable =
+        problem?.code === "unavailable" || result.response.status === 503;
+      return { ok: false, unavailable };
+    } catch {
+      if (signal.aborted) {
+        return { ok: false, unavailable: false, aborted: true };
+      }
+      return { ok: false, unavailable: true };
+    }
+  },
 };
 
 export const AssistantContext = createContext<Assistant>(serviceAssistant);
@@ -386,6 +422,15 @@ export interface DividerMessage {
 
 export type ThreadMessage = WriterMessage | AssistantMessage | DividerMessage;
 
+export interface PinnedFinding {
+  findingId: string;
+  documentId: string;
+  agent: ReviewAgentKind;
+  agentLabel: string;
+  quote: string;
+  note: string;
+}
+
 export interface ChatThread {
   id: string;
   title: string;
@@ -393,6 +438,7 @@ export interface ChatThread {
   documentTitle: string;
   updatedAt: number;
   unread: boolean;
+  pinnedFinding: PinnedFinding | null;
   messages: readonly ThreadMessage[];
 }
 
@@ -498,6 +544,9 @@ export class ConversationStore {
   private openDocumentId: string | null = null;
   private openDocumentTitle = "";
   private assistantOpen = false;
+  private chatTabVisible = true;
+  private lastBusy = false;
+  private readonly busyListeners = new Set<(busy: boolean) => void>();
   private pendingTargetThread: { documentId: string; threadId: string } | null =
     null;
 
@@ -506,6 +555,11 @@ export class ConversationStore {
   constructor(assistant: Assistant, bridge: EditorBridge) {
     this.assistant = assistant;
     this.bridge = bridge;
+  }
+
+  onBusyChange(listener: (busy: boolean) => void): () => void {
+    this.busyListeners.add(listener);
+    return () => this.busyListeners.delete(listener);
   }
 
   setAssistant(assistant: Assistant): void {
@@ -550,6 +604,11 @@ export class ConversationStore {
   };
 
   private emit(): void {
+    const busy = this.streaming !== null || this.pendingSend !== null;
+    if (busy !== this.lastBusy) {
+      this.lastBusy = busy;
+      for (const listener of this.busyListeners) listener(busy);
+    }
     this.cachedSnapshot = null;
     for (const listener of this.listeners) listener();
   }
@@ -568,12 +627,67 @@ export class ConversationStore {
   setAssistantOpen(open: boolean): void {
     const becameOpen = open && !this.assistantOpen;
     this.assistantOpen = open;
-    if (open && this.view === "thread" && this.activeThreadId) {
+    if (
+      open &&
+      this.chatTabVisible &&
+      this.view === "thread" &&
+      this.activeThreadId
+    ) {
       this.markThreadRead(this.activeThreadId);
     }
     if (becameOpen) {
       void this.checkReadiness();
     }
+  }
+
+  setChatTabVisible(visible: boolean): void {
+    this.chatTabVisible = visible;
+    if (
+      visible &&
+      this.assistantOpen &&
+      this.view === "thread" &&
+      this.activeThreadId
+    ) {
+      this.markThreadRead(this.activeThreadId);
+    }
+  }
+
+  openFindingThread(finding: PinnedFinding): string {
+    const existing = this.threads.find(
+      (t) =>
+        t.documentId === finding.documentId &&
+        t.pinnedFinding?.findingId === finding.findingId,
+    );
+    if (existing) {
+      this.activeThreadId = existing.id;
+      this.view = "thread";
+      if (this.assistantOpen && this.chatTabVisible) {
+        this.markThreadReadSilent(existing.id);
+      }
+      this.emit();
+      return existing.id;
+    }
+
+    const threadId = crypto.randomUUID();
+    const quoteSnippet =
+      finding.quote.length > 32
+        ? `${finding.quote.slice(0, 30).trimEnd()}…`
+        : finding.quote;
+    const newThread: ChatThread = {
+      id: threadId,
+      title: `${finding.agentLabel}: “${quoteSnippet}”`,
+      documentId: finding.documentId,
+      documentTitle: this.openDocumentTitle || "Untitled",
+      updatedAt: Date.now(),
+      unread: false,
+      pinnedFinding: finding,
+      messages: [],
+    };
+    this.threads = [newThread, ...this.threads];
+    this.activeThreadId = threadId;
+    this.view = "thread";
+    this.emit();
+    return threadId;
   }
 
   setOpenDocument(documentId: string | null, title: string): void {
@@ -617,7 +731,7 @@ export class ConversationStore {
         const latest = this.threads.find((t) => t.documentId === documentId);
         this.activeThreadId = latest?.id ?? null;
       }
-      if (this.assistantOpen && this.activeThreadId) {
+      if (this.assistantOpen && this.chatTabVisible && this.activeThreadId) {
         this.markThreadReadSilent(this.activeThreadId);
       }
     } else {
@@ -686,7 +800,7 @@ export class ConversationStore {
     if (!this.threads.some((t) => t.id === threadId)) return;
     this.activeThreadId = threadId;
     this.view = "thread";
-    if (this.assistantOpen) {
+    if (this.assistantOpen && this.chatTabVisible) {
       this.markThreadReadSilent(threadId);
     }
     this.emit();
@@ -1086,6 +1200,7 @@ export class ConversationStore {
         documentTitle: params.documentTitle,
         updatedAt: now,
         unread: false,
+        pinnedFinding: null,
         messages: appended,
       };
       this.threads = [newThread, ...this.threads];
@@ -1116,6 +1231,7 @@ export class ConversationStore {
     };
     this.emit();
 
+    const pinnedFinding = params.existingThread?.pinnedFinding ?? null;
     const apiRequest: CreatePairWriterReplyRequest = {
       message: params.text,
       document: {
@@ -1126,6 +1242,15 @@ export class ConversationStore {
         cursorOffset: selectionOffset ?? cursorOffset,
       },
       ...(plan.selection ? { selection: { text: plan.selection } } : {}),
+      ...(pinnedFinding
+        ? {
+            finding: {
+              agent: pinnedFinding.agentLabel,
+              quote: pinnedFinding.quote,
+              note: pinnedFinding.note,
+            },
+          }
+        : {}),
       contextDocuments: plan.contextDocuments.map((doc) => ({
         documentId: doc.documentId,
         title: doc.title,
@@ -1149,6 +1274,7 @@ export class ConversationStore {
           this.streaming = null;
           const unseen =
             !this.assistantOpen ||
+            !this.chatTabVisible ||
             this.view !== "thread" ||
             this.activeThreadId !== threadId;
           const thread = this.threads.find((t) => t.id === threadId);

@@ -241,6 +241,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pair-writer/reviews": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Review changed paragraphs or scenes for provisional background findings. */
+        post: operations["createPairWriterReview"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/workspace": {
         parameters: {
             query?: never;
@@ -288,6 +305,12 @@ export interface components {
             /** @description Scope used if the caller already windowed a document past the limit. */
             scope?: components["schemas"]["ReadingScope"];
             title: string;
+        };
+        /** @description A pinned finding handed off from the Findings tab to a Chat thread. */
+        ChatFindingInput: {
+            agent: string;
+            note: string;
+            quote: string;
         };
         /** @description One earlier message in the active thread. */
         ChatHistoryMessage: {
@@ -374,7 +397,7 @@ export interface components {
          * @description The kind of source recorded in `What it read`.
          * @enum {string}
          */
-        ChatSourceKind: "document" | "selection" | "contextDocument" | "history";
+        ChatSourceKind: "document" | "selection" | "finding" | "contextDocument" | "history";
         /** @description A document to create with a client-generated identifier. */
         CreateDocumentRequest: {
             /** @description The sibling to create it before, or `null` for the end. */
@@ -416,12 +439,26 @@ export interface components {
             contextDocuments?: components["schemas"]["ChatContextDocument"][];
             /** @description The open document as it stands. */
             document: components["schemas"]["ChatDocumentInput"];
+            /** @description Optional pinned finding when the thread was opened from the Findings tab. */
+            finding?: components["schemas"]["ChatFindingInput"];
             /** @description Earlier messages in the current thread, oldest first. */
             history?: components["schemas"]["ChatHistoryMessage"][];
             /** @description The writer's question or prompt for this turn. */
             message: string;
             /** @description Optional active selection in the open document. */
             selection?: components["schemas"]["ChatSelectionInput"];
+        };
+        /** @description Request to review changed paragraphs or scenes of one document. */
+        CreatePairWriterReviewRequest: {
+            documentId: string;
+            /**
+             * Format: int32
+             * @description Optional document word count for quietness gates and `What it read`.
+             */
+            documentWordCount?: number;
+            /** @description Changed paragraphs or scenes to review, in reading order. */
+            passages: components["schemas"]["ReviewPassageInput"][];
+            title: string;
         };
         /** @description A document's metadata and the revision of its content. */
         Document: {
@@ -443,6 +480,35 @@ export interface components {
             markdown: string;
             revision: string;
         };
+        /**
+         * @description Provisional passage anchor pointing to an exact substring inside one
+         *     reviewed passage, using UTF-16 code-unit offsets.
+         */
+        FindingAnchor: {
+            contentHash: string;
+            /** Format: int32 */
+            endOffset: number;
+            passageId: string;
+            quote: string;
+            /** Format: int32 */
+            startOffset: number;
+        };
+        /** @description Facts shown in a finding's collapsed `What it read` disclosure. */
+        FindingAudit: {
+            model: string;
+            /** @description Prompt name and version when a prompt or rule set is used, or `null`. */
+            promptVersion: string | null;
+            reason: string;
+            sources: components["schemas"]["ChatReadSource"][];
+            /** Format: int32 */
+            totalWords: number;
+            trigger: string;
+        };
+        /**
+         * @description Category filters defined in ADR 0011 for the Findings tab.
+         * @enum {string}
+         */
+        FindingCategory: "prose" | "continuity" | "questions" | "chapter" | "rules";
         /** @description A folder, which holds folders and documents. */
         Folder: {
             id: string;
@@ -463,6 +529,13 @@ export interface components {
          * @enum {string}
          */
         PairWriterIssue: "notConfigured" | "runtimeUnreachable" | "modelMissing";
+        /** @description Advice-only findings produced for one background review request. */
+        PairWriterReviewResponse: {
+            items: components["schemas"]["ReviewFinding"][];
+            model: string;
+            /** @description Prompt name and version when a prompt or rule set is used, or `null`. */
+            promptVersion: string | null;
+        };
         /** @description Whether the pair writer can answer and, if not, what is missing. */
         PairWriterStatus: {
             /** @description Short service-authored explanation of what is missing; otherwise `null`. */
@@ -536,6 +609,37 @@ export interface components {
              *     characters.
              */
             title: string;
+        };
+        /**
+         * @description The five pause-triggered background agents from ADR 0011.
+         * @enum {string}
+         */
+        ReviewAgentKind: "weakProse" | "clarity" | "openQuestions" | "povTense" | "repetition";
+        /** @description One advice-only background review finding. */
+        ReviewFinding: {
+            agent: components["schemas"]["ReviewAgentKind"];
+            agentLabel: string;
+            anchor: components["schemas"]["FindingAnchor"];
+            audit: components["schemas"]["FindingAudit"];
+            category: components["schemas"]["FindingCategory"];
+            /** Format: int32 */
+            confidence: number;
+            findingId: string;
+            note: string;
+        };
+        /** @description One changed paragraph or scene sent for provisional background review. */
+        ReviewPassageInput: {
+            /** @description Content hash of `text` so callers correlate findings with the reviewed snapshot. */
+            contentHash: string;
+            /**
+             * Format: int32
+             * @description Zero-based block index in reading order within the document.
+             */
+            index: number;
+            /** @description Client-assigned stable identifier for the paragraph or scene block. */
+            passageId: string;
+            /** @description Plain prose text of the changed paragraph or scene. */
+            text: string;
         };
         /** @description The whole workspace tree. */
         Workspace: {
@@ -1586,6 +1690,102 @@ export interface operations {
             };
             /** @description The pair writer is not configured or not ready. */
             503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+        };
+    };
+    createPairWriterReview: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePairWriterReviewRequest"];
+            };
+        };
+        responses: {
+            /** @description Advice-only background findings for the changed passages. */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PairWriterReviewResponse"];
+                };
+            };
+            /** @description The request body is not valid JSON. */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The request body exceeds the size limit. */
+            413: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The request body is not sent as application/json. */
+            415: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The request body breaks the schema or a workspace rule; `errors` names each field. */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The service failed unexpectedly. */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The pair-writer provider failed before completing the review. */
+            502: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The pair writer is not configured or not ready. */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/problem+json": components["schemas"]["Problem"];
+                };
+            };
+            /** @description The pair-writer provider timed out before completing the review. */
+            504: {
                 headers: {
                     [name: string]: unknown;
                 };

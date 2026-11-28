@@ -93,6 +93,7 @@ The service reads settings from its process environment and does not load
 | `WRITER_SCRIPTED_MS_PER_1000_WORDS`       | `3000`                           | Additional first-read delay in milliseconds per further 1,000 words beyond the first 1,000.                                |
 | `WRITER_SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS` | `450`                            | Delay in milliseconds before the first token on a follow-up turn.                                                          |
 | `WRITER_SCRIPTED_TOKENS_PER_SEC`          | `30`                             | Streaming rate in tokens per second (`0` streams without delay).                                                           |
+| `WRITER_SCRIPTED_REVIEW_MS`               | `1200`                           | Delay in milliseconds before a scripted background review returns findings.                                                |
 
 To run on another port, for example when another process already uses 8888:
 
