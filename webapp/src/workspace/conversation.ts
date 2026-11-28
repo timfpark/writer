@@ -4,6 +4,7 @@ import {
   type ChatReadSource,
   type ChatReplyDelta,
   type ChatReplyDone,
+  type ChatReplyMetrics,
   type CreatePairWriterReplyRequest,
   type PairWriterStatus,
   type Problem,
@@ -118,10 +119,33 @@ function isReadingScope(value: unknown): value is ReadingScope {
   );
 }
 
+function nullableNumber(value: unknown): number | null {
+  return typeof value === "number" ? value : null;
+}
+
+function parseReplyMetrics(value: unknown): ChatReplyMetrics | null {
+  if (!isRecord(value)) return null;
+  return {
+    firstTokenMs: nullableNumber(value["firstTokenMs"]),
+    totalMs: nullableNumber(value["totalMs"]),
+    loadMs: nullableNumber(value["loadMs"]),
+    promptEvalMs: nullableNumber(value["promptEvalMs"]),
+    evalMs: nullableNumber(value["evalMs"]),
+    promptTokens: nullableNumber(value["promptTokens"]),
+    outputTokens: nullableNumber(value["outputTokens"]),
+  };
+}
+
 function parseReplyDone(value: unknown): ChatReplyDone | undefined {
   if (!isRecord(value)) return undefined;
-  const { model, promptVersion, sources, totalWords, droppedHistoryTurns } =
-    value;
+  const {
+    model,
+    promptVersion,
+    sources,
+    totalWords,
+    droppedHistoryTurns,
+    metrics,
+  } = value;
   if (
     typeof model !== "string" ||
     (promptVersion !== null && typeof promptVersion !== "string") ||
@@ -160,6 +184,7 @@ function parseReplyDone(value: unknown): ChatReplyDone | undefined {
     sources: parsedSources,
     totalWords,
     droppedHistoryTurns,
+    metrics: parseReplyMetrics(metrics),
   };
 }
 

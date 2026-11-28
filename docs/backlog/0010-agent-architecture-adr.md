@@ -44,7 +44,7 @@ measures whether chaining story notes into a continuity check works and
 what it costs. This decision chooses an implementation that meets them.
 
 Backlog 60,
-[backlog 61](./0061-local-model-chat.md), and
+backlog 61, and
 [backlog 62](./0062-scripted-findings-tab.md) come first, so writers try the
 pair writer in Writer and a design that fails is backed out cheaply. Within
 what ADR 0001, ADR 0002, ADR 0004, and ADR 0010 already decide, they add an
@@ -213,5 +213,4 @@ what this ADR decides.
 ## Prerequisites
 
 * [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)
-* [Answer in the Chat tab from the local model](./0061-local-model-chat.md)
 * [Try the Findings tab against scripted findings](./0062-scripted-findings-tab.md)

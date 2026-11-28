@@ -12,13 +12,13 @@ Clients reach it only through the API and the committed
 [openapi.json](./openapi.json); the service never imports client code. People
 start with [README.md](./README.md).
 
-| Crate                                      | Responsibility                                                                                          | May depend on                                                                                            |
-|--------------------------------------------|---------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
-| [writer-server](./crates/writer-server/)   | Reads configuration, logs, opens storage, binds `127.0.0.1`, serves, and shuts down; no routes or rules | `writer-api`, `writer-storage`, `writer-agent`, Tokio, axum                                              |
-| [writer-api](./crates/writer-api/)         | Routes, handlers, transport types, `Problem` errors, SSE streams, and the OpenAPI document              | Lower internal crates, axum, `futures-core`, utoipa                                                      |
-| [writer-agent](./crates/writer-agent/)     | `ChatProvider`, 19,000-word reading assembly, `UnconfiguredProvider`, and `ScriptedProvider`            | Tokio; no axum, Tower, or utoipa                                                                         |
-| [writer-storage](./crates/writer-storage/) | `WorkspaceStore`, `StoreError`, revisions, the conformance suite, and the filesystem backend            | `writer-domain`, Tokio, serde, `sha2`, `tempfile`, `unicase`, `unicode-normalization`, `uuid`, `tracing` |
-| [writer-domain](./crates/writer-domain/)   | Workspace types, limits, and the `Tree` checks every backend applies; no I/O                            | Nothing internal; no runtime or framework                                                                |
+| Crate                                      | Responsibility                                                                                                                                      | May depend on                                                                                            |
+|--------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------------------------|
+| [writer-server](./crates/writer-server/)   | Reads configuration, logs, opens storage, binds `127.0.0.1`, serves, and shuts down; no routes or rules                                             | `writer-api`, `writer-storage`, `writer-agent`, Tokio, axum                                              |
+| [writer-api](./crates/writer-api/)         | Routes, handlers, transport types, `Problem` errors, SSE streams, and the OpenAPI document                                                          | Lower internal crates, axum, `futures-core`, utoipa                                                      |
+| [writer-agent](./crates/writer-agent/)     | `ChatProvider`, 19,000-word reading assembly, [prompts/](./prompts/) loading, `OllamaProvider`, `ScriptedProvider`, and `UnconfiguredProvider`      | Tokio, `reqwest`, `serde`, `serde_json`, `sha2`, `tracing`; no axum, Tower, or utoipa                    |
+| [writer-storage](./crates/writer-storage/) | `WorkspaceStore`, `StoreError`, revisions, the conformance suite, and the filesystem backend                                                        | `writer-domain`, Tokio, serde, `sha2`, `tempfile`, `unicase`, `unicode-normalization`, `uuid`, `tracing` |
+| [writer-domain](./crates/writer-domain/)   | Workspace types, limits, and the `Tree` checks every backend applies; no I/O                                                                        | Nothing internal; no runtime or framework                                                                |
 
 * Dependencies point downward: `writer-server` to `writer-api` to feature
   crates such as `writer-storage` or agent to `writer-domain`.
@@ -29,9 +29,11 @@ start with [README.md](./README.md).
   `writer-api` uses utoipa. Lower crates expose none of them.
 * Add a crate under `crates/` only with the behavior that needs it, named as
   its folder, inheriting `[workspace.package]` and `[lints] workspace = true`.
-* `service/prompts/` (planned) arrives with backlog 61, the first story
-  that answers from a model; do not create it empty. Evaluation cases live in
-  the top-level [evals/](../evals/) subsystem, not in `service/`.
+* Product pair-writer prompt templates live in [prompts/](./prompts/)
+  (currently [conversation-grounded.txt](./prompts/conversation-grounded.txt)),
+  kept separate from coding-agent files (`AGENTS.md` and `.github/`).
+  Evaluation cases live in the top-level [evals/](../evals/) subsystem, not in
+  `service/`.
 
 ## Operational rules
 
@@ -50,11 +52,14 @@ start with [README.md](./README.md).
   as the operations that carry document content do.
 * Provisional pair-writer routes live under `/api/v1/pair-writer`
   (`getPairWriter` for readiness and `createPairWriterReply` on
-  `POST /api/v1/pair-writer/replies` for ADR 0004 SSE streams). Select the
-  provider via `WRITER_PAIR_WRITER=scripted` (and optional
-  `WRITER_SCRIPTED_*` settings in [.env.example](./.env.example)); when unset,
-  `writer-server` starts with `UnconfiguredProvider` and answers turns with
-  `503` `unavailable`.
+  `POST /api/v1/pair-writer/replies` for ADR 0004 SSE streams). By default
+  (`WRITER_PAIR_WRITER=ollama` or unset), `writer-server` uses
+  `OllamaProvider` against `OLLAMA_HOST` (default `http://127.0.0.1:11434`,
+  or `http://host.docker.internal:11434` inside the development container) and
+  `WRITER_CONVERSATION_MODEL` (default `gemma4:31b-mlx`). Set
+  `WRITER_PAIR_WRITER=scripted` (with optional `WRITER_SCRIPTED_*` settings in
+  [.env.example](./.env.example)) for deterministic replies in tests and
+  demonstrations, or `WRITER_PAIR_WRITER=none` for `UnconfiguredProvider`.
 * Stop generating as soon as the SSE stream is dropped (client disconnect),
   and never log request, document, or reply text. Verify with the synthetic
   marker in [writer-api/tests/pair_writer.rs](./crates/writer-api/tests/pair_writer.rs).

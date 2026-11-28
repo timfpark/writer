@@ -14,11 +14,13 @@ use axum::body::{Body, to_bytes};
 use axum::http::{Request, StatusCode, header};
 use serde_json::json;
 use tempfile::TempDir;
+use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use tokio::net::{TcpListener, TcpStream};
 use tower::ServiceExt;
 use writer_agent::{
-    AgentFuture, ChatProvider, ChatTurnRequest, DEFAULT_SCRIPTED_MODEL, PairWriterStatus,
-    ReplyError, ReplyEvent, ReplyStream, ScriptedConfig, ScriptedMode, ScriptedProvider,
-    UnconfiguredProvider,
+    AgentFuture, ChatProvider, ChatTurnRequest, DEFAULT_CONVERSATION_MODEL, DEFAULT_SCRIPTED_MODEL,
+    OllamaConfig, OllamaProvider, PairWriterStatus, ReplyError, ReplyEvent, ReplyStream,
+    ScriptedConfig, ScriptedMode, ScriptedProvider, UnconfiguredProvider,
 };
 use writer_api::{
     ChatReplyDelta, ChatReplyDone, PairWriterIssue, PairWriterStatus as ApiStatus, Problem,
@@ -430,4 +432,410 @@ async fn dropping_sse_response_cancels_provider_generation() {
     tokio::time::timeout(Duration::from_secs(2), cancelled.notified())
         .await
         .expect("dropping the SSE response should notify the producer to stop");
+}
+
+#[derive(Clone)]
+enum FakeOllamaMode {
+    StreamWithMarker,
+    MissingModel,
+    FailEchoingMarker,
+    StallAfterDelta,
+    HoldUntilClosed,
+}
+
+async fn read_http_req(stream: &mut TcpStream) -> Option<(String, String)> {
+    let mut buf = Vec::new();
+    let mut tmp = [0u8; 4096];
+    let header_end = loop {
+        let n = stream.read(&mut tmp).await.ok()?;
+        if n == 0 {
+            return None;
+        }
+        buf.extend_from_slice(&tmp[..n]);
+        if let Some(pos) = buf.windows(4).position(|w| w == b"\r\n\r\n") {
+            break pos + 4;
+        }
+    };
+    let headers = String::from_utf8_lossy(&buf[..header_end]).into_owned();
+    let first_line = headers.lines().next()?;
+    let mut parts = first_line.split_whitespace();
+    let method = parts.next()?.to_owned();
+    let path = parts.next()?.to_owned();
+    let content_length = headers
+        .lines()
+        .find_map(|line| {
+            let (k, v) = line.split_once(':')?;
+            if k.eq_ignore_ascii_case("content-length") {
+                v.trim().parse::<usize>().ok()
+            } else {
+                None
+            }
+        })
+        .unwrap_or(0);
+    let mut body_len = buf.len().saturating_sub(header_end);
+    while body_len < content_length {
+        let n = stream.read(&mut tmp).await.ok()?;
+        if n == 0 {
+            break;
+        }
+        body_len += n;
+    }
+    Some((method, path))
+}
+
+async fn write_json(stream: &mut TcpStream, status: &str, body: &str) {
+    let resp = format!(
+        "HTTP/1.1 {status}\r\nContent-Type: application/json\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{body}",
+        body.len()
+    );
+    let _ = stream.write_all(resp.as_bytes()).await;
+    let _ = stream.flush().await;
+}
+
+async fn write_chunk(stream: &mut TcpStream, payload: &str) {
+    let header = format!("{:x}\r\n", payload.len());
+    let _ = stream.write_all(header.as_bytes()).await;
+    let _ = stream.write_all(payload.as_bytes()).await;
+    let _ = stream.write_all(b"\r\n").await;
+    let _ = stream.flush().await;
+}
+
+async fn start_fake_ollama(
+    mode: FakeOllamaMode,
+) -> (String, Arc<tokio::sync::Notify>, Arc<tokio::sync::Notify>) {
+    let listener = TcpListener::bind("127.0.0.1:0").await.unwrap();
+    let addr = listener.local_addr().unwrap();
+    let chat_started = Arc::new(tokio::sync::Notify::new());
+    let chat_disconnected = Arc::new(tokio::sync::Notify::new());
+    let started_clone = Arc::clone(&chat_started);
+    let disconnected_clone = Arc::clone(&chat_disconnected);
+
+    tokio::spawn(async move {
+        while let Ok((mut socket, _)) = listener.accept().await {
+            let mode = mode.clone();
+            let started = Arc::clone(&started_clone);
+            let disconnected = Arc::clone(&disconnected_clone);
+            tokio::spawn(async move {
+                let Some((method, path)) = read_http_req(&mut socket).await else {
+                    return;
+                };
+                match (method.as_str(), path.as_str()) {
+                    ("GET", "/api/tags") => {
+                        let body = match mode {
+                            FakeOllamaMode::MissingModel => json!({ "models": [] }).to_string(),
+                            _ => json!({
+                                "models": [{ "name": DEFAULT_CONVERSATION_MODEL, "digest": "d1" }]
+                            })
+                            .to_string(),
+                        };
+                        write_json(&mut socket, "200 OK", &body).await;
+                    }
+                    ("POST", "/api/show") => {
+                        let body = json!({
+                            "capabilities": ["completion", "thinking"],
+                            "thinking": { "values": [false, true] }
+                        })
+                        .to_string();
+                        write_json(&mut socket, "200 OK", &body).await;
+                    }
+                    ("POST", "/api/chat") => {
+                        started.notify_one();
+                        match mode {
+                            FakeOllamaMode::StreamWithMarker => {
+                                let _ = socket
+                                    .write_all(
+                                        b"HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n",
+                                    )
+                                    .await;
+                                let delta = json!({
+                                    "message": {
+                                        "role": "assistant",
+                                        "content": format!("1. Look at \"The keeper climbed the stairs twice before lighting the lamp near {MARKER}.\"")
+                                    },
+                                    "done": false
+                                })
+                                .to_string();
+                                write_chunk(&mut socket, &format!("{delta}\n")).await;
+                                let done = json!({
+                                    "message": { "role": "assistant", "content": "" },
+                                    "done": true,
+                                    "total_duration": 2_100_000_000u64,
+                                    "load_duration": 50_000_000u64,
+                                    "prompt_eval_count": 320u64,
+                                    "prompt_eval_duration": 1_200_000_000u64,
+                                    "eval_count": 42u64,
+                                    "eval_duration": 850_000_000u64
+                                })
+                                .to_string();
+                                write_chunk(&mut socket, &format!("{done}\n")).await;
+                                let _ = socket.write_all(b"0\r\n\r\n").await;
+                                let _ = socket.flush().await;
+                            }
+                            FakeOllamaMode::FailEchoingMarker => {
+                                let _ = socket
+                                    .write_all(
+                                        b"HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n",
+                                    )
+                                    .await;
+                                write_chunk(
+                                    &mut socket,
+                                    "{\"message\":{\"role\":\"assistant\",\"content\":\"Start \"},\"done\":false}\n",
+                                )
+                                .await;
+                                let err_line = json!({
+                                    "error": format!("upstream boom echoing {MARKER}")
+                                })
+                                .to_string();
+                                write_chunk(&mut socket, &format!("{err_line}\n")).await;
+                                let _ = socket.write_all(b"0\r\n\r\n").await;
+                            }
+                            FakeOllamaMode::StallAfterDelta => {
+                                let _ = socket
+                                    .write_all(
+                                        b"HTTP/1.1 200 OK\r\nContent-Type: application/x-ndjson\r\nTransfer-Encoding: chunked\r\nConnection: close\r\n\r\n",
+                                    )
+                                    .await;
+                                write_chunk(
+                                    &mut socket,
+                                    "{\"message\":{\"role\":\"assistant\",\"content\":\"Halfway\"},\"done\":false}\n",
+                                )
+                                .await;
+                                let mut buf = [0u8; 64];
+                                let _ = socket.read(&mut buf).await;
+                            }
+                            FakeOllamaMode::HoldUntilClosed => {
+                                let mut buf = [0u8; 64];
+                                let _ = socket.read(&mut buf).await;
+                                disconnected.notify_one();
+                            }
+                            FakeOllamaMode::MissingModel => {
+                                write_json(&mut socket, "404 Not Found", "{}").await;
+                            }
+                        }
+                    }
+                    _ => write_json(&mut socket, "404 Not Found", "{}").await,
+                }
+            });
+        }
+    });
+
+    (format!("http://{addr}"), chat_started, chat_disconnected)
+}
+
+#[tokio::test]
+async fn ollama_provider_streams_metrics_and_prompt_version_without_logging_marker() {
+    let (host, _, _) = start_fake_ollama(FakeOllamaMode::StreamWithMarker).await;
+    let provider = OllamaProvider::new(OllamaConfig {
+        host,
+        ..OllamaConfig::default()
+    })
+    .unwrap();
+    let (_dir, router) = router_for(Arc::new(provider)).await;
+
+    let status_res = router
+        .clone()
+        .oneshot(
+            Request::get("/api/v1/pair-writer")
+                .body(Body::empty())
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let status: ApiStatus =
+        serde_json::from_slice(&to_bytes(status_res.into_body(), usize::MAX).await.unwrap())
+            .unwrap();
+    assert!(status.ready);
+    assert_eq!(status.provider.as_deref(), Some("ollama"));
+    assert_eq!(status.model.as_deref(), Some(DEFAULT_CONVERSATION_MODEL));
+
+    let response = router
+        .oneshot(
+            Request::post("/api/v1/pair-writer/replies")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(sample_body()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    let body = String::from_utf8(
+        to_bytes(response.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec(),
+    )
+    .unwrap();
+    let events = parse_sse(&body);
+    let mut reply_text = String::new();
+    let mut done: Option<ChatReplyDone> = None;
+    for (name, data) in events {
+        match name.as_str() {
+            "delta" => {
+                let delta: ChatReplyDelta = serde_json::from_str(&data).unwrap();
+                reply_text.push_str(&delta.text);
+            }
+            "done" => done = Some(serde_json::from_str(&data).unwrap()),
+            other => panic!("unexpected event {other}: {data}"),
+        }
+    }
+    assert!(reply_text.contains(MARKER));
+    let done = done.expect("done event");
+    assert_eq!(done.model, DEFAULT_CONVERSATION_MODEL);
+    assert_eq!(
+        done.prompt_version.as_deref(),
+        Some("conversation-grounded@c0a3c0b9f874")
+    );
+    let metrics = done.metrics.expect("Ollama metrics in done event");
+    assert!(metrics.first_token_ms.is_some());
+    assert_eq!(metrics.total_ms, Some(2_100));
+    assert_eq!(metrics.load_ms, Some(50));
+    assert_eq!(metrics.prompt_eval_ms, Some(1_200));
+    assert_eq!(metrics.eval_ms, Some(850));
+    assert_eq!(metrics.prompt_tokens, Some(320));
+    assert_eq!(metrics.output_tokens, Some(42));
+    assert_no_marker_in_logs();
+}
+
+#[tokio::test]
+async fn ollama_missing_model_and_failures_never_leak_marker() {
+    // 1. Missing model -> 503 unavailable before stream.
+    let (host, _, _) = start_fake_ollama(FakeOllamaMode::MissingModel).await;
+    let provider = OllamaProvider::new(OllamaConfig {
+        host,
+        ..OllamaConfig::default()
+    })
+    .unwrap();
+    let (_dir, router) = router_for(Arc::new(provider)).await;
+
+    let res = router
+        .oneshot(
+            Request::post("/api/v1/pair-writer/replies")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(sample_body()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::SERVICE_UNAVAILABLE);
+    let text = String::from_utf8(
+        to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec(),
+    )
+    .unwrap();
+    assert!(!text.contains(MARKER), "503 leaked marker: {text}");
+    let problem: Problem = serde_json::from_str(&text).unwrap();
+    assert_eq!(problem.code, ProblemCode::Unavailable);
+
+    // 2. Mid-stream upstream error echoing marker -> SSE error upstreamFailed without marker.
+    let (host, _, _) = start_fake_ollama(FakeOllamaMode::FailEchoingMarker).await;
+    let provider = OllamaProvider::new(OllamaConfig {
+        host,
+        ..OllamaConfig::default()
+    })
+    .unwrap();
+    let (_dir, router) = router_for(Arc::new(provider)).await;
+
+    let res = router
+        .oneshot(
+            Request::post("/api/v1/pair-writer/replies")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(sample_body()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(res.status(), StatusCode::OK);
+    let body = String::from_utf8(
+        to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec(),
+    )
+    .unwrap();
+    let events = parse_sse(&body);
+    let err_data = events
+        .into_iter()
+        .find_map(|(name, data)| (name == "error").then_some(data))
+        .expect("SSE error event");
+    assert!(
+        !err_data.contains(MARKER),
+        "SSE error leaked marker: {err_data}"
+    );
+    let problem: Problem = serde_json::from_str(&err_data).unwrap();
+    assert_eq!(problem.code, ProblemCode::UpstreamFailed);
+    assert_eq!(problem.status, 502);
+
+    // 3. Mid-stream timeout -> SSE error upstreamTimeout without marker.
+    let (host, _, _) = start_fake_ollama(FakeOllamaMode::StallAfterDelta).await;
+    let provider = OllamaProvider::new(OllamaConfig {
+        host,
+        idle_timeout: Duration::from_millis(120),
+        ..OllamaConfig::default()
+    })
+    .unwrap();
+    let (_dir, router) = router_for(Arc::new(provider)).await;
+
+    let res = router
+        .oneshot(
+            Request::post("/api/v1/pair-writer/replies")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(sample_body()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    let body = String::from_utf8(
+        to_bytes(res.into_body(), usize::MAX)
+            .await
+            .unwrap()
+            .to_vec(),
+    )
+    .unwrap();
+    let events = parse_sse(&body);
+    let err_data = events
+        .into_iter()
+        .find_map(|(name, data)| (name == "error").then_some(data))
+        .expect("SSE timeout error event");
+    assert!(
+        !err_data.contains(MARKER),
+        "SSE timeout leaked marker: {err_data}"
+    );
+    let problem: Problem = serde_json::from_str(&err_data).unwrap();
+    assert_eq!(problem.code, ProblemCode::UpstreamTimeout);
+    assert_eq!(problem.status, 504);
+
+    assert_no_marker_in_logs();
+}
+
+#[tokio::test]
+async fn dropping_sse_response_cancels_in_flight_ollama_request() {
+    let (host, chat_started, chat_disconnected) =
+        start_fake_ollama(FakeOllamaMode::HoldUntilClosed).await;
+    let provider = OllamaProvider::new(OllamaConfig {
+        host,
+        ..OllamaConfig::default()
+    })
+    .unwrap();
+    let (_dir, router) = router_for(Arc::new(provider)).await;
+
+    let response = router
+        .oneshot(
+            Request::post("/api/v1/pair-writer/replies")
+                .header(header::CONTENT_TYPE, "application/json")
+                .body(Body::from(sample_body()))
+                .unwrap(),
+        )
+        .await
+        .unwrap();
+    assert_eq!(response.status(), StatusCode::OK);
+    tokio::time::timeout(Duration::from_secs(2), chat_started.notified())
+        .await
+        .expect("fake Ollama should receive the chat request");
+    drop(response);
+    tokio::time::timeout(Duration::from_secs(2), chat_disconnected.notified())
+        .await
+        .expect("dropping the SSE response should cancel the in-flight Ollama request");
+    assert_no_marker_in_logs();
 }

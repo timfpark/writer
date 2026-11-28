@@ -23,7 +23,7 @@ smaller tiers for smaller machines, and expects new open-weight releases
 about every six months. The
 [agent architecture ADR](./0010-agent-architecture-adr.md) decides how the
 service is configured with a model per mode, and
-[backlog 61](./0061-local-model-chat.md) reads the conversation model from
+backlog 61 reads the conversation model from
 settings at start and answers in the `Chat` tab. Background review arrives
 with [backlog 35](./0035-service-background-review.md), which adds its mode
 to these settings. Comparing models side by side on the writer's own work
@@ -57,4 +57,3 @@ follows in [backlog 55](./0055-compare-models-in-use.md).
 ## Prerequisites
 
 * [Record the pair-writing agent architecture ADR](./0010-agent-architecture-adr.md)
-* [Answer in the Chat tab from the local model](./0061-local-model-chat.md)

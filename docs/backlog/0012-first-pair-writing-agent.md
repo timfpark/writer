@@ -21,7 +21,7 @@ the agent ADRs decide and measured by the evaluation harness.
 ## Context
 
 Backlog 60 and
-[backlog 61](./0061-local-model-chat.md) build a provisional conversation
+backlog 61 built a provisional conversation
 path: an agent crate below `writer-api` with scripted and Ollama providers,
 `service/prompts/` with [ADR 0010](../adrs/0010-pair-writing-models.md)'s
 `conversation-grounded` prompt, and a stateless streaming endpoint, while

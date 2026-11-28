@@ -19,6 +19,7 @@ export type ChatHistoryMessage = components["schemas"]["ChatHistoryMessage"];
 export type ChatHistoryRole = components["schemas"]["ChatHistoryRole"];
 export type ChatReplyDelta = components["schemas"]["ChatReplyDelta"];
 export type ChatReplyDone = components["schemas"]["ChatReplyDone"];
+export type ChatReplyMetrics = components["schemas"]["ChatReplyMetrics"];
 export type ChatReadSource = components["schemas"]["ChatReadSource"];
 export type ChatSourceKind = components["schemas"]["ChatSourceKind"];
 export type ReadingScope = components["schemas"]["ReadingScope"];

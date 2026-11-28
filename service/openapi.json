@@ -1433,19 +1433,31 @@
       },
       "ChatReplyDone": {
         "type": "object",
-        "description": "Payload of a `done` SSE event carrying the facts `What it read` shows.",
+        "description": "Payload of a `done` SSE event carrying the facts `What it read` shows and\nruntime timing and token counts for audit and measurement.",
         "required": [
           "model",
           "promptVersion",
           "sources",
           "totalWords",
-          "droppedHistoryTurns"
+          "droppedHistoryTurns",
+          "metrics"
         ],
         "properties": {
           "droppedHistoryTurns": {
             "type": "integer",
             "format": "int32",
             "minimum": 0
+          },
+          "metrics": {
+            "oneOf": [
+              {
+                "$ref": "#/components/schemas/ChatReplyMetrics",
+                "description": "Timing and token counts reported by the model runtime, or `null` when\nnone are reported."
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "model": {
             "type": "string"
@@ -1466,6 +1478,84 @@
           "totalWords": {
             "type": "integer",
             "format": "int32",
+            "minimum": 0
+          }
+        }
+      },
+      "ChatReplyMetrics": {
+        "type": "object",
+        "description": "Timing and token counts reported by the model runtime for one reply.",
+        "required": [
+          "firstTokenMs",
+          "totalMs",
+          "loadMs",
+          "promptEvalMs",
+          "evalMs",
+          "promptTokens",
+          "outputTokens"
+        ],
+        "properties": {
+          "evalMs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Milliseconds spent generating output tokens, when reported.",
+            "minimum": 0
+          },
+          "firstTokenMs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Milliseconds from sending the model request to the first visible reply token.",
+            "minimum": 0
+          },
+          "loadMs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Milliseconds spent loading the model into memory, when reported.",
+            "minimum": 0
+          },
+          "outputTokens": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Number of output tokens generated, when reported.",
+            "minimum": 0
+          },
+          "promptEvalMs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Milliseconds spent evaluating the prompt, when reported.",
+            "minimum": 0
+          },
+          "promptTokens": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Number of prompt tokens evaluated, when reported.",
+            "minimum": 0
+          },
+          "totalMs": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "Total milliseconds reported by the model runtime for the reply.",
             "minimum": 0
           }
         }

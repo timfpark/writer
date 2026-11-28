@@ -33,7 +33,7 @@ from [backlog 29](./0029-service-history.md) provides history if it has
 landed, and otherwise the recap uses what the service already knows, such as
 which documents were saved, together with the reverse outline and open
 threads from [backlog 50](./0050-threads-and-outline.md) when present. The
-pair writer from [backlog 61](./0061-local-model-chat.md) provides the
+pair writer from backlog 61 provides the
 agent the recap uses, and background review from
 [backlog 35](./0035-service-background-review.md) provides the background
 work that prepares it. Turning the recap off for part or all of the
@@ -83,4 +83,3 @@ workspace comes with [backlog 54](./0054-agent-settings-tree.md).
 ## Prerequisites
 
 * [Review documents in the background in the service](./0035-service-background-review.md)
-* [Answer in the Chat tab from the local model](./0061-local-model-chat.md)

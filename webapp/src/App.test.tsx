@@ -135,6 +135,7 @@ function healthyService(request: Request): Promise<Response> {
             ],
             totalWords: 7,
             droppedHistoryTurns: 0,
+            metrics: null,
           },
         },
       ]),
@@ -695,6 +696,104 @@ describe("assistant", () => {
       "disabled",
       false,
     );
+  });
+
+  it("clears the Ollama setup notice on window focus without reload and keeps metrics out of What it read", async () => {
+    let ollamaReady = false;
+    stubFetch((request) => {
+      const path = new URL(request.url).pathname;
+      if (path === "/api/v1/pair-writer") {
+        return Promise.resolve(
+          Response.json(
+            ollamaReady
+              ? {
+                  ready: true,
+                  provider: "ollama",
+                  model: "gemma4:31b-mlx",
+                  issue: null,
+                  detail: null,
+                }
+              : {
+                  ready: false,
+                  provider: "ollama",
+                  model: "gemma4:31b-mlx",
+                  issue: "runtimeUnreachable",
+                  detail:
+                    "Ollama is not reachable at http://127.0.0.1:11434. Start Ollama or check OLLAMA_HOST.",
+                },
+          ),
+        );
+      }
+      if (path === "/api/v1/pair-writer/replies" && request.method === "POST") {
+        return Promise.resolve(
+          sseResponse([
+            {
+              event: "delta",
+              data: {
+                text: '1. In "The lamp burned low through the night.", tighten *through the night*.',
+              },
+            },
+            {
+              event: "done",
+              data: {
+                model: "gemma4:31b-mlx",
+                promptVersion: "conversation-grounded@c0a3c0b9f874",
+                sources: [
+                  {
+                    kind: "document",
+                    documentId,
+                    title: "Synthetic Chapter One",
+                    scope: "whole",
+                    wordCount: 7,
+                    label: "Synthetic Chapter One · whole · 7 words",
+                  },
+                ],
+                totalWords: 7,
+                droppedHistoryTurns: 0,
+                metrics: {
+                  firstTokenMs: 1842,
+                  totalMs: 4120,
+                  loadMs: 12,
+                  promptEvalMs: 1790,
+                  evalMs: 2280,
+                  promptTokens: 315,
+                  outputTokens: 64,
+                },
+              },
+            },
+          ]),
+        );
+      }
+      return healthyService(request);
+    });
+
+    renderApp(`/documents/${documentId}`);
+    await screen.findByRole("textbox", { name: "Synthetic Chapter One" });
+
+    expect(await screen.findByText("Ollama is not reachable")).toBeTruthy();
+    expect(screen.getByText(/service\/README\.md/)).toBeTruthy();
+
+    ollamaReady = true;
+    globalThis.dispatchEvent(new Event("focus"));
+    await waitFor(() => {
+      expect(screen.queryByText("Ollama is not reachable")).toBeNull();
+    });
+
+    fireEvent.change(messageBox(), { target: { value: "Check opening" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send" }));
+
+    const disclosure = await within(transcript()).findByText("What it read");
+    fireEvent.click(disclosure);
+    expect(
+      within(transcript()).getByText("Model: gemma4:31b-mlx"),
+    ).toBeTruthy();
+    expect(
+      within(transcript()).getByText(
+        "Prompt: conversation-grounded@c0a3c0b9f874",
+      ),
+    ).toBeTruthy();
+    // Runtime timing and token counts belong to the done event, not What it read.
+    expect(within(transcript()).queryByText(/1842|4120|315/)).toBeNull();
   });
 
   it("navigates between the active thread and the full-pane Chats list", async () => {
