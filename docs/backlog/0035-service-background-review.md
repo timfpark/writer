@@ -44,7 +44,8 @@ provisional review endpoint, and
 [backlog 12](./0012-first-pair-writing-agent.md) aligns them with the agent
 ADR and adds the conversation cases in `evals/`, all of which this story
 extends. [Backlog 48](./0048-background-agent-evals.md) wrote
-cases and a first prompt for each agent and measured which are feasible, and
+cases and a first prompt for each agent this story ships and measured
+which are feasible, and
 [evals/README.md](../../evals/README.md#sweeping-prompt-variants) documents
 how to sweep prompt variants in the harness. [ADR 0004](../adrs/0004-api-conventions.md) sets the endpoint
 conventions. Living artifacts such as story notes, and chapter-level and
@@ -123,4 +124,4 @@ agent ADR, amend it in the same pull request.
 ## Prerequisites
 
 * [Keep the pair writer's conversations in the service](./0012-first-pair-writing-agent.md)
-* [Measure the background agents with the evaluation harness](./0048-background-agent-evals.md)
+* [Measure the first background agents](./0048-background-agent-evals.md)

@@ -24,8 +24,9 @@ authentication to Foundry, its client-facing API, where it runs, and how it
 records cost and enforces spending caps. The `evals/` harness from
 [ADR 0010](../adrs/0010-pair-writing-models.md) reaches models through runtime
 adapters, starting with Ollama.
-[Backlog 56](./0056-story-notes-continuity-test.md) and
-[backlog 48](./0048-background-agent-evals.md) use a frontier model this
+[Backlog 56](./0056-story-notes-continuity-test.md),
+[backlog 48](./0048-background-agent-evals.md), and
+[backlog 63](./0063-remaining-background-agent-evals.md) use a frontier model this
 story deploys as a ceiling for local results, and
 [backlog 43](./0043-cloud-model-evals.md) later measures the cloud models
 for price and quality.

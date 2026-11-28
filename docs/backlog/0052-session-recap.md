@@ -26,7 +26,7 @@ that directory's tree, and selecting a file shows only that file's recap.
 There is no fixed directory depth or required book / chapter layout.
 Returning to a document not visited since an earlier session shows a
 compact, non-modal banner that clears the instant the writer types.
-[Backlog 48](./0048-background-agent-evals.md)
+[Backlog 63](./0063-remaining-background-agent-evals.md)
 measures it. Knowing
 what changed needs a record of the last session: the change control work
 from [backlog 29](./0029-service-history.md) provides history if it has
@@ -59,7 +59,7 @@ workspace comes with [backlog 54](./0054-agent-settings-tree.md).
 * Refresh only the changed file's recap and its ancestor rollups. Show an
   explicit no-previous-activity state for trees or files without a recap,
   never a recap borrowed from another scope.
-* Tune the recap prompt on backlog 48's cases, as backlog 35 tunes its
+* Tune the recap prompt on backlog 63's cases, as backlog 35 tunes its
   agents, and amend [ADR 0010](../adrs/0010-pair-writing-models.md) with the
   chosen prompt. Add the prompt and cases, and extend the fake provider.
 
@@ -83,3 +83,4 @@ workspace comes with [backlog 54](./0054-agent-settings-tree.md).
 ## Prerequisites
 
 * [Review documents in the background in the service](./0035-service-background-review.md)
+* [Measure the remaining background agents](./0063-remaining-background-agent-evals.md)

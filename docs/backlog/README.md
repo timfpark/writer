@@ -2,7 +2,7 @@
 title: Backlog
 description: Prioritized index of planned work for the Writer service and clients
 author: Tim Park
-ms.date: 2026-11-27
+ms.date: 2026-11-28
 ms.topic: reference
 keywords:
   - backlog
@@ -45,15 +45,16 @@ Every subsystem shares one backlog of delivery stories and open decisions.
 | 57 | [Choose the model for each mode in settings](./0057-model-settings.md)                        | `service`, `webapp`              | Writers switch the model behind each mode at run time from the models Ollama has pulled.     | 10                 |
 | 44 | [Record the cloud model proxy ADR](./0044-cloud-model-proxy-adr.md)                           | `repository`, `evals`, `service` | An accepted ADR picks a local proxy to Azure AI Foundry with keyless auth and spending caps. | None               |
 | 45 | [Run the cloud model proxy with a first set of Foundry models](./0045-cloud-model-proxy.md)   | `repository`, `evals`            | The proxy runs with cheap and frontier Foundry models, and the harness calls it.             | 44                 |
-| 48 | [Measure the background agents with the evaluation harness](./0048-background-agent-evals.md) | `evals`                          | Each first-wave background agent is measured on local models with a first prompt.            | 56                 |
+| 48 | [Measure the first background agents](./0048-background-agent-evals.md)                       | `evals`                          | The five pause-triggered agents are measured on local models with a first prompt.            | 56                 |
 | 35 | [Review documents in the background in the service](./0035-service-background-review.md)      | `service`, `webapp`, `evals`     | The service returns the first background agents' findings, with tuned prompts.               | 12, 48             |
 | 36 | [Show background findings in the webapp](./0036-background-findings-view.md)                  | `service`, `webapp`              | Real findings replace scripted ones, restore when a document reopens, and stay dismissed.    | 34, 35, 62         |
 | 59 | [Measure battery drain and host typing during review](./0059-battery-and-typing-check.md)     | `evals`, `webapp`                | ADR 0010 records unplugged battery drain and host-browser typing during review.              | None               |
-| 49 | [Keep story notes and check continuity](./0049-story-notes-continuity.md)                     | `service`, `webapp`, `evals`     | Story notes and a timeline stay current, and contradictions are flagged against them.        | 35, 36             |
+| 63 | [Measure the remaining background agents](./0063-remaining-background-agent-evals.md)         | `evals`                          | The other ten first-wave agents are measured on local models with a first prompt.            | 48                 |
+| 49 | [Keep story notes and check continuity](./0049-story-notes-continuity.md)                     | `service`, `webapp`, `evals`     | Story notes and a timeline stay current, and contradictions are flagged against them.        | 35, 36, 63         |
 | 50 | [Track open threads and keep a reverse outline](./0050-threads-and-outline.md)                | `service`, `webapp`, `evals`     | Writers see what each scene does and which setups have no payoff.                            | 49                 |
 | 51 | [Review finished chapters](./0051-chapter-review.md)                                          | `service`, `webapp`, `evals`     | Settled chapters get pacing, voice, and first-reader reviews from story notes and outline.   | 49, 50             |
-| 53 | [Check the writer's own rules](./0053-writer-rules.md)                                        | `service`, `webapp`, `evals`     | Writers set style rules, and background review flags text that breaks them.                  | 35, 36             |
-| 52 | [Recap the last session when Writer opens](./0052-session-recap.md)                           | `service`, `webapp`, `evals`     | Returning writers get workspace, folder, and document recaps with a suggested next step.     | 35                 |
+| 53 | [Check the writer's own rules](./0053-writer-rules.md)                                        | `service`, `webapp`, `evals`     | Writers set style rules, and background review flags text that breaks them.                  | 35, 36, 63         |
+| 52 | [Recap the last session when Writer opens](./0052-session-recap.md)                           | `service`, `webapp`, `evals`     | Returning writers get workspace, folder, and document recaps with a suggested next step.     | 35, 63             |
 | 54 | [Turn background agents on and off across the workspace tree](./0054-agent-settings-tree.md)  | `service`, `webapp`              | Writers turn agents on or off for folders and documents, inherited down the tree.            | 49, 50, 51, 52, 53 |
 | 58 | [Check technical nonfiction](./0058-nonfiction-agents.md)                                     | `service`, `webapp`, `evals`     | Technical books get terminology, concept order, code, and cross-reference checks.            | 54                 |
 | 55 | [Compare models while writing](./0055-compare-models-in-use.md)                               | `service`, `webapp`, `evals`     | Writers trial new models side by side on their own work and adopt the better one.            | 36, 57             |
@@ -151,13 +152,15 @@ the model behind each mode.
 
 Cloud models are hosted in Azure AI Foundry and reached only through a
 local proxy that holds the credentials and caps spending: item 44 chooses
-it, and item 45 runs it with a first set of models, which item 48 uses as a
-ceiling for local results.
+it, and item 45 runs it with a first set of models, which items 48 and 63 use
+as a ceiling for local results.
 
-Background review follows. Item 48 measures each first-wave agent with a
-first prompt. Item 35 tunes the first agents' prompts and adds background
+Background review follows. Item 48 measures the five pause-triggered agents
+that ship first, each with a first prompt, without waiting on the agents
+that ship later. Item 35 tunes those agents' prompts and adds background
 review to the service, and item 36 puts its findings in place of item 62's
-scripted ones. Item
+scripted ones. Beside them, item 63 measures the other ten first-wave
+agents the same way, ahead of the stories that build them. Item
 59 runs the unplugged battery and host-browser typing check ADR 0010 left
 open without blocking the first agents, so battery targets can be adjusted
 before the full set runs. Items 49 to 53 add the remaining agents on that

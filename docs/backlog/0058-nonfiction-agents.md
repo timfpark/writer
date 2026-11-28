@@ -43,7 +43,8 @@ confidence.
 * Write synthetic technical nonfiction cases with planted issues and
   coherent cases that should produce none, add a first prompt for each
   agent, measure them on ADR 0010's models as
-  [backlog 48](./0048-background-agent-evals.md) does, and tune the prompts
+  [backlog 48](./0048-background-agent-evals.md) and
+  [backlog 63](./0063-remaining-background-agent-evals.md) do, and tune the prompts
   of those that are feasible as backlog 35 does.
 * Build each feasible agent on the background review plumbing, with
   findings anchored to passages and any terminology list kept as a living

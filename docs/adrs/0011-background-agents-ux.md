@@ -36,8 +36,10 @@ unplugged battery and host-browser typing checks diverge materially from
 those estimates. Its continuity chain waits on
 [backlog 56](../backlog/0056-story-notes-continuity-test.md) and its agent
 feasibility waits on
-[backlog 48](../backlog/0048-background-agent-evals.md). Per-folder and
-per-document agent settings follow in
+[backlog 48](../backlog/0048-background-agent-evals.md) for the five
+pause-triggered agents and
+[backlog 63](../backlog/0063-remaining-background-agent-evals.md) for the
+rest. Per-folder and per-document agent settings follow in
 [backlog 54](../backlog/0054-agent-settings-tree.md), and the deferred
 nonfiction agents follow in
 [backlog 58](../backlog/0058-nonfiction-agents.md).
@@ -218,8 +220,9 @@ Wave 1 leaves four seams ready for them:
 
 The 15 shipping agents are ranked by value to the writer, balancing daily
 usefulness, local-model reliability from ADR 0010, and structural
-dependencies so [backlog 48](../backlog/0048-background-agent-evals.md) and
-the delivery stories build them in order.
+dependencies so [backlog 48](../backlog/0048-background-agent-evals.md),
+[backlog 63](../backlog/0063-remaining-background-agent-evals.md), and the delivery stories build them in
+order.
 
 | Rank | #  | Agent                    | Shape           | Scope                    | Trigger                         | Surface                                            | Interruption                                    |
 |------|----|--------------------------|-----------------|--------------------------|---------------------------------|----------------------------------------------------|-------------------------------------------------|
@@ -434,7 +437,8 @@ on a technical book, notes, or short fragments:
   workspace may contain technical writing, outlines, or notes, and defines
   returning an empty list (or empty artifact delta) as the correct outcome
   whenever the text does not fit the agent's purpose.
-  [Backlog 48](../backlog/0048-background-agent-evals.md) scores every
+  [Backlog 48](../backlog/0048-background-agent-evals.md) and
+  [backlog 63](../backlog/0063-remaining-background-agent-evals.md) score every
   shipping agent on synthetic technical nonfiction specifically to catch
   false alarms before delivery.
 
@@ -600,7 +604,8 @@ prototype.
   story-notes-chained continuity checks still miss contradictions or raise
   too many false alarms on local models: defer `Continuity check` behind
   cloud fallback or stronger local models.
-* [Backlog 48](../backlog/0048-background-agent-evals.md) finds a shipping
+* [Backlog 48](../backlog/0048-background-agent-evals.md) or
+  [backlog 63](../backlog/0063-remaining-background-agent-evals.md) finds a shipping
   agent unreliable or noisy on synthetic technical nonfiction: defer that
   agent or tighten its structural gate before its delivery story builds it.
 * [Backlog 59](../backlog/0059-battery-and-typing-check.md) finds unplugged
