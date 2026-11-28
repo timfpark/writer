@@ -29,7 +29,8 @@ Whether that works shapes the
 stored intermediate results, and incremental updates per chapter are
 different machinery from one review per request. This story answers that
 one question early and leaves measuring every other agent to
-[backlog 48](./0048-background-agent-evals.md).
+[backlog 48](./0048-background-agent-evals.md) and
+[backlog 63](./0063-remaining-background-agent-evals.md).
 
 ## Scope
 

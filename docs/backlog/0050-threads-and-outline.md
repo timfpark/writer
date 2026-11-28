@@ -21,7 +21,7 @@ paid off so that I can shape the structure of my work without rereading it.
 [ADR 0011](../adrs/0011-background-agents-ux.md) defines the chapter-settled
 triggers and `Reference` tab surface (with full-width `Expand` for wide
 scene tables) for open threads and the reverse outline, and
-[backlog 48](./0048-background-agent-evals.md) measures them. They are
+[backlog 63](./0063-remaining-background-agent-evals.md) measures them. They are
 book-scoped living artifacts like story notes from
 [backlog 49](./0049-story-notes-continuity.md), and reuse their storage,
 incremental updates, and corrections.
@@ -42,7 +42,7 @@ incremental updates, and corrections.
   read` sources, as
   [ADR 0012](../adrs/0012-pair-writing-experience.md#what-the-agent-reads)
   decides.
-* Tune the reverse outline and open threads prompts on backlog 48's cases,
+* Tune the reverse outline and open threads prompts on backlog 63's cases,
   as backlog 35 tunes its agents, and amend
   [ADR 0010](../adrs/0010-pair-writing-models.md) with the chosen prompts.
   Add the prompts and cases, and extend the fake provider for tests.

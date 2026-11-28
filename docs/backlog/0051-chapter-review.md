@@ -31,7 +31,7 @@ noise, `Character voice` reads story notes from
 [backlog 49](./0049-story-notes-continuity.md) and `Scene purpose and
 pacing` reads the reverse outline from
 [backlog 50](./0050-threads-and-outline.md).
-[Backlog 48](./0048-background-agent-evals.md) measures them, and
+[Backlog 63](./0063-remaining-background-agent-evals.md) measures them, and
 [backlog 35](./0035-service-background-review.md) and
 [backlog 36](./0036-background-findings-view.md) provide the review
 plumbing and findings view.
@@ -49,7 +49,7 @@ plumbing and findings view.
 * Generate `Reader reaction` (engagement, confusion, predictions) as a
   chapter-level living artifact shown in a collapsible card inside the
   `Findings` tab, with no inline underlines on the writing surface.
-* Tune each agent's prompt on backlog 48's cases, as backlog 35 tunes its
+* Tune each agent's prompt on backlog 63's cases, as backlog 35 tunes its
   agents, and amend [ADR 0010](../adrs/0010-pair-writing-models.md) with
   the chosen prompts. Add the prompts and cases, and extend the fake
   provider.

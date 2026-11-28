@@ -694,8 +694,10 @@ Trade-offs and risks:
 * [Backlog 56](../backlog/0056-story-notes-continuity-test.md): test
   whether story notes extracted chapter by chapter close the disconnect
   gap this record found, before the agent architecture is chosen.
-* [Backlog 48](../backlog/0048-background-agent-evals.md): measure each
-  background agent that ships, and give each a first prompt.
+* [Backlog 48](../backlog/0048-background-agent-evals.md) and
+  [backlog 63](../backlog/0063-remaining-background-agent-evals.md): measure each
+  background agent that ships, the five pause-triggered agents first, and
+  give each a first prompt.
 * Conversation prompt sweep (settled on 2026-11-26): swept five prompt
   variants across `gemma4:31b-mlx` and four challengers, chose
   `conversation-grounded` (`c0a3c0b9f874`), kept `gemma4:31b-mlx`, and

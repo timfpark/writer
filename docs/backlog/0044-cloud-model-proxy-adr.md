@@ -22,8 +22,9 @@ to a provider directly, or can spend without a cap.
 
 [ADR 0010](../adrs/0010-pair-writing-models.md), the model ADR, runs the
 pair writer on local models served by Ollama, reached at `OLLAMA_HOST` on
-loopback. [Backlog 56](./0056-story-notes-continuity-test.md) and
-[backlog 48](./0048-background-agent-evals.md) use a frontier cloud model as
+loopback. [Backlog 56](./0056-story-notes-continuity-test.md),
+[backlog 48](./0048-background-agent-evals.md), and
+[backlog 63](./0063-remaining-background-agent-evals.md) use a frontier cloud model as
 a ceiling for local results,
 [backlog 43](./0043-cloud-model-evals.md) measures cloud models on the same
 cases, and the [cloud fallback ADR](./0040-cloud-model-fallback-adr.md) may

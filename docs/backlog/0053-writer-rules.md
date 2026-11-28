@@ -27,7 +27,7 @@ rule exists, and marks rule findings with dashed warm underlines that
 update on pause or immediately after a rule change. Rules apply to the
 whole workspace at first; scoping them to folders and documents comes with
 [backlog 54](./0054-agent-settings-tree.md), and
-[backlog 48](./0048-background-agent-evals.md) measures how reliably local
+[backlog 63](./0063-remaining-background-agent-evals.md) measures how reliably local
 models follow them. Background review from
 [backlog 35](./0035-service-background-review.md) runs the checks, and
 [backlog 36](./0036-background-findings-view.md) shows the findings.
@@ -44,7 +44,7 @@ models follow them. Background review from
   above the composer, and the `What it read` sources, as
   [ADR 0012](../adrs/0012-pair-writing-experience.md#what-the-agent-reads)
   decides.
-* Tune the rules prompt on backlog 48's cases, as backlog 35 tunes its
+* Tune the rules prompt on backlog 63's cases, as backlog 35 tunes its
   agents, and amend [ADR 0010](../adrs/0010-pair-writing-models.md) with the
   chosen prompt. Add the prompt and cases, and extend the fake provider.
 
@@ -62,3 +62,4 @@ models follow them. Background review from
 
 * [Review documents in the background in the service](./0035-service-background-review.md)
 * [Show background findings in the webapp](./0036-background-findings-view.md)
+* [Measure the remaining background agents](./0063-remaining-background-agent-evals.md)
