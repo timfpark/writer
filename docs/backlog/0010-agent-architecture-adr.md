@@ -45,7 +45,7 @@ what it costs. This decision chooses an implementation that meets them.
 
 Backlog 60,
 backlog 61, and
-[backlog 62](./0062-scripted-findings-tab.md) come first, so writers try the
+backlog 62 came first, so writers try the
 pair writer in Writer and a design that fails is backed out cheaply. Within
 what ADR 0001, ADR 0002, ADR 0004, and ADR 0010 already decide, they add an
 agent crate in the Rust service with a scripted provider, a stateless
@@ -213,4 +213,3 @@ what this ADR decides.
 ## Prerequisites
 
 * [Test story notes for continuity checking](./0056-story-notes-continuity-test.md)
-* [Try the Findings tab against scripted findings](./0062-scripted-findings-tab.md)

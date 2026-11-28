@@ -37,6 +37,7 @@ const service = spawn(
         process.env.WRITER_SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS ?? "40",
       WRITER_SCRIPTED_TOKENS_PER_SEC:
         process.env.WRITER_SCRIPTED_TOKENS_PER_SEC ?? "60",
+      WRITER_SCRIPTED_REVIEW_MS: process.env.WRITER_SCRIPTED_REVIEW_MS ?? "120",
     },
   },
 );

@@ -132,8 +132,38 @@ The header's title slot shows the open document's title, or Writer's name at
 When the service cannot be reached, the writing region says so and
 offers to try again.
 
-The assistant implements [ADR 0012](../docs/adrs/0012-pair-writing-experience.md)'s
-`Chat` experience. Threads belong to the document open when they started, stay
+The assistant implements [ADR 0011](../docs/adrs/0011-background-agents-ux.md)'s
+and [ADR 0012](../docs/adrs/0012-pair-writing-experience.md)'s `Findings` and
+`Chat` tabs beneath a status bar with a global `Pause` / `Resume` control
+(`Mod+Shift+P`, kept in `localStorage` under `writer.assistant.paused`).
+After a 2.6-second typing pause on AC power, changed prose paragraphs are sent
+to the service's provisional review endpoint and active findings appear as
+subtle hairline underlines on the writing surface (solid neutral for prose
+agents, dotted accent for open questions) within ADR 0011's density caps (at
+most 3 per scene and 6 per document), never while typing. Typing in another
+paragraph lets an in-flight review finish and holds its underlines until the
+next pause; typing inside the reviewed paragraph cancels it, and sending a chat
+message stops background review until the reply ends. Editing inside an
+underlined passage drops its underline and marks its card `Passage changed`
+with only `Dismiss` until the next pause review replaces it; deleting the
+passage removes the finding quietly with a polite announcement.
+
+| Control                     | Effect                                                                       |
+|-----------------------------|------------------------------------------------------------------------------|
+| `Mod+Shift+P` or Pause      | Pauses or resumes background review while keeping `Chat` available           |
+| `F8` and `Shift+F8`         | Moves the caret to the next or previous finding and announces its note       |
+| Clicking a passage underline| Opens the assistant to `Findings` and highlights that finding's card         |
+| `Discuss in Chat` / `Answer`| Opens or resumes that finding's pinned thread in `Chat` focused on the box   |
+| `Dismiss`                   | Removes the finding and keeps that agent off the same exact text until edited|
+
+The `Findings` tab lists findings in reading order with category filters
+(`All`, `Prose`, `Continuity`, `Questions`, `Chapter`, `Rules`) and a collapsed
+`What it read` disclosure whose document source reopens read-only in the
+writing region. While the assistant is collapsed, its header toggle shows the
+active findings count badge and pulses its single dot while a review runs or a
+reply streams, staying lit while a finished reply is unread.
+
+In the `Chat` tab, threads belong to the document open when they started, stay
 in browser memory (a reload clears them), and reopen when you return to their
 document. From a thread, the `Chats` back button steps up to a full-pane
 `Chats` list ordered by last activity under `This document` and `All chats`,
@@ -150,11 +180,9 @@ editor, and `What it read` reopens each document source read-only in the
 writing region (`Back to current draft` or `Escape` returns). When the open
 document changes since a thread's last turn, `Document edited since this chat`
 offers `View text then`, and sending adds `Continuing against the current
-draft`. One dot on the collapsed assistant toggle pulses while a reply streams
-and stays lit while a finished reply is unread. When the service has no pair
-writer configured, the pane names what is missing, points to
-`service/README.md`, keeps any typed message, and clears the notice without a
-reload once the service reports ready.
+draft`. When the service has no pair writer configured, the pane names what is
+missing, hides `Pause`, points to `service/README.md`, keeps any typed message,
+and clears the notice without a reload once the service reports ready.
 
 ### Writing
 

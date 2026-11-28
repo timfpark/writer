@@ -181,12 +181,31 @@
 
 .signalDot {
   position: absolute;
-  inset-block-start: 4px;
-  inset-inline-end: 4px;
+  inset-block-start: 3px;
+  inset-inline-end: 3px;
   inline-size: 0.45rem;
   block-size: 0.45rem;
   border-radius: 50%;
   background: var(--color-accent);
+  box-shadow: 0 0 0 1.5px var(--color-chrome);
+}
+
+.countBadge {
+  position: absolute;
+  inset-block-end: 1px;
+  inset-inline-end: 1px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-inline-size: 1rem;
+  block-size: 1rem;
+  padding-inline: 3px;
+  border-radius: 999px;
+  background: var(--color-accent);
+  color: var(--color-page);
+  font-size: 0.6875rem;
+  font-weight: var(--weight-semibold);
+  line-height: 1;
   box-shadow: 0 0 0 1.5px var(--color-chrome);
 }
 

@@ -18,6 +18,9 @@ const pairs: [foreground: string, background: string, target: number][] = [
   ["--color-accent", "--color-chrome", 3],
   ["--color-accent", "--color-page", 3],
   ["--color-accent", "--color-current", 3],
+  ["--color-page", "--color-accent", 4.5],
+  ["--color-finding-prose", "--color-page", 3],
+  ["--color-finding-question", "--color-page", 3],
   ["--color-success", "--color-success-surface", 4.5],
 ];
 

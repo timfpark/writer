@@ -11,6 +11,7 @@ import {
   keyLabel,
   navigatorKeys,
   paneKeys,
+  pauseKeys,
   referenceKeys,
   type Keys,
 } from "./shortcuts";
@@ -124,6 +125,14 @@ function groups(apple: boolean): Group[] {
     {
       title: "Assistant",
       shortcuts: [
+        {
+          keys: [pauseKeys],
+          effect: "Pause or resume background review",
+        },
+        {
+          keys: [["F8"], ["Shift", "F8"]],
+          effect: "Move to the next or previous finding",
+        },
         { keys: [["Enter"]], effect: "Send the message" },
         { keys: [["Shift", "Enter"]], effect: "Start a new line" },
       ],

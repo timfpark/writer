@@ -3,7 +3,11 @@ import { expect, test } from "./fixtures";
 
 declare global {
   interface Window {
-    writerTiming?: { keystrokes: number[]; serializations: number[] };
+    writerTiming?: {
+      measuring: boolean;
+      keystrokes: number[];
+      serializations: number[];
+    };
   }
 }
 
@@ -139,23 +143,39 @@ test("edits a 1 MiB document within the responsiveness targets", async ({
   const middle = editor.locator("p").nth(400);
   await middle.scrollIntoViewIfNeeded();
 
-  // Start a pair-writer reply so typing latency is measured while a reply
-  // streams from the real service, as ADR 0012 requires.
-  const assistant = page.getByRole("complementary", { name: "Assistant" });
-  const chatBox = assistant.getByRole("textbox", {
-    name: "Message the assistant",
-  });
-  await chatBox.click();
-  await page.keyboard.type(
-    "Give me some ideas about how I can improve this text",
+  // Trigger a pause review on an adjacent paragraph so underlines are shown on
+  // the 1 MiB manuscript, then start a second review and hold it in flight
+  // while measuring typing latency in `middle`, as ADR 0012 requires.
+  const triggerParagraph = editor.locator("p").nth(398);
+  await triggerParagraph.click();
+  await page.keyboard.press("End");
+  await page.keyboard.type(" The harbor felt very dark.");
+  await expect(editor.locator(".writer-finding-underline").first()).toBeVisible(
+    { timeout: 15_000 },
   );
-  await page.keyboard.press("Enter");
-  await expect(assistant.getByRole("button", { name: "Stop" })).toBeVisible();
 
-  // Measures each keystroke from keydown to the frame after it, and each
-  // serialization for a save.
+  const reviewResolvers: Array<() => void> = [];
+  let reviewInFlight = false;
+  await page.route("**/api/v1/pair-writer/reviews", async (route) => {
+    reviewInFlight = true;
+    const response = await route.fetch();
+    await new Promise<void>((resolve) => {
+      reviewResolvers.push(resolve);
+    });
+    await route.fulfill({ response }).catch(() => {});
+  });
+
+  const secondParagraph = editor.locator("p").nth(399);
+  await secondParagraph.click();
+  await page.keyboard.press("End");
+  await page.keyboard.type(" She never told anyone why.");
+  await expect.poll(() => reviewInFlight, { timeout: 15_000 }).toBe(true);
+
+  // Measures each editor keystroke from keydown to the frame after it, and
+  // each serialization for a save.
   await page.evaluate(() => {
     const state = {
+      measuring: true,
       keystrokes: [] as number[],
       serializations: [] as number[],
     };
@@ -163,6 +183,7 @@ test("edits a 1 MiB document within the responsiveness targets", async ({
     document.addEventListener(
       "keydown",
       (event) => {
+        if (!state.measuring) return;
         const start = event.timeStamp;
         requestAnimationFrame(() =>
           state.keystrokes.push(performance.now() - start),
@@ -181,10 +202,38 @@ test("edits a 1 MiB document within the responsiveness targets", async ({
 
   await middle.click();
   await page.keyboard.press("End");
-  // Faster than any writer types, but each key waits for the one before to
-  // be sent, so the measurement is not of keys queued behind one another.
+  // Type with underlines shown and a background review in flight.
   await page.keyboard.type(
     " The keeper climbed the stair again and trimmed the lamp before the long night came in over the water.",
+    { delay: 30 },
+  );
+  reviewResolvers.shift()?.();
+  await page.unroute("**/api/v1/pair-writer/reviews");
+
+  // Also start a pair-writer reply so typing latency is measured while a reply
+  // streams from the real service, as ADR 0012 requires. Pause keystroke
+  // recording while submitting the chat prompt itself.
+  await page.evaluate(() => {
+    if (window.writerTiming) window.writerTiming.measuring = false;
+  });
+  const assistant = page.getByRole("complementary", { name: "Assistant" });
+  const chatBox = assistant.getByRole("textbox", {
+    name: "Message the assistant",
+  });
+  await chatBox.click();
+  await page.keyboard.type(
+    "Give me some ideas about how I can improve this text",
+  );
+  await page.keyboard.press("Enter");
+  await expect(assistant.getByRole("button", { name: "Stop" })).toBeVisible();
+
+  await middle.click();
+  await page.keyboard.press("End");
+  await page.evaluate(() => {
+    if (window.writerTiming) window.writerTiming.measuring = true;
+  });
+  await page.keyboard.type(
+    " Fog drifted across the stone quay while the tide pulled out.",
     { delay: 30 },
   );
   await page.keyboard.press("ControlOrMeta+s");

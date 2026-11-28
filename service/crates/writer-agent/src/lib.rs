@@ -7,6 +7,7 @@
 pub mod ollama;
 pub mod prompt;
 pub mod reading;
+pub mod review;
 pub mod scripted;
 
 use std::future::Future;
@@ -24,6 +25,11 @@ pub use prompt::{
 };
 pub use reading::{
     AssembledReading, READING_LIMIT_WORDS, assemble_reading, count_words, strip_markdown_inline,
+};
+pub use review::{
+    FindingAnchor, FindingAudit, FindingCategory, ReviewAgentKind, ReviewFinding,
+    ReviewPassageInput, ReviewRequest, ReviewResponse, SCRIPTED_REVIEW_PROMPT_VERSION,
+    scripted_review,
 };
 pub use scripted::{DEFAULT_SCRIPTED_MODEL, ScriptedConfig, ScriptedMode, ScriptedProvider};
 
@@ -93,12 +99,21 @@ pub struct ContextDocument {
     pub content: String,
 }
 
+/// A pinned finding handed off from the Findings tab to a Chat thread.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct FindingContext {
+    pub agent: String,
+    pub quote: String,
+    pub note: String,
+}
+
 /// One conversation turn sent to the pair writer.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ChatTurnRequest {
     pub message: String,
     pub document: DocumentInput,
     pub selection: Option<String>,
+    pub finding: Option<FindingContext>,
     pub context_documents: Vec<ContextDocument>,
     pub history: Vec<HistoryMessage>,
 }
@@ -108,6 +123,7 @@ pub struct ChatTurnRequest {
 pub enum ReadSourceKind {
     Document,
     Selection,
+    Finding,
     ContextDocument,
     History,
 }
@@ -190,7 +206,7 @@ impl ReplyStream {
     }
 }
 
-/// A pair-writer provider behind the provisional chat endpoint.
+/// A pair-writer provider behind the provisional chat and review endpoints.
 pub trait ChatProvider: Send + Sync {
     /// Checks whether the provider can answer turns right now.
     fn status(&self) -> AgentFuture<'_, PairWriterStatus>;
@@ -198,6 +214,11 @@ pub trait ChatProvider: Send + Sync {
     /// Starts streaming a reply for one turn. Errors detected before the
     /// stream starts return `Err`.
     fn reply(&self, request: ChatTurnRequest) -> AgentFuture<'_, Result<ReplyStream, ReplyError>>;
+
+    /// Runs a provisional pause-triggered background review over changed
+    /// passages. Dropping the returned future cancels in-flight work.
+    fn review(&self, request: ReviewRequest)
+    -> AgentFuture<'_, Result<ReviewResponse, ReplyError>>;
 }
 
 /// Used when no pair-writer provider is configured; the service starts
@@ -222,6 +243,18 @@ impl ChatProvider for UnconfiguredProvider {
     }
 
     fn reply(&self, _request: ChatTurnRequest) -> AgentFuture<'_, Result<ReplyStream, ReplyError>> {
+        Box::pin(async {
+            Err(ReplyError {
+                kind: ReplyErrorKind::Unavailable,
+                detail: "No pair-writer provider is configured.".to_owned(),
+            })
+        })
+    }
+
+    fn review(
+        &self,
+        _request: ReviewRequest,
+    ) -> AgentFuture<'_, Result<ReviewResponse, ReplyError>> {
         Box::pin(async {
             Err(ReplyError {
                 kind: ReplyErrorKind::Unavailable,

@@ -19,7 +19,7 @@ when I pause and follow them to the passages they concern.
 
 ## Context
 
-[Backlog 62](./0062-scripted-findings-tab.md) builds the `Findings` tab,
+Backlog 62 built the `Findings` tab,
 passage underlines, the edit-versus-delete lifecycle, `Discuss in Chat` and
 `Answer in Chat` handoffs, `Pause`, and the collapsed badge against
 scripted findings. [Backlog 35](./0035-service-background-review.md)
@@ -82,4 +82,3 @@ typing latency, which a review must never degrade.
 
 * [Keep chat threads across sessions in the assistant pane](./0034-assistant-pane-agent.md)
 * [Review documents in the background in the service](./0035-service-background-review.md)
-* [Try the Findings tab against scripted findings](./0062-scripted-findings-tab.md)

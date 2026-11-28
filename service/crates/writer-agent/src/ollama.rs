@@ -12,6 +12,7 @@ use tokio::sync::{RwLock, mpsc};
 
 use crate::prompt::{PromptMessage, PromptTemplate, conversation_grounded_prompt};
 use crate::reading::{assemble_reading, count_words};
+use crate::review::{ReviewRequest, ReviewResponse, scripted_review};
 use crate::{
     AgentFuture, ChatProvider, ChatTurnRequest, PairWriterIssue, PairWriterStatus, ReplyDone,
     ReplyError, ReplyErrorKind, ReplyEvent, ReplyMetrics, ReplyStream,
@@ -373,6 +374,31 @@ impl ChatProvider for OllamaProvider {
             });
 
             Ok(ReplyStream::from_receiver(rx))
+        })
+    }
+
+    fn review(
+        &self,
+        request: ReviewRequest,
+    ) -> AgentFuture<'_, Result<ReviewResponse, ReplyError>> {
+        Box::pin(async move {
+            match self.check_tags().await {
+                TagsCheck::Installed { .. } => Ok(scripted_review(&request, "scripted-review")),
+                TagsCheck::ModelMissing => Err(ReplyError {
+                    kind: ReplyErrorKind::Unavailable,
+                    detail: format!(
+                        "Model '{}' is not installed in Ollama. Run: ollama pull {}",
+                        self.config.model, self.config.model
+                    ),
+                }),
+                TagsCheck::Unreachable => Err(ReplyError {
+                    kind: ReplyErrorKind::Unavailable,
+                    detail: format!(
+                        "Ollama is not reachable at {}. Start Ollama or check OLLAMA_HOST.",
+                        self.config.host
+                    ),
+                }),
+            }
         })
     }
 }
@@ -1179,6 +1205,7 @@ mod tests {
                 cursor_offset: None,
             },
             selection: None,
+            finding: None,
             context_documents: vec![],
             history,
         }

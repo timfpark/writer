@@ -34,6 +34,7 @@ const SCRIPTED_FIRST_TOKEN_MS_VAR: &str = "WRITER_SCRIPTED_FIRST_TOKEN_MS";
 const SCRIPTED_MS_PER_1000_WORDS_VAR: &str = "WRITER_SCRIPTED_MS_PER_1000_WORDS";
 const SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS_VAR: &str = "WRITER_SCRIPTED_FOLLOWUP_FIRST_TOKEN_MS";
 const SCRIPTED_TOKENS_PER_SEC_VAR: &str = "WRITER_SCRIPTED_TOKENS_PER_SEC";
+const SCRIPTED_REVIEW_MS_VAR: &str = "WRITER_SCRIPTED_REVIEW_MS";
 /// How long in-flight requests may run after a shutdown signal.
 const DRAIN_DEADLINE: Duration = Duration::from_secs(10);
 
@@ -196,6 +197,10 @@ fn agent_from_env() -> Result<(Arc<dyn ChatProvider>, String), String> {
                     SCRIPTED_TOKENS_PER_SEC_VAR,
                     defaults.tokens_per_second,
                 )?,
+                review_delay: Duration::from_millis(optional_u64_env(
+                    SCRIPTED_REVIEW_MS_VAR,
+                    u64::try_from(defaults.review_delay.as_millis()).unwrap_or(1_200),
+                )?),
                 mode: scripted_mode_from_env()?,
                 model: defaults.model,
             };

@@ -1,7 +1,8 @@
 //! Assembles one turn's reading within ADR 0012's 19,000-word limit.
 
 use crate::{
-    ChatTurnRequest, ContextDocument, HistoryMessage, ReadSource, ReadSourceKind, ReadingScope,
+    ChatTurnRequest, ContextDocument, FindingContext, HistoryMessage, ReadSource, ReadSourceKind,
+    ReadingScope,
 };
 
 /// Maximum words read in a single turn, matching ADR 0010's measured context
@@ -17,6 +18,7 @@ pub struct AssembledReading {
     pub document_scope: ReadingScope,
     pub document_words: usize,
     pub selection: Option<String>,
+    pub finding: Option<FindingContext>,
     pub context_documents: Vec<ContextDocument>,
     pub history: Vec<HistoryMessage>,
     pub dropped_history_turns: usize,
@@ -261,6 +263,23 @@ pub fn assemble_reading(request: &ChatTurnRequest) -> AssembledReading {
         });
     }
 
+    let finding = request.finding.clone();
+    if let Some(ref pinned) = finding {
+        let finding_words = count_words(&pinned.quote) + count_words(&pinned.note);
+        sources.push(ReadSource {
+            kind: ReadSourceKind::Finding,
+            document_id: Some(request.document.document_id.clone()),
+            title: Some(request.document.title.clone()),
+            scope: None,
+            word_count: to_u32(finding_words),
+            label: format!(
+                "Finding ({}) · {}",
+                pinned.agent,
+                format_words(finding_words)
+            ),
+        });
+    }
+
     for doc in &context_documents {
         let words = count_words(&doc.content);
         sources.push(ReadSource {
@@ -296,6 +315,7 @@ pub fn assemble_reading(request: &ChatTurnRequest) -> AssembledReading {
         document_scope,
         document_words,
         selection,
+        finding,
         context_documents,
         history: kept_reversed,
         dropped_history_turns,
@@ -373,6 +393,7 @@ mod tests {
                 cursor_offset: None,
             },
             selection: Some("lantern swayed".to_owned()),
+            finding: None,
             context_documents: vec![ContextDocument {
                 document_id: "doc-2".to_owned(),
                 title: "Notes".to_owned(),
@@ -410,6 +431,7 @@ mod tests {
                 cursor_offset: Some(offset),
             },
             selection: None,
+            finding: None,
             context_documents: vec![],
             history: vec![],
         });
@@ -427,6 +449,7 @@ mod tests {
                 cursor_offset: Some(0),
             },
             selection: Some(target.to_owned()),
+            finding: None,
             context_documents: vec![],
             history: vec![],
         });
@@ -448,6 +471,7 @@ mod tests {
                 cursor_offset: None,
             },
             selection: None,
+            finding: None,
             context_documents: vec![],
             history: vec![
                 HistoryMessage {
@@ -492,6 +516,7 @@ mod tests {
                 cursor_offset: Some(late_char_offset),
             },
             selection: Some(repeated.to_owned()),
+            finding: None,
             context_documents: vec![],
             history: vec![],
         });

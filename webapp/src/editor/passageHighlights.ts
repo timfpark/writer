@@ -1,94 +1,58 @@
 import { Extension } from "@tiptap/core";
 import type { Node as ProseMirrorNode } from "@tiptap/pm/model";
-import { Plugin, PluginKey } from "@tiptap/pm/state";
-import { Decoration, DecorationSet } from "@tiptap/pm/view";
+import { Plugin, PluginKey, TextSelection } from "@tiptap/pm/state";
+import { Decoration, DecorationSet, type EditorView } from "@tiptap/pm/view";
 import type { Editor } from "@tiptap/react";
+import type {
+  FindingDecorationRange,
+  FindingMapUpdate,
+  PassageDescriptor,
+  ResolvedFindingAnchor,
+} from "../workspace/editorBridge";
+import {
+  allocateBlockId,
+  mapFindingThroughTransaction,
+  updateBlockIds,
+  utf16RangeInBlockToDocRange,
+} from "./findingUnderlines";
 
 interface HighlightState {
   focused: boolean;
   selectionIgnored: boolean;
   quoteRange: { from: number; to: number } | null;
+  blockIds: readonly string[];
+  findings: readonly FindingDecorationRange[];
+  selectedFindingId: string | null;
+  lastEditedPassageIds: readonly string[];
+  lastFindingUpdates: readonly FindingMapUpdate[];
+  txSeq: number;
 }
 
-type HighlightMeta =
-  | { type: "focus"; focused: boolean }
-  | { type: "ignoreSelection"; ignored: boolean }
-  | { type: "quote"; range: { from: number; to: number } | null };
+interface HighlightPatch {
+  focused?: boolean;
+  selectionIgnored?: boolean;
+  quoteRange?: { from: number; to: number } | null;
+  findings?: readonly FindingDecorationRange[];
+  selectedFindingId?: string | null;
+}
+
+export interface FindingCallbacks {
+  onTransaction: (
+    editedPassageIds: readonly string[],
+    findingUpdates: readonly FindingMapUpdate[],
+  ) => void;
+  onClickFinding: (findingId: string) => void;
+}
 
 export const passageHighlightsKey = new PluginKey<HighlightState>(
   "writerPassageHighlights",
 );
 
-function isHighlightMeta(value: unknown): value is HighlightMeta {
-  if (typeof value !== "object" || value === null || !("type" in value)) {
-    return false;
-  }
-  const kind = value.type;
-  return kind === "focus" || kind === "ignoreSelection" || kind === "quote";
-}
-
-interface TextSegment {
-  text: string;
-  startIndex: number;
-  docPos: number;
-}
-
-function collectSegments(doc: ProseMirrorNode): {
-  fullText: string;
-  segments: TextSegment[];
-} {
-  const segments: TextSegment[] = [];
-  let offset = 0;
-  let needsBlockSep = false;
-
-  doc.descendants((node, pos) => {
-    if (node.isTextblock) {
-      if (needsBlockSep) offset += 1;
-      needsBlockSep = true;
-      return true;
-    }
-    if (node.isText && node.text) {
-      segments.push({
-        text: node.text,
-        startIndex: offset,
-        docPos: pos,
-      });
-      offset += node.text.length;
-      return false;
-    }
-    return true;
-  });
-
-  // Join segments with "\n" where block gaps occurred.
-  const parts: string[] = [];
-  let cursor = 0;
-  for (const seg of segments) {
-    if (seg.startIndex > cursor) {
-      parts.push("\n".repeat(seg.startIndex - cursor));
-    }
-    parts.push(seg.text);
-    cursor = seg.startIndex + seg.text.length;
-  }
-  return { fullText: parts.join(""), segments };
-}
-
-function textIndexToDocPos(
-  segments: readonly TextSegment[],
-  index: number,
-  preferEnd: boolean,
-): number | null {
-  for (const seg of segments) {
-    const end = seg.startIndex + seg.text.length;
-    if (
-      preferEnd
-        ? index > seg.startIndex && index <= end
-        : index >= seg.startIndex && index < end
-    ) {
-      return seg.docPos + (index - seg.startIndex);
-    }
-  }
-  return null;
-}
+const findingCallbacks = new WeakMap<EditorView, FindingCallbacks>();
+const isNonProse = (name: string) =>
+  name === "codeBlock" || name === "rawBlock" || name === "horizontalRule";
+const isSceneBreak = (name: string) =>
+  name === "heading" || name === "horizontalRule";
 
 // Finds the exact ProseMirror position range of `quote` inside `doc`'s
 // rendered text, spanning inline formatting such as emphasis or links.
@@ -98,14 +62,10 @@ export function findQuoteRange(
 ): { from: number; to: number } | null {
   const needle = quote.trim();
   if (!needle) return null;
-  const { fullText, segments } = collectSegments(doc);
+  const fullText = doc.textBetween(0, doc.content.size, "\n");
   const start = fullText.indexOf(needle);
   if (start === -1) return null;
-  const end = start + needle.length;
-  const from = textIndexToDocPos(segments, start, false);
-  const to = textIndexToDocPos(segments, end, true);
-  if (from === null || to === null || from >= to) return null;
-  return { from, to };
+  return utf16RangeInBlockToDocRange(doc, 0, start, start + needle.length);
 }
 
 // Approximate character offset in plain text corresponding to a ProseMirror
@@ -135,17 +95,145 @@ export function docPosToTextOffset(doc: ProseMirrorNode, pos: number): number {
 
 const clearTimers = new WeakMap<Editor, ReturnType<typeof setTimeout>>();
 
+const pendingPatches = new WeakMap<object, HighlightPatch>();
+
+function dispatchMeta(editor: Editor, patch: HighlightPatch): void {
+  if (editor.isDestroyed) return;
+  const tr = editor.state.tr;
+  pendingPatches.set(tr, patch);
+  editor.view.dispatch(tr);
+}
+
 export function setSelectionIgnoredInEditor(
   editor: Editor,
   ignored: boolean,
 ): void {
+  dispatchMeta(editor, { selectionIgnored: ignored });
+}
+
+function scrollToDocPos(editor: Editor, pos: number): void {
+  try {
+    const { node } = editor.view.domAtPos(pos);
+    (node instanceof HTMLElement ? node : node.parentElement)?.scrollIntoView({
+      block: "center",
+    });
+  } catch {
+    // Ignore scroll failures in synthetic DOM environments such as jsdom.
+  }
+}
+
+export function setFindingCallbacks(
+  editor: Editor,
+  callbacks: FindingCallbacks | null,
+): void {
   if (editor.isDestroyed) return;
-  editor.view.dispatch(
-    editor.state.tr.setMeta(passageHighlightsKey, {
-      type: "ignoreSelection",
-      ignored,
-    } satisfies HighlightMeta),
-  );
+  if (callbacks) findingCallbacks.set(editor.view, callbacks);
+  else findingCallbacks.delete(editor.view);
+}
+
+function walkBlocks(
+  editor: Editor,
+  visit: (
+    block: ProseMirrorNode,
+    index: number,
+    blockStartPos: number,
+    sceneIndex: number,
+    passageId: string,
+  ) => boolean | void,
+): void {
+  const state = editor.isDestroyed
+    ? undefined
+    : passageHighlightsKey.getState(editor.state);
+  if (!state) return;
+  const doc = editor.state.doc;
+  let pos = 0;
+  let sceneIndex = 0;
+  for (let i = 0; i < doc.childCount; i += 1) {
+    const child = doc.child(i);
+    if (i > 0 && isSceneBreak(child.type.name)) sceneIndex += 1;
+    const passageId = state.blockIds[i];
+    if (passageId && visit(child, i, pos, sceneIndex, passageId) === false) {
+      return;
+    }
+    pos += child.nodeSize;
+  }
+}
+
+export function readPassagesFromEditor(
+  editor: Editor,
+  passageIds: ReadonlySet<string>,
+): PassageDescriptor[] {
+  if (passageIds.size === 0) return [];
+  const result: PassageDescriptor[] = [];
+  walkBlocks(editor, (child, index, _pos, sceneIndex, passageId) => {
+    if (!passageIds.has(passageId) || isNonProse(child.type.name)) return;
+    const text = child.textBetween(0, child.content.size, "\n");
+    if (text.trim()) result.push({ passageId, index, sceneIndex, text });
+  });
+  return result;
+}
+
+export function resolveFindingAnchorInEditor(
+  editor: Editor,
+  anchor: {
+    passageId: string;
+    startOffset: number;
+    endOffset: number;
+    quote: string;
+  },
+): ResolvedFindingAnchor | null {
+  let found: ResolvedFindingAnchor | null = null;
+  walkBlocks(editor, (child, _index, pos, sceneIndex, passageId) => {
+    if (passageId !== anchor.passageId) return undefined;
+    const range = utf16RangeInBlockToDocRange(
+      child,
+      pos + 1,
+      anchor.startOffset,
+      anchor.endOffset,
+    );
+    if (
+      range &&
+      editor.state.doc.textBetween(range.from, range.to, "\n") === anchor.quote
+    ) {
+      found = { ...range, sceneIndex };
+    }
+    return false;
+  });
+  return found;
+}
+
+export function syncFindingDecorationsInEditor(
+  editor: Editor,
+  ranges: readonly FindingDecorationRange[],
+  selectedFindingId: string | null,
+): void {
+  dispatchMeta(editor, { findings: ranges, selectedFindingId });
+}
+
+export function focusFindingRangeInEditor(
+  editor: Editor,
+  from: number,
+  to: number,
+  moveCaret: boolean,
+): boolean {
+  if (
+    editor.isDestroyed ||
+    from < 0 ||
+    to > editor.state.doc.content.size ||
+    from >= to
+  ) {
+    return false;
+  }
+  if (moveCaret) {
+    editor.view.dispatch(
+      editor.state.tr
+        .setSelection(TextSelection.create(editor.state.doc, from))
+        .scrollIntoView(),
+    );
+    editor.view.focus();
+  }
+  scrollToDocPos(editor, from);
+  return true;
 }
 
 // Scrolls to an exact quote in the open document and briefly highlights it
@@ -158,38 +246,20 @@ export function highlightQuoteInEditor(editor: Editor, quote: string): boolean {
   const existingTimer = clearTimers.get(editor);
   if (existingTimer !== undefined) clearTimeout(existingTimer);
 
-  editor.view.dispatch(
-    editor.state.tr.setMeta(passageHighlightsKey, {
-      type: "quote",
-      range,
-    } satisfies HighlightMeta),
-  );
-
-  try {
-    const domAt = editor.view.domAtPos(range.from);
-    const element =
-      domAt.node instanceof HTMLElement ? domAt.node : domAt.node.parentElement;
-    element?.scrollIntoView({ block: "center" });
-  } catch {
-    // Ignore scroll failures in synthetic DOM environments such as jsdom.
-  }
+  dispatchMeta(editor, { quoteRange: range });
+  scrollToDocPos(editor, range.from);
 
   const timer = setTimeout(() => {
     clearTimers.delete(editor);
-    if (editor.isDestroyed) return;
-    editor.view.dispatch(
-      editor.state.tr.setMeta(passageHighlightsKey, {
-        type: "quote",
-        range: null,
-      } satisfies HighlightMeta),
-    );
+    dispatchMeta(editor, { quoteRange: null });
   }, 2_400);
   clearTimers.set(editor, timer);
   return true;
 }
 
 // Keeps the active text selection visibly highlighted while focus moves to
-// Chat, and highlights passages jumped to from a reply's quote links.
+// Chat, highlights jumped-to quotes, renders ADR 0011 finding underlines, and
+// maps finding ranges through edits and deletions without mutating the doc.
 export const PassageHighlights = Extension.create({
   name: "writerPassageHighlights",
 
@@ -198,29 +268,91 @@ export const PassageHighlights = Extension.create({
       new Plugin<HighlightState>({
         key: passageHighlightsKey,
         state: {
-          init: () => ({
+          init: (_config, instance) => ({
             focused: false,
             selectionIgnored: false,
             quoteRange: null,
+            blockIds: Array.from(
+              { length: instance.doc.childCount },
+              allocateBlockId,
+            ),
+            findings: [],
+            selectedFindingId: null,
+            lastEditedPassageIds: [],
+            lastFindingUpdates: [],
+            txSeq: 0,
           }),
           apply(tr, prev, oldState, newState) {
-            let next = prev;
-            const rawMeta: unknown = tr.getMeta(passageHighlightsKey);
-            const meta = isHighlightMeta(rawMeta) ? rawMeta : undefined;
-            if (meta?.type === "focus") {
-              next = { ...next, focused: meta.focused };
-            } else if (meta?.type === "ignoreSelection") {
-              next = { ...next, selectionIgnored: meta.ignored };
-            } else if (meta?.type === "quote") {
-              next = { ...next, quoteRange: meta.range };
+            let next: HighlightState = {
+              ...prev,
+              lastEditedPassageIds: [],
+              lastFindingUpdates: [],
+            };
+            const patch = pendingPatches.get(tr);
+            if (patch?.focused !== undefined) next.focused = patch.focused;
+            if (patch?.selectionIgnored !== undefined) {
+              next.selectionIgnored = patch.selectionIgnored;
+            }
+            if (patch?.quoteRange !== undefined) {
+              next.quoteRange = patch.quoteRange;
             }
 
-            if (tr.docChanged && next.quoteRange) {
-              const from = tr.mapping.map(next.quoteRange.from);
-              const to = tr.mapping.map(next.quoteRange.to);
+            if (tr.docChanged) {
+              const blockUpdate = updateBlockIds(
+                oldState.doc,
+                newState.doc,
+                prev.blockIds,
+                tr,
+              );
+              let findings = next.findings;
+              let findingUpdates: readonly FindingMapUpdate[] = [];
+              if (prev.findings.length > 0) {
+                const kept: FindingDecorationRange[] = [];
+                const updates: FindingMapUpdate[] = [];
+                for (const finding of prev.findings) {
+                  const mapped = mapFindingThroughTransaction(
+                    finding,
+                    tr,
+                    newState.doc,
+                  );
+                  updates.push(mapped);
+                  if (mapped.status !== "deleted") {
+                    kept.push({
+                      ...finding,
+                      from: mapped.from,
+                      to: mapped.to,
+                      status: mapped.status,
+                    });
+                  }
+                }
+                findings = kept;
+                findingUpdates = updates;
+              }
+              let quoteRange = next.quoteRange;
+              if (quoteRange) {
+                const from = tr.mapping.map(quoteRange.from);
+                const to = tr.mapping.map(quoteRange.to);
+                quoteRange = from < to ? { from, to } : null;
+              }
               next = {
                 ...next,
-                quoteRange: from < to ? { from, to } : null,
+                quoteRange,
+                blockIds: blockUpdate.blockIds,
+                findings,
+                lastEditedPassageIds: blockUpdate.editedPassageIds,
+                lastFindingUpdates: findingUpdates,
+                txSeq: next.txSeq + 1,
+              };
+            }
+
+            if (patch?.findings !== undefined) {
+              next = {
+                ...next,
+                findings: patch.findings,
+                selectedFindingId:
+                  patch.selectedFindingId !== undefined
+                    ? patch.selectedFindingId
+                    : next.selectedFindingId,
               };
             }
 
@@ -235,24 +367,50 @@ export const PassageHighlights = Extension.create({
             return next;
           },
         },
+        view() {
+          let lastNotifiedSeq = 0;
+          return {
+            update(view) {
+              const state = passageHighlightsKey.getState(view.state);
+              if (!state || state.txSeq === lastNotifiedSeq) return;
+              lastNotifiedSeq = state.txSeq;
+              const callbacks = findingCallbacks.get(view);
+              if (
+                callbacks &&
+                (state.lastEditedPassageIds.length > 0 ||
+                  state.lastFindingUpdates.length > 0)
+              ) {
+                callbacks.onTransaction(
+                  state.lastEditedPassageIds,
+                  state.lastFindingUpdates,
+                );
+              }
+            },
+          };
+        },
         props: {
+          handleClick(view, pos) {
+            const state = passageHighlightsKey.getState(view.state);
+            const callbacks = findingCallbacks.get(view);
+            const hit = state?.findings.find(
+              (f) => f.status === "active" && pos >= f.from && pos <= f.to,
+            );
+            if (hit && callbacks) {
+              setTimeout(() => callbacks.onClickFinding(hit.findingId), 0);
+            }
+            return false;
+          },
           handleDOMEvents: {
             focus(view) {
-              view.dispatch(
-                view.state.tr.setMeta(passageHighlightsKey, {
-                  type: "focus",
-                  focused: true,
-                } satisfies HighlightMeta),
-              );
+              const tr = view.state.tr;
+              pendingPatches.set(tr, { focused: true });
+              view.dispatch(tr);
               return false;
             },
             blur(view) {
-              view.dispatch(
-                view.state.tr.setMeta(passageHighlightsKey, {
-                  type: "focus",
-                  focused: false,
-                } satisfies HighlightMeta),
-              );
+              const tr = view.state.tr;
+              pendingPatches.set(tr, { focused: false });
+              view.dispatch(tr);
               return false;
             },
           },
@@ -260,6 +418,7 @@ export const PassageHighlights = Extension.create({
             const pluginState = passageHighlightsKey.getState(state);
             if (!pluginState) return DecorationSet.empty;
             const decorations: Decoration[] = [];
+            const size = state.doc.content.size;
 
             if (
               !pluginState.focused &&
@@ -280,6 +439,29 @@ export const PassageHighlights = Extension.create({
                   pluginState.quoteRange.to,
                   { class: "writer-quote-highlight" },
                 ),
+              );
+            }
+
+            for (const f of pluginState.findings) {
+              if (
+                f.status !== "active" ||
+                f.from < 0 ||
+                f.to > size ||
+                f.from >= f.to
+              ) {
+                continue;
+              }
+              const cls =
+                `writer-finding-underline writer-finding-${f.style}` +
+                (f.findingId === pluginState.selectedFindingId
+                  ? " writer-finding-selected"
+                  : "");
+              decorations.push(
+                Decoration.inline(f.from, f.to, {
+                  class: cls,
+                  "data-finding-id": f.findingId,
+                  "data-finding-style": f.style,
+                }),
               );
             }
 

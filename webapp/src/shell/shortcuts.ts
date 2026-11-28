@@ -11,6 +11,8 @@ export const paneKeys: Record<PaneName, Keys> = {
 
 export const referenceKeys: Keys = ["Mod", "/"];
 
+export const pauseKeys: Keys = ["Mod", "Shift", "P"];
+
 function hasMod(event: KeyboardEvent): boolean {
   return event.ctrlKey || event.metaKey;
 }
@@ -45,6 +47,23 @@ export function isReferenceShortcut(event: KeyboardEvent): boolean {
     hasMod(event) &&
     event.code === "Slash"
   );
+}
+
+// Mod+Shift+P pauses or resumes background review.
+export function isPauseShortcut(event: KeyboardEvent): boolean {
+  return (
+    !event.repeat &&
+    !event.altKey &&
+    event.shiftKey &&
+    hasMod(event) &&
+    event.code === "KeyP"
+  );
+}
+
+// F8 moves to the next finding and Shift+F8 to the previous one.
+export function findingStep(event: KeyboardEvent): 1 | -1 | null {
+  if (event.key !== "F8" || event.altKey || hasMod(event)) return null;
+  return event.shiftKey ? -1 : 1;
 }
 
 export type NavigatorShortcut =

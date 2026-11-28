@@ -28,9 +28,12 @@ pub use documents::{Document, DocumentContent};
 pub use folders::Folder;
 pub use health::{Health, HealthStatus};
 pub use pair_writer::{
-    Agent, ChatContextDocument, ChatDocumentInput, ChatHistoryMessage, ChatHistoryRole,
-    ChatReadSource, ChatReplyDelta, ChatReplyDone, ChatReplyMetrics, ChatSelectionInput,
-    ChatSourceKind, CreatePairWriterReplyRequest, PairWriterIssue, PairWriterStatus, ReadingScope,
+    Agent, ChatContextDocument, ChatDocumentInput, ChatFindingInput, ChatHistoryMessage,
+    ChatHistoryRole, ChatReadSource, ChatReplyDelta, ChatReplyDone, ChatReplyMetrics,
+    ChatSelectionInput, ChatSourceKind, CreatePairWriterReplyRequest,
+    CreatePairWriterReviewRequest, FindingAnchor, FindingAudit, FindingCategory, PairWriterIssue,
+    PairWriterReviewResponse, PairWriterStatus, ReadingScope, ReviewAgentKind, ReviewFinding,
+    ReviewPassageInput,
 };
 pub use problem::{Problem, ProblemCode, ProblemFieldError};
 pub use workspace::{ItemKind, Store, Workspace, WorkspaceItem};
@@ -107,6 +110,10 @@ fn v1() -> OpenApiRouter<AppState> {
         .routes(routes!(pair_writer::get_pair_writer))
         .routes(
             routes!(pair_writer::create_pair_writer_reply)
+                .layer(DefaultBodyLimit::max(CONTENT_BODY_LIMIT)),
+        )
+        .routes(
+            routes!(pair_writer::create_pair_writer_review)
                 .layer(DefaultBodyLimit::max(CONTENT_BODY_LIMIT)),
         )
 }

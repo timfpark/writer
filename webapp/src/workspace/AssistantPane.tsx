@@ -3,6 +3,8 @@ import {
   ArrowLeft,
   ArrowUp,
   FileText,
+  Pause,
+  Play,
   Plus,
   RotateCcw,
   Square,
@@ -25,14 +27,21 @@ import {
   DialogTrigger,
   Form,
   Popover,
+  Tab,
+  TabList,
+  TabPanel,
+  Tabs,
   TextArea,
   TextField,
+  Tooltip,
+  TooltipTrigger,
 } from "react-aria-components";
 import { client, type PairWriterStatus } from "../api/client";
 import { read } from "../api/queries";
 import { useWorkspaceTree } from "../api/workspaceChanges";
 import controls from "../shell/controls.module.css";
 import { regionElement } from "../shell/regions";
+import { ariaKeys, keyLabel, pauseKeys } from "../shell/shortcuts";
 import styles from "./AssistantPane.module.css";
 import {
   latestWriterTurn,
@@ -45,12 +54,47 @@ import {
   type TurnAudit,
 } from "./conversation";
 import { useEditorBridge, useEditorSummary } from "./editorBridge";
+import type { FindingsStore, ReviewStatus, TrackedFinding } from "./findings";
+import { FindingsTab } from "./FindingsTab";
 import {
   countWords,
   formatWords,
   parseReplyInline,
   scopeLabel,
 } from "./reading";
+
+export type AssistantTab = "findings" | "chat";
+
+function statusLabel(
+  reviewStatus: ReviewStatus,
+  showSetupNotice: boolean,
+  readinessStatus: PairWriterStatus | null,
+): string {
+  if (showSetupNotice && readinessStatus) {
+    switch (readinessStatus.issue) {
+      case "notConfigured":
+        return "Not configured";
+      case "modelMissing":
+        return "Model missing";
+      case "runtimeUnreachable":
+        return readinessStatus.provider === "ollama"
+          ? "Ollama unavailable"
+          : "Unavailable";
+      default:
+        return "Not ready";
+    }
+  }
+  switch (reviewStatus) {
+    case "paused":
+      return "Paused by you";
+    case "reviewing":
+      return "Reviewing prose";
+    case "waiting":
+      return "Waiting for pause";
+    default:
+      return "Idle";
+  }
+}
 
 function truncate(text: string, max: number): string {
   const collapsed = text.replace(/\s+/g, " ").trim();
@@ -75,18 +119,28 @@ function setupHeading(status: PairWriterStatus): string {
   }
 }
 
-// ADR 0012's Chat tab: threads belonging to documents, reading summary above
-// the composer, mirrored selection chip, `+ Context`, streaming with `Stop`
-// from the moment of sending, verbatim quote links, `What it read` disclosures,
-// edited-document revival, and setup/error/no-document states.
+// ADR 0011 and ADR 0012's assistant pane: top status line with global Pause,
+// Findings and Chat tabs, passage-finding handoffs, threads, reading summary,
+// mirrored selection chip, `+ Context`, streaming with `Stop`, quote links,
+// `What it read` disclosures, edited-document revival, and setup/error states.
 export function AssistantPane({
   store,
+  findingsStore,
+  activeTab,
+  onTabChange,
   onRevealWriting,
 }: {
   store: ConversationStore;
+  findingsStore: FindingsStore;
+  activeTab: AssistantTab;
+  onTabChange: (tab: AssistantTab) => void;
   onRevealWriting?: () => void;
 }) {
   const snapshot = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  const findingsSnapshot = useSyncExternalStore(
+    findingsStore.subscribe,
+    findingsStore.getSnapshot,
+  );
   const bridge = useEditorBridge();
   const editorSummary = useEditorSummary();
   const { items } = useWorkspaceTree();
@@ -154,7 +208,9 @@ export function AssistantPane({
 
   useEffect(() => {
     const requested = pendingFocusViewRef.current;
-    if (!requested || requested !== snapshot.view) return;
+    if (!requested || activeTab !== "chat" || requested !== snapshot.view) {
+      return;
+    }
     pendingFocusViewRef.current = null;
     if (snapshot.view === "list") {
       if (newChatButtonRef.current && !newChatButtonRef.current.disabled) {
@@ -171,7 +227,7 @@ export function AssistantPane({
     } else {
       backButtonRef.current?.focus({ preventScroll: true });
     }
-  }, [snapshot.view, activeThread, openDocumentId]);
+  }, [activeTab, snapshot.view, activeThread, openDocumentId]);
 
   useEffect(() => {
     const transcript = transcriptRef.current;
@@ -327,6 +383,20 @@ export function AssistantPane({
     setConfirmingDeleteKey(null);
     pendingFocusViewRef.current = "thread";
     store.startNewThread();
+  }
+
+  function handleDiscussFinding(finding: TrackedFinding) {
+    setConfirmingDeleteKey(null);
+    pendingFocusViewRef.current = "thread";
+    store.openFindingThread({
+      findingId: finding.findingId,
+      documentId: finding.documentId,
+      agent: finding.agent,
+      agentLabel: finding.agentLabel,
+      quote: finding.quote,
+      note: finding.note,
+    });
+    onTabChange("chat");
   }
 
   function onKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
@@ -568,9 +638,17 @@ export function AssistantPane({
     );
   }
 
-  if (snapshot.view === "list") {
-    return (
-      <div ref={listViewRef} className={styles.assistant} tabIndex={-1}>
+  const pinnedFinding = activeThread?.pinnedFinding ?? null;
+  void editorSummary?.version;
+  const pinnedQuoteMatches =
+    pinnedFinding !== null &&
+    !isOtherDocThread &&
+    openDocumentId !== null &&
+    bridge.hasExactQuote(openDocumentId, pinnedFinding.quote);
+
+  const chatContent =
+    snapshot.view === "list" ? (
+      <div ref={listViewRef} className={styles.tabBody} tabIndex={-1}>
         <div className={styles.header}>
           <div className={styles.headerRow}>
             <h2 className={styles.listHeading}>Chats</h2>
@@ -634,455 +712,596 @@ export function AssistantPane({
           </section>
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className={styles.assistant}>
-      <div className={styles.header}>
-        <div className={styles.headerRow}>
-          <Button
-            ref={backButtonRef}
-            className={styles.backButton}
-            onPress={handleShowThreadList}
-          >
-            <ArrowLeft aria-hidden size={14} />
-            <span>Chats</span>
-            {otherActivitySignal ? (
-              <>
-                <span className={styles.srOnly}>
-                  {otherActivitySignal === "streaming"
-                    ? " (replying in another chat)"
-                    : " (unread reply in another chat)"}
-                </span>
-                <span
-                  className={styles.dot}
-                  data-signal={otherActivitySignal}
-                  aria-hidden="true"
-                />
-              </>
-            ) : null}
-          </Button>
-
-          <div className={styles.headerActions}>
+    ) : (
+      <div className={styles.tabBody}>
+        <div className={styles.header}>
+          <div className={styles.headerRow}>
             <Button
-              className={styles.headerButton}
-              onPress={handleStartNewThread}
-              isDisabled={!openDocumentId}
+              ref={backButtonRef}
+              className={styles.backButton}
+              onPress={handleShowThreadList}
             >
-              <Plus aria-hidden size={14} />
-              <span>New</span>
+              <ArrowLeft aria-hidden size={14} />
+              <span>Chats</span>
+              {otherActivitySignal ? (
+                <>
+                  <span className={styles.srOnly}>
+                    {otherActivitySignal === "streaming"
+                      ? " (replying in another chat)"
+                      : " (unread reply in another chat)"}
+                  </span>
+                  <span
+                    className={styles.dot}
+                    data-signal={otherActivitySignal}
+                    aria-hidden="true"
+                  />
+                </>
+              ) : null}
             </Button>
-            {activeThread && !confirmingHeaderDelete ? (
+
+            <div className={styles.headerActions}>
               <Button
                 className={styles.headerButton}
-                aria-label="Delete chat"
-                onPress={() =>
-                  setConfirmingDeleteKey(`header:${activeThread.id}`)
-                }
+                onPress={handleStartNewThread}
+                isDisabled={!openDocumentId}
               >
-                <Trash2 aria-hidden size={14} />
-                <span>Delete</span>
+                <Plus aria-hidden size={14} />
+                <span>New</span>
+              </Button>
+              {activeThread && !confirmingHeaderDelete ? (
+                <Button
+                  className={styles.headerButton}
+                  aria-label="Delete chat"
+                  onPress={() =>
+                    setConfirmingDeleteKey(`header:${activeThread.id}`)
+                  }
+                >
+                  <Trash2 aria-hidden size={14} />
+                  <span>Delete</span>
+                </Button>
+              ) : null}
+            </div>
+          </div>
+          <h2 className={styles.threadHeading}>
+            {activeThread ? activeThread.title : "New chat"}
+          </h2>
+        </div>
+
+        {activeThread && confirmingHeaderDelete ? (
+          <section
+            className={styles.inlineConfirm}
+            aria-label="Confirm delete chat"
+          >
+            <span className={styles.confirmText}>
+              Delete this chat and what it recorded?
+            </span>
+            <div className={styles.confirmButtons}>
+              <Button
+                className={styles.smallButton}
+                onPress={() => setConfirmingDeleteKey(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className={`${styles.smallButton} ${styles.confirmDelete}`}
+                onPress={() => {
+                  store.deleteThread(activeThread.id);
+                  setConfirmingDeleteKey(null);
+                }}
+              >
+                Confirm delete
+              </Button>
+            </div>
+          </section>
+        ) : null}
+
+        {setupNotice}
+
+        {isOtherDocThread && activeThread ? (
+          <div className={styles.banner}>
+            <p className={styles.bannerText}>
+              {otherDocExists
+                ? `This chat belongs to “${activeThread.documentTitle}”.`
+                : `This chat belongs to “${activeThread.documentTitle}” (deleted document).`}
+            </p>
+            {otherDocExists ? (
+              <Button
+                className={styles.smallButton}
+                onPress={() => openThreadDocument(activeThread)}
+              >
+                Open document
               </Button>
             ) : null}
           </div>
-        </div>
-        <h2 className={styles.threadHeading}>
-          {activeThread ? activeThread.title : "New chat"}
-        </h2>
-      </div>
+        ) : null}
 
-      {activeThread && confirmingHeaderDelete ? (
-        <section
-          className={styles.inlineConfirm}
-          aria-label="Confirm delete chat"
-        >
-          <span className={styles.confirmText}>
-            Delete this chat and what it recorded?
-          </span>
-          <div className={styles.confirmButtons}>
-            <Button
-              className={styles.smallButton}
-              onPress={() => setConfirmingDeleteKey(null)}
-            >
-              Cancel
-            </Button>
-            <Button
-              className={`${styles.smallButton} ${styles.confirmDelete}`}
-              onPress={() => {
-                store.deleteThread(activeThread.id);
-                setConfirmingDeleteKey(null);
-              }}
-            >
-              Confirm delete
+        {documentEditedSinceChat ? (
+          <div className={styles.banner}>
+            <p className={styles.bannerText}>Document edited since this chat</p>
+            <Button className={styles.smallButton} onPress={viewTextThen}>
+              View text then
             </Button>
           </div>
-        </section>
-      ) : null}
+        ) : null}
 
-      {setupNotice}
-
-      {isOtherDocThread && activeThread ? (
-        <div className={styles.banner}>
-          <p className={styles.bannerText}>
-            {otherDocExists
-              ? `This chat belongs to “${activeThread.documentTitle}”.`
-              : `This chat belongs to “${activeThread.documentTitle}” (deleted document).`}
-          </p>
-          {otherDocExists ? (
-            <Button
-              className={styles.smallButton}
-              onPress={() => openThreadDocument(activeThread)}
-            >
-              Open document
-            </Button>
-          ) : null}
-        </div>
-      ) : null}
-
-      {documentEditedSinceChat ? (
-        <div className={styles.banner}>
-          <p className={styles.bannerText}>Document edited since this chat</p>
-          <Button className={styles.smallButton} onPress={viewTextThen}>
-            View text then
-          </Button>
-        </div>
-      ) : null}
-
-      <div
-        ref={transcriptRef}
-        className={styles.transcript}
-        role="log"
-        aria-label="Conversation"
-      >
-        {!activeThread ? (
-          openDocumentId ? (
-            <div className={styles.emptyState}>
-              <p className={styles.emptyHint}>
-                Ask your pair writer for advice on this draft. Suggestions stay
-                advice; nothing edits your document.
-              </p>
-              <div className={styles.starters}>
-                {STARTER_PROMPTS.map((prompt) => (
-                  <Button
-                    key={prompt}
-                    className={styles.starter}
-                    isDisabled={!isReady || isStreamingAny}
-                    onPress={() => void store.send(prompt)}
-                  >
-                    {prompt}
-                  </Button>
-                ))}
-              </div>
+        {pinnedFinding ? (
+          <section
+            className={styles.pinnedFinding}
+            aria-label={`Pinned ${pinnedFinding.agentLabel} finding`}
+          >
+            <div className={styles.pinnedHeader}>
+              <span className={styles.pinnedAgent}>
+                {pinnedFinding.agentLabel}
+              </span>
+              {pinnedQuoteMatches && openDocumentId !== null ? (
+                <Button
+                  className={styles.quoteLink}
+                  onPress={() => {
+                    bridge.highlightQuote(openDocumentId, pinnedFinding.quote);
+                    onRevealWriting?.();
+                  }}
+                >
+                  {`“${pinnedFinding.quote}”`}
+                </Button>
+              ) : (
+                <span className={styles.pinnedQuote}>
+                  {`“${pinnedFinding.quote}”`}
+                </span>
+              )}
             </div>
-          ) : (
-            <p className={styles.emptyHint}>
-              Open a document in the navigator to chat with your pair writer.
-              Every turn reads the open document as it stands.
+            <p className={styles.pinnedNote}>
+              {parseReplyInline(pinnedFinding.note).map((seg, idx) =>
+                seg.kind === "italic" ? (
+                  <em key={idx}>{seg.text}</em>
+                ) : seg.kind === "quote" ? (
+                  <Fragment key={idx}>{`“${seg.text}”`}</Fragment>
+                ) : (
+                  <Fragment key={idx}>{seg.text}</Fragment>
+                ),
+              )}
             </p>
-          )
-        ) : (
-          <ol className={styles.messages}>
-            {activeThread.messages.map((message) => {
-              if (message.role === "divider") {
-                return (
-                  <li key={message.id} className={styles.divider}>
-                    <span>{message.text}</span>
-                  </li>
-                );
-              }
-              if (message.role === "writer") {
+          </section>
+        ) : null}
+
+        <div
+          ref={transcriptRef}
+          className={styles.transcript}
+          role="log"
+          aria-label="Conversation"
+        >
+          {!activeThread ? (
+            openDocumentId ? (
+              <div className={styles.emptyState}>
+                <p className={styles.emptyHint}>
+                  Ask your pair writer for advice on this draft. Suggestions
+                  stay advice; nothing edits your document.
+                </p>
+                {!showSetupNotice ? (
+                  <div className={styles.starters}>
+                    {STARTER_PROMPTS.map((prompt) => (
+                      <Button
+                        key={prompt}
+                        className={styles.starter}
+                        isDisabled={!isReady || isStreamingAny}
+                        onPress={() => void store.send(prompt)}
+                      >
+                        {prompt}
+                      </Button>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            ) : (
+              <p className={styles.emptyHint}>
+                Open a document in the navigator to chat with your pair writer.
+                Every turn reads the open document as it stands.
+              </p>
+            )
+          ) : activeThread.messages.length === 0 ? (
+            <p className={styles.emptyHint}>
+              {pinnedFinding?.agent === "openQuestions"
+                ? "Answer this question below to explore where the scene could go."
+                : "Discuss this finding below. Suggestions stay advice; nothing edits your document."}
+            </p>
+          ) : (
+            <ol className={styles.messages}>
+              {activeThread.messages.map((message) => {
+                if (message.role === "divider") {
+                  return (
+                    <li key={message.id} className={styles.divider}>
+                      <span>{message.text}</span>
+                    </li>
+                  );
+                }
+                if (message.role === "writer") {
+                  return (
+                    <li
+                      key={message.id}
+                      className={styles.message}
+                      data-role="writer"
+                    >
+                      <span className={styles.speaker}>You</span>
+                      {message.selectionQuote ? (
+                        <span className={styles.turnMeta}>
+                          {`Selection: “${truncate(message.selectionQuote, 60)}”`}
+                        </span>
+                      ) : null}
+                      {message.contextTitles.length > 0 ? (
+                        <span className={styles.turnMeta}>
+                          {`Context: ${message.contextTitles.join(", ")}`}
+                        </span>
+                      ) : null}
+                      <p className={styles.text}>{message.text}</p>
+                    </li>
+                  );
+                }
                 return (
                   <li
                     key={message.id}
                     className={styles.message}
-                    data-role="writer"
+                    data-role="assistant"
                   >
-                    <span className={styles.speaker}>You</span>
-                    {message.selectionQuote ? (
-                      <span className={styles.turnMeta}>
-                        {`Selection: “${truncate(message.selectionQuote, 60)}”`}
-                      </span>
-                    ) : null}
-                    {message.contextTitles.length > 0 ? (
-                      <span className={styles.turnMeta}>
-                        {`Context: ${message.contextTitles.join(", ")}`}
-                      </span>
-                    ) : null}
-                    <p className={styles.text}>{message.text}</p>
-                  </li>
-                );
-              }
-              return (
-                <li
-                  key={message.id}
-                  className={styles.message}
-                  data-role="assistant"
-                >
-                  <span className={styles.speaker}>Pair writer</span>
-                  <div className={styles.assistantCard}>
-                    {renderReplyText(message)}
-                    {message.stopped ? (
-                      <p className={styles.stoppedBadge}>Stopped</p>
-                    ) : null}
-                    {message.error ? (
-                      <div className={styles.inlineError} role="alert">
-                        <span>{message.error}</span>
-                        <Button
-                          className={styles.smallButton}
-                          isDisabled={
-                            isStreamingAny ||
-                            !openDocumentId ||
-                            isOtherDocThread
-                          }
-                          onPress={() =>
-                            void store.retry(activeThread.id, message.id)
-                          }
-                        >
-                          <RotateCcw aria-hidden size={13} />
-                          <span>Retry</span>
-                        </Button>
-                      </div>
-                    ) : null}
-                    {!message.streaming && message.audit ? (
-                      <details className={styles.audit}>
-                        <summary className={styles.auditSummary}>
-                          What it read
-                        </summary>
-                        <div className={styles.auditBody}>
-                          <ul className={styles.sourceList}>
-                            {message.audit.sources.map((source, idx) => {
-                              const docSnap =
-                                (source.kind === "document" ||
-                                  source.kind === "contextDocument") &&
-                                source.documentId
-                                  ? message.audit?.snapshots.find(
-                                      (s) => s.documentId === source.documentId,
-                                    )
-                                  : undefined;
-                              return (
-                                <li key={idx} className={styles.sourceItem}>
-                                  {docSnap && source.documentId ? (
-                                    <Button
-                                      className={styles.sourceLink}
-                                      onPress={() => {
-                                        if (
-                                          message.audit &&
-                                          source.documentId
-                                        ) {
-                                          openAuditSource(
-                                            message.audit,
-                                            source.documentId,
-                                          );
-                                        }
-                                      }}
-                                    >
-                                      <FileText aria-hidden size={13} />
-                                      <span>{source.label}</span>
-                                    </Button>
-                                  ) : (
-                                    <span>{source.label}</span>
-                                  )}
-                                </li>
-                              );
-                            })}
-                          </ul>
-                          <p className={styles.auditFact}>
-                            {`Why it ran: ${message.audit.reason}`}
-                          </p>
-                          <p className={styles.auditFact}>
-                            {`Model: ${message.audit.model}`}
-                          </p>
-                          {message.audit.promptVersion ? (
-                            <p className={styles.auditFact}>
-                              {`Prompt: ${message.audit.promptVersion}`}
-                            </p>
-                          ) : null}
-                        </div>
-                      </details>
-                    ) : null}
-                  </div>
-                </li>
-              );
-            })}
-          </ol>
-        )}
-      </div>
-
-      {openDocumentId && !isOtherDocThread ? (
-        <div className={styles.readingBar}>
-          <div className={styles.readingSummary}>
-            <span>
-              {`${openDoc?.title ?? "Document"} · ${scopeLabel(openDocScope)} · ${formatWords(openDocReadWords)}`}
-            </span>
-            {snapshot.extraContext.length > 0 ? (
-              <span className={styles.readingTotal}>
-                {`Total ${formatWords(readingTotalWords)}`}
-              </span>
-            ) : null}
-          </div>
-          <div className={styles.chips}>
-            {activeSelection ? (
-              <span className={styles.chip} data-kind="selection">
-                <span className={styles.chipLabel}>
-                  {`Selection: “${truncate(activeSelection.text, 34)}”`}
-                </span>
-                <Button
-                  className={styles.chipRemove}
-                  aria-label="Ignore selection for next message"
-                  onPress={() => store.ignoreSelection(activeSelection.key)}
-                >
-                  <X aria-hidden size={12} />
-                </Button>
-              </span>
-            ) : null}
-            {snapshot.extraContext.map((doc) => (
-              <span key={doc.documentId} className={styles.chip}>
-                <span className={styles.chipLabel}>
-                  {`${doc.title} (${formatWords(doc.wordCount)})`}
-                </span>
-                <Button
-                  className={styles.chipRemove}
-                  aria-label={`Remove ${doc.title} from context`}
-                  onPress={() => store.removeContextDocument(doc.documentId)}
-                >
-                  <X aria-hidden size={12} />
-                </Button>
-              </span>
-            ))}
-            <DialogTrigger
-              isOpen={contextOpen}
-              onOpenChange={(open) => {
-                setContextOpen(open);
-                if (!open) setContextNote(null);
-              }}
-            >
-              <Button
-                className={styles.addContext}
-                isDisabled={otherContextCandidates.length === 0}
-              >
-                <Plus aria-hidden size={12} />
-                <span>Context</span>
-              </Button>
-              <Popover
-                className={styles.popover}
-                placement="top start"
-                offset={4}
-              >
-                <Dialog
-                  className={styles.popoverDialog}
-                  aria-label="Add documents to context"
-                >
-                  <h3 className={styles.sectionHeading}>
-                    {`Add documents (${formatWords(remainingContextWords)} remaining)`}
-                  </h3>
-                  {contextNote ? (
-                    <output className={styles.contextError}>
-                      {contextNote}
-                    </output>
-                  ) : null}
-                  <ul className={styles.threadList}>
-                    {otherContextCandidates.map((doc) => {
-                      const added = snapshot.extraContext.some(
-                        (c) => c.documentId === doc.id,
-                      );
-                      const disabled =
-                        loadingContextId === doc.id ||
-                        (!added && remainingContextWords === 0);
-                      return (
-                        <li key={doc.id}>
+                    <span className={styles.speaker}>Pair writer</span>
+                    <div className={styles.assistantCard}>
+                      {renderReplyText(message)}
+                      {message.stopped ? (
+                        <p className={styles.stoppedBadge}>Stopped</p>
+                      ) : null}
+                      {message.error ? (
+                        <div className={styles.inlineError} role="alert">
+                          <span>{message.error}</span>
                           <Button
-                            className={styles.threadItem}
-                            data-current={added ? "true" : undefined}
-                            isDisabled={disabled}
+                            className={styles.smallButton}
+                            isDisabled={
+                              isStreamingAny ||
+                              !openDocumentId ||
+                              isOtherDocThread
+                            }
                             onPress={() =>
-                              void toggleContextDocument(doc.id, doc.title)
+                              void store.retry(activeThread.id, message.id)
                             }
                           >
-                            <span className={styles.threadItemTitle}>
-                              {doc.title}
-                            </span>
-                            <span className={styles.threadItemMeta}>
-                              {added
-                                ? "Added"
-                                : remainingContextWords === 0
-                                  ? "Limit reached"
-                                  : "Add"}
-                            </span>
+                            <RotateCcw aria-hidden size={13} />
+                            <span>Retry</span>
                           </Button>
-                        </li>
-                      );
-                    })}
-                  </ul>
-                </Dialog>
-              </Popover>
-            </DialogTrigger>
-          </div>
-        </div>
-      ) : null}
-
-      {isStreamingAny && !isStreamingHere && streamingThread ? (
-        <div className={styles.streamingElsewhere}>
-          <span>{`Replying in “${streamingThread.title}”…`}</span>
-          <Button
-            className={styles.smallButton}
-            onPress={() => handleSelectThread(streamingThread.id)}
-          >
-            View
-          </Button>
-        </div>
-      ) : null}
-
-      <Form
-        className={styles.composer}
-        onSubmit={(event) => {
-          event.preventDefault();
-          if (!sendDisabled) void store.send();
-        }}
-      >
-        <TextField
-          className={styles.field}
-          aria-label="Message the assistant"
-          value={snapshot.draft}
-          onChange={(value) => store.setDraft(value)}
-        >
-          <TextArea
-            ref={inputRef}
-            className={styles.input}
-            rows={2}
-            placeholder={
-              openDocumentId
-                ? isOtherDocThread
-                  ? "Open this chat’s document to continue"
-                  : "Ask your pair writer"
-                : "Open a document to ask your pair writer"
-            }
-            data-focus-target=""
-            onKeyDown={onKeyDown}
-          />
-        </TextField>
-        <div className={styles.actions}>
-          {isStreamingHere ? (
-            <Button
-              type="button"
-              className={styles.stopButton}
-              onPress={() => store.stopStreaming()}
-            >
-              <Square aria-hidden size={13} />
-              <span>Stop</span>
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              className={`${controls.iconButton} ${styles.send}`}
-              aria-label="Send"
-              isDisabled={sendDisabled}
-            >
-              <ArrowUp aria-hidden size={16} strokeWidth={2.5} />
-            </Button>
+                        </div>
+                      ) : null}
+                      {!message.streaming && message.audit ? (
+                        <details className={styles.audit}>
+                          <summary className={styles.auditSummary}>
+                            What it read
+                          </summary>
+                          <div className={styles.auditBody}>
+                            <ul className={styles.sourceList}>
+                              {message.audit.sources.map((source, idx) => {
+                                const docSnap =
+                                  (source.kind === "document" ||
+                                    source.kind === "contextDocument") &&
+                                  source.documentId
+                                    ? message.audit?.snapshots.find(
+                                        (s) =>
+                                          s.documentId === source.documentId,
+                                      )
+                                    : undefined;
+                                return (
+                                  <li key={idx} className={styles.sourceItem}>
+                                    {docSnap && source.documentId ? (
+                                      <Button
+                                        className={styles.sourceLink}
+                                        onPress={() => {
+                                          if (
+                                            message.audit &&
+                                            source.documentId
+                                          ) {
+                                            openAuditSource(
+                                              message.audit,
+                                              source.documentId,
+                                            );
+                                          }
+                                        }}
+                                      >
+                                        <FileText aria-hidden size={13} />
+                                        <span>{source.label}</span>
+                                      </Button>
+                                    ) : (
+                                      <span>{source.label}</span>
+                                    )}
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                            <p className={styles.auditFact}>
+                              {`Why it ran: ${message.audit.reason}`}
+                            </p>
+                            <p className={styles.auditFact}>
+                              {`Model: ${message.audit.model}`}
+                            </p>
+                            {message.audit.promptVersion ? (
+                              <p className={styles.auditFact}>
+                                {`Prompt: ${message.audit.promptVersion}`}
+                              </p>
+                            ) : null}
+                          </div>
+                        </details>
+                      ) : null}
+                    </div>
+                  </li>
+                );
+              })}
+            </ol>
           )}
         </div>
-      </Form>
+
+        {openDocumentId && !isOtherDocThread ? (
+          <div className={styles.readingBar}>
+            <div className={styles.readingSummary}>
+              <span>
+                {`${openDoc?.title ?? "Document"} · ${scopeLabel(openDocScope)} · ${formatWords(openDocReadWords)}`}
+              </span>
+              {snapshot.extraContext.length > 0 ? (
+                <span className={styles.readingTotal}>
+                  {`Total ${formatWords(readingTotalWords)}`}
+                </span>
+              ) : null}
+            </div>
+            <div className={styles.chips}>
+              {activeSelection ? (
+                <span className={styles.chip} data-kind="selection">
+                  <span className={styles.chipLabel}>
+                    {`Selection: “${truncate(activeSelection.text, 34)}”`}
+                  </span>
+                  <Button
+                    className={styles.chipRemove}
+                    aria-label="Ignore selection for next message"
+                    onPress={() => store.ignoreSelection(activeSelection.key)}
+                  >
+                    <X aria-hidden size={12} />
+                  </Button>
+                </span>
+              ) : null}
+              {snapshot.extraContext.map((doc) => (
+                <span key={doc.documentId} className={styles.chip}>
+                  <span className={styles.chipLabel}>
+                    {`${doc.title} (${formatWords(doc.wordCount)})`}
+                  </span>
+                  <Button
+                    className={styles.chipRemove}
+                    aria-label={`Remove ${doc.title} from context`}
+                    onPress={() => store.removeContextDocument(doc.documentId)}
+                  >
+                    <X aria-hidden size={12} />
+                  </Button>
+                </span>
+              ))}
+              <DialogTrigger
+                isOpen={contextOpen}
+                onOpenChange={(open) => {
+                  setContextOpen(open);
+                  if (!open) setContextNote(null);
+                }}
+              >
+                <Button
+                  className={styles.addContext}
+                  isDisabled={otherContextCandidates.length === 0}
+                >
+                  <Plus aria-hidden size={12} />
+                  <span>Context</span>
+                </Button>
+                <Popover
+                  className={styles.popover}
+                  placement="top start"
+                  offset={4}
+                >
+                  <Dialog
+                    className={styles.popoverDialog}
+                    aria-label="Add documents to context"
+                  >
+                    <h3 className={styles.sectionHeading}>
+                      {`Add documents (${formatWords(remainingContextWords)} remaining)`}
+                    </h3>
+                    {contextNote ? (
+                      <output className={styles.contextError}>
+                        {contextNote}
+                      </output>
+                    ) : null}
+                    <ul className={styles.threadList}>
+                      {otherContextCandidates.map((doc) => {
+                        const added = snapshot.extraContext.some(
+                          (c) => c.documentId === doc.id,
+                        );
+                        const disabled =
+                          loadingContextId === doc.id ||
+                          (!added && remainingContextWords === 0);
+                        return (
+                          <li key={doc.id}>
+                            <Button
+                              className={styles.threadItem}
+                              data-current={added ? "true" : undefined}
+                              isDisabled={disabled}
+                              onPress={() =>
+                                void toggleContextDocument(doc.id, doc.title)
+                              }
+                            >
+                              <span className={styles.threadItemTitle}>
+                                {doc.title}
+                              </span>
+                              <span className={styles.threadItemMeta}>
+                                {added
+                                  ? "Added"
+                                  : remainingContextWords === 0
+                                    ? "Limit reached"
+                                    : "Add"}
+                              </span>
+                            </Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </Dialog>
+                </Popover>
+              </DialogTrigger>
+            </div>
+          </div>
+        ) : null}
+
+        {isStreamingAny && !isStreamingHere && streamingThread ? (
+          <div className={styles.streamingElsewhere}>
+            <span>{`Replying in “${streamingThread.title}”…`}</span>
+            <Button
+              className={styles.smallButton}
+              onPress={() => handleSelectThread(streamingThread.id)}
+            >
+              View
+            </Button>
+          </div>
+        ) : null}
+
+        <Form
+          className={styles.composer}
+          onSubmit={(event) => {
+            event.preventDefault();
+            if (!sendDisabled) void store.send();
+          }}
+        >
+          <TextField
+            className={styles.field}
+            aria-label="Message the assistant"
+            value={snapshot.draft}
+            onChange={(value) => store.setDraft(value)}
+          >
+            <TextArea
+              ref={inputRef}
+              className={styles.input}
+              rows={2}
+              placeholder={
+                openDocumentId
+                  ? isOtherDocThread
+                    ? "Open this chat’s document to continue"
+                    : "Ask your pair writer"
+                  : "Open a document to ask your pair writer"
+              }
+              data-focus-target=""
+              onKeyDown={onKeyDown}
+            />
+          </TextField>
+          <div className={styles.actions}>
+            {isStreamingHere ? (
+              <Button
+                type="button"
+                className={styles.stopButton}
+                onPress={() => store.stopStreaming()}
+              >
+                <Square aria-hidden size={13} />
+                <span>Stop</span>
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                className={`${controls.iconButton} ${styles.send}`}
+                aria-label="Send"
+                isDisabled={sendDisabled}
+              >
+                <ArrowUp aria-hidden size={16} strokeWidth={2.5} />
+              </Button>
+            )}
+          </div>
+        </Form>
+      </div>
+    );
+
+  const paneStatus = statusLabel(
+    findingsSnapshot.reviewStatus,
+    showSetupNotice,
+    snapshot.readiness.status,
+  );
+
+  return (
+    <div className={styles.assistant}>
+      <div className={styles.statusBar}>
+        <span
+          className={styles.statusText}
+          data-status={
+            showSetupNotice ? "error" : findingsSnapshot.reviewStatus
+          }
+        >
+          {paneStatus}
+        </span>
+        {!showSetupNotice ? (
+          <TooltipTrigger delay={600}>
+            <Button
+              className={styles.pauseButton}
+              aria-keyshortcuts={ariaKeys(pauseKeys)}
+              onPress={() => findingsStore.togglePaused()}
+            >
+              {findingsSnapshot.paused ? (
+                <>
+                  <Play aria-hidden size={13} />
+                  <span>Resume</span>
+                </>
+              ) : (
+                <>
+                  <Pause aria-hidden size={13} />
+                  <span>Pause</span>
+                </>
+              )}
+            </Button>
+            <Tooltip className={controls.tooltip} offset={6}>
+              {`${findingsSnapshot.paused ? "Resume" : "Pause"} background review (${keyLabel(pauseKeys)})`}
+            </Tooltip>
+          </TooltipTrigger>
+        ) : null}
+      </div>
+
+      <Tabs
+        className={styles.tabs}
+        selectedKey={activeTab}
+        onSelectionChange={(key) => {
+          onTabChange(key === "findings" ? "findings" : "chat");
+        }}
+      >
+        <TabList className={styles.tabList} aria-label="Assistant views">
+          <Tab id="findings" className={styles.tab}>
+            <span>Findings</span>
+            {findingsSnapshot.activeCount > 0 ? (
+              <span className={styles.tabCount}>
+                {findingsSnapshot.activeCount}
+              </span>
+            ) : null}
+          </Tab>
+          <Tab id="chat" className={styles.tab}>
+            <span>Chat</span>
+            {snapshot.signal !== "idle" ? (
+              <>
+                <span className={styles.srOnly}>
+                  {snapshot.signal === "streaming"
+                    ? " (replying)"
+                    : " (unread reply)"}
+                </span>
+                <span
+                  className={styles.dot}
+                  data-signal={snapshot.signal}
+                  aria-hidden="true"
+                />
+              </>
+            ) : null}
+          </Tab>
+        </TabList>
+
+        <TabPanel id="findings" className={styles.tabPanel}>
+          <FindingsTab
+            store={findingsStore}
+            openDocumentId={openDocumentId}
+            setupNotice={setupNotice}
+            onDiscussFinding={handleDiscussFinding}
+            onOpenSource={(source) => store.openSource(source)}
+            {...(onRevealWriting ? { onRevealWriting } : {})}
+          />
+        </TabPanel>
+
+        <TabPanel id="chat" className={styles.tabPanel}>
+          {chatContent}
+        </TabPanel>
+      </Tabs>
     </div>
   );
 }

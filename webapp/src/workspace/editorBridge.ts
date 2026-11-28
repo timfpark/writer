@@ -10,6 +10,48 @@ export interface EditorSelection {
   to: number;
 }
 
+export interface PassageDescriptor {
+  passageId: string;
+  index: number;
+  sceneIndex: number;
+  text: string;
+}
+
+export type FindingUnderlineStyle = "prose" | "question";
+
+export interface FindingDecorationRange {
+  findingId: string;
+  from: number;
+  to: number;
+  quote: string;
+  style: FindingUnderlineStyle;
+  status: "active" | "changed";
+}
+
+export type FindingMapUpdate =
+  | {
+      findingId: string;
+      status: "active" | "changed";
+      from: number;
+      to: number;
+    }
+  | {
+      findingId: string;
+      status: "deleted";
+    };
+
+export interface EditorTransactionReport {
+  documentId: string;
+  editedPassageIds: readonly string[];
+  findingUpdates: readonly FindingMapUpdate[];
+}
+
+export interface ResolvedFindingAnchor {
+  from: number;
+  to: number;
+  sceneIndex: number;
+}
+
 export interface DocumentSnapshot {
   documentId: string;
   markdown: string;
@@ -39,16 +81,48 @@ export interface EditorHandle {
   hasExactQuote(quote: string): boolean;
   highlightQuote(quote: string): boolean;
   setSelectionIgnored(ignored: boolean): void;
+  readPassages(passageIds: ReadonlySet<string>): PassageDescriptor[];
+  resolveAnchor(anchor: {
+    passageId: string;
+    startOffset: number;
+    endOffset: number;
+    quote: string;
+  }): ResolvedFindingAnchor | null;
+  syncFindingDecorations(
+    ranges: readonly FindingDecorationRange[],
+    selectedFindingId: string | null,
+  ): void;
+  focusFindingRange(from: number, to: number, moveCaret: boolean): boolean;
 }
 
 export class EditorBridge {
   private handle: EditorHandle | null = null;
   private currentSummary: EditorSummary | null = null;
   private readonly listeners = new Set<() => void>();
+  private readonly transactionListeners = new Set<
+    (report: EditorTransactionReport) => void
+  >();
+  private readonly findingClickListeners = new Set<
+    (documentId: string, findingId: string) => void
+  >();
 
   subscribe = (listener: () => void): (() => void) => {
     this.listeners.add(listener);
     return () => this.listeners.delete(listener);
+  };
+
+  onTransaction = (
+    listener: (report: EditorTransactionReport) => void,
+  ): (() => void) => {
+    this.transactionListeners.add(listener);
+    return () => this.transactionListeners.delete(listener);
+  };
+
+  onFindingClick = (
+    listener: (documentId: string, findingId: string) => void,
+  ): (() => void) => {
+    this.findingClickListeners.add(listener);
+    return () => this.findingClickListeners.delete(listener);
   };
 
   get summary(): EditorSummary | null {
@@ -92,6 +166,18 @@ export class EditorBridge {
     this.emit();
   }
 
+  reportTransaction(report: EditorTransactionReport): void {
+    if (this.handle?.documentId !== report.documentId) return;
+    for (const listener of this.transactionListeners) listener(report);
+  }
+
+  reportFindingClick(documentId: string, findingId: string): void {
+    if (this.handle?.documentId !== documentId) return;
+    for (const listener of this.findingClickListeners) {
+      listener(documentId, findingId);
+    }
+  }
+
   readSnapshot(documentId: string): DocumentSnapshot | null {
     if (this.handle?.documentId !== documentId) return null;
     return this.handle.readSnapshot();
@@ -110,6 +196,46 @@ export class EditorBridge {
   setSelectionIgnored(documentId: string, ignored: boolean): void {
     if (this.handle?.documentId !== documentId) return;
     this.handle.setSelectionIgnored(ignored);
+  }
+
+  readPassages(
+    documentId: string,
+    passageIds: ReadonlySet<string>,
+  ): PassageDescriptor[] {
+    if (this.handle?.documentId !== documentId) return [];
+    return this.handle.readPassages(passageIds);
+  }
+
+  resolveAnchor(
+    documentId: string,
+    anchor: {
+      passageId: string;
+      startOffset: number;
+      endOffset: number;
+      quote: string;
+    },
+  ): ResolvedFindingAnchor | null {
+    if (this.handle?.documentId !== documentId) return null;
+    return this.handle.resolveAnchor(anchor);
+  }
+
+  syncFindingDecorations(
+    documentId: string,
+    ranges: readonly FindingDecorationRange[],
+    selectedFindingId: string | null,
+  ): void {
+    if (this.handle?.documentId !== documentId) return;
+    this.handle.syncFindingDecorations(ranges, selectedFindingId);
+  }
+
+  focusFindingRange(
+    documentId: string,
+    from: number,
+    to: number,
+    moveCaret: boolean,
+  ): boolean {
+    if (this.handle?.documentId !== documentId) return false;
+    return this.handle.focusFindingRange(from, to, moveCaret);
   }
 
   private emit(): void {
